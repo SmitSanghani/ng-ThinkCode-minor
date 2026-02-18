@@ -1,0 +1,168 @@
+<div class="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-2xl">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Already have an account?
+                <a routerLink="/login"
+                    class="font-medium text-indigo-600 hover:text-indigo-500 transition duration-150 ease-in-out">
+                    Sign in
+                </a>
+            </p>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
+            <p class="font-bold">Error</p>
+            <p>{{ errorMessage }}</p>
+        </div>
+
+        <form class="mt-8 space-y-6" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+            <div class="rounded-md shadow-sm space-y-4">
+
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required
+                        formControlName="username"
+                        class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        [ngClass]="{ 'border-red-500': f['username'].touched && f['username'].errors }">
+                    <div *ngIf="f['username'].touched && f['username'].errors" class="text-red-500 text-xs mt-1">
+                        <span *ngIf="f['username'].errors['required']">Username is required</span>
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email-address" class="block text-sm font-medium text-gray-700">Email address</label>
+                    <input id="email-address" name="email" type="email" autocomplete="email" required
+                        formControlName="email"
+                        class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        [ngClass]="{ 'border-red-500': f['email'].touched && f['email'].errors }">
+                    <div *ngIf="f['email'].touched && f['email'].errors" class="text-red-500 text-xs mt-1">
+                        <span *ngIf="f['email'].errors['required']">Email is required</span>
+                        <span *ngIf="f['email'].errors['email']">Enter a valid email</span>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        <input id="password" name="password" [type]="showPassword ? 'text' : 'password'"
+                            autocomplete="new-password" required formControlName="password"
+                            class="appearance-none rounded-md relative block w-full pl-3 pr-10 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            [ngClass]="{ 'border-red-500': f['password'].touched && f['password'].errors }">
+                        <button type="button" (click)="togglePassword()"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 focus:outline-none transition-colors z-20">
+                            <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.049 7.21 5 12 5c4.79 0 8.601 3.049 9.964 7.322a1.012 1.012 0 010 .644C20.601 15.951 16.79 19 12 19c-4.79 0-8.601-3.049-9.964-7.322z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Password Strength Meter -->
+                    <div class="mt-2 h-2 w-full bg-gray-200 rounded-full" *ngIf="f['password'].value">
+                        <div class="h-full rounded-full transition-all duration-300"
+                            [style.width.%]="passwordStrength * 20" [ngClass]="{
+                       'bg-red-500': passwordStrength <= 2,
+                       'bg-yellow-500': passwordStrength === 3,
+                       'bg-green-500': passwordStrength >= 4
+                   }"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1" *ngIf="f['password'].value">
+                        Strength: {{ passwordStrength <= 2 ? 'Weak' : (passwordStrength===3 ? 'Medium' : 'Strong' ) }}
+                            (Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special) </p>
+
+                            <div *ngIf="f['password'].touched && f['password'].errors"
+                                class="text-red-500 text-xs mt-1">
+                                <span *ngIf="f['password'].errors['required']">Password is required</span>
+                                <span *ngIf="f['password'].errors['minlength']">Password must be at least 8
+                                    characters</span>
+                                <span *ngIf="f['password'].errors['pattern']">Missing requirements</span>
+                            </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm
+                        Password</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                        <input id="confirmPassword" name="confirmPassword"
+                            [type]="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" required
+                            formControlName="confirmPassword"
+                            class="appearance-none rounded-md relative block w-full pl-3 pr-10 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            [ngClass]="{ 'border-red-500': (f['confirmPassword'].touched && f['confirmPassword'].errors) || (registerForm.errors?.['mismatch'] && f['confirmPassword'].touched) }">
+                        <button type="button" (click)="toggleConfirmPassword()"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 focus:outline-none transition-colors z-20">
+                            <svg *ngIf="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.049 7.21 5 12 5c4.79 0 8.601 3.049 9.964 7.322a1.012 1.012 0 010 .644C20.601 15.951 16.79 19 12 19c-4.79 0-8.601-3.049-9.964-7.322z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <svg *ngIf="showConfirmPassword" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.822 7.822L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div *ngIf="f['confirmPassword'].touched" class="text-red-500 text-xs mt-1">
+                        <span *ngIf="f['confirmPassword'].errors?.['required']">Please confirm your password</span>
+                        <span *ngIf="registerForm.errors?.['mismatch']">Passwords do not match</span>
+                    </div>
+                </div>
+
+                <!-- Terms -->
+                <div class="flex items-center">
+                    <input id="terms" name="terms" type="checkbox" formControlName="terms"
+                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="terms" class="ml-2 block text-sm text-gray-900">
+                        I agree to the <a href="#" class="text-indigo-600">Terms</a> and <a href="#"
+                            class="text-indigo-600">Privacy Policy</a>
+                    </label>
+                </div>
+                <div *ngIf="f['terms'].touched && f['terms'].errors" class="text-red-500 text-xs mt-1">
+                    <span *ngIf="f['terms'].errors['required']">You must accept the terms</span>
+                </div>
+
+            </div>
+
+            <div>
+                <button type="submit" [disabled]="registerForm.invalid || isLoading"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg *ngIf="!isLoading" class="h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <svg *ngIf="isLoading" class="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </span>
+                    {{ isLoading ? 'Creating account...' : 'Create Account' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

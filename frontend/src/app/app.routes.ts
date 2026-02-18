@@ -1,0 +1,35 @@
+import { Routes } from '@angular/router';
+import { LoginComponent } from './features/auth/login/login.component';
+import { RegisterComponent } from './features/auth/register/register.component';
+import { AdminLayoutComponent } from './features/admin/admin-layout.component';
+import { AdminOverviewComponent } from './features/admin/overview/overview.component';
+import { SubmissionsComponent } from './features/admin/submissions/submissions.component';
+import { StatisticsComponent } from './features/admin/statistics/statistics.component';
+import { StudentHomeComponent } from './features/student/home/home.component';
+import { authGuard } from './core/guards/auth.guard';
+
+export const routes: Routes = [
+    { path: '', redirectTo: 'login', pathMatch: 'full' },
+    { path: 'login', component: LoginComponent },
+    { path: 'register', component: RegisterComponent },
+    {
+        path: 'admin',
+        component: AdminLayoutComponent,
+        canActivate: [authGuard],
+        children: [
+            { path: 'dashboard', component: AdminOverviewComponent },
+            {
+                path: '',
+                loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule)
+            },
+            { path: 'submissions', component: SubmissionsComponent },
+            { path: 'statistics', component: StatisticsComponent },
+            { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+        ]
+    },
+    {
+        path: 'website/home',
+        component: StudentHomeComponent,
+        canActivate: [authGuard]
+    }
+];
