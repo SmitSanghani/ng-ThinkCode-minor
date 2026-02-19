@@ -3,7 +3,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <nav class="flex text-sm text-slate-500 mb-1 font-medium">
-                <a routerLink="/admin/questions" class="hover:text-indigo-600 transition-colors">Questions</a>
+                <a routerLink="/admin/questions" class="hover:text-indigo-600 transition-colors">All Questions</a>
                 <span class="mx-2 text-slate-300">/</span>
                 <span class="text-slate-900">New Question</span>
             </nav>
@@ -29,218 +29,237 @@
         </div>
     </div>
 
-    <form [formGroup]="questionForm" class="space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <form [formGroup]="questionForm" class="w-full mx-auto space-y-6">
 
-            <!-- Left Column: Main Content -->
-            <div class="lg:col-span-2 space-y-6">
-
-                <!-- Basic Info Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-6 border-b border-slate-50 bg-slate-50/50">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1 h-6 bg-indigo-500 rounded-full"></div>
-                            <h3 class="text-lg font-bold text-slate-800">Problem Details</h3>
-                        </div>
-                    </div>
-                    <div class="p-6 space-y-6">
-                        <div class="group">
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Title</label>
-                            <input type="text" formControlName="title" placeholder="e.g. Two Sum"
-                                class="w-full px-4 py-3 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 font-medium">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Description</label>
-                            <div class="relative group">
-                                <textarea formControlName="description" rows="12"
-                                    placeholder="Describe the problem statement, input format, and output format..."
-                                    class="w-full px-5 py-4 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 font-sans leading-relaxed resize-y"></textarea>
-                                <div
-                                    class="absolute bottom-3 right-4 text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-1 rounded">
-                                    Markdown Supported</div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Constraints</label>
-                            <div class="bg-slate-900 rounded-xl p-1">
-                                <textarea formControlName="constraints" rows="4"
-                                    placeholder="- 1 <= nums.length <= 10^4&#10;- -10^9 <= nums[i] <= 10^9"
-                                    class="w-full px-4 py-3 bg-slate-900 text-slate-300 border-none focus:ring-0 rounded-lg text-sm font-mono leading-relaxed placeholder:text-slate-600"></textarea>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Problem Details & Configuration (Merged) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-50 bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <div class="w-1 h-6 bg-indigo-500 rounded-full"></div>
+                    <h3 class="text-lg font-bold text-slate-800">Problem Details</h3>
                 </div>
-
-                <!-- Examples Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
-                            <h3 class="text-lg font-bold text-slate-800">Examples</h3>
-                        </div>
-                        <button type="button" (click)="addExample()"
-                            class="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-all border border-indigo-100">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                    d="M12 4v16m8-8H4" />
-                            </svg> Add Example
-                        </button>
-                    </div>
-                    <div class="p-6 space-y-4" formArrayName="examples">
-                        <div *ngFor="let item of examples.controls; let i=index" [formGroupName]="i"
-                            class="group relative bg-slate-50/80 rounded-2xl border border-slate-200 p-6 transition-all hover:bg-white hover:border-indigo-200 hover:shadow-md">
-
-                            <button type="button" (click)="removeExample(i)"
-                                class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-lg p-1.5 opacity-0 group-hover:opacity-100 shadow-sm border border-slate-100 hover:border-rose-100">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-
-                            <h4
-                                class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                <span
-                                    class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">#{{i+1}}</span>
-                                Example
-                            </h4>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label
-                                        class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Input</label>
-                                    <input type="text" formControlName="input"
-                                        class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700"
-                                        placeholder="nums = [2,7,11,15], target = 9">
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Output</label>
-                                    <input type="text" formControlName="output"
-                                        class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700"
-                                        placeholder="[0,1]">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label
-                                        class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Explanation</label>
-                                    <input type="text" formControlName="explanation"
-                                        class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none placeholder:text-slate-300"
-                                        placeholder="Because nums[0] + nums[1] == 9, we return [0, 1].">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
-            <!-- Right Column: Settings -->
-            <div class="space-y-6">
-
-                <!-- Configuration Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-5 border-b border-slate-50 bg-slate-50/50">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1 h-5 bg-violet-500 rounded-full"></div>
-                            <h3 class="text-base font-bold text-slate-800">Configuration</h3>
-                        </div>
-                    </div>
-                    <div class="p-5 space-y-5">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Difficulty</label>
-                            <div class="relative">
-                                <select formControlName="difficulty"
-                                    class="w-full px-4 py-3 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm outline-none appearance-none cursor-pointer font-medium text-slate-700">
-                                    <option value="Easy">Easy</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Hard">Hard</option>
-                                </select>
-                                <svg class="w-4 h-4 text-slate-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Category</label>
-                            <input type="text" formControlName="category" placeholder="e.g. Dynamic Programming"
-                                class="w-full px-4 py-3 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none font-medium">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">Function Signature</label>
-                            <div class="bg-slate-900 rounded-xl p-1 shadow-inner">
-                                <textarea formControlName="functionSignature" rows="6"
-                                    placeholder="function twoSum(nums, target) {&#10;  // Your code here&#10;}"
-                                    class="w-full px-4 py-3 bg-slate-900 border-none focus:ring-0 rounded-lg text-xs font-mono text-emerald-400 placeholder:text-slate-600 leading-relaxed resize-none"></textarea>
-                            </div>
-                        </div>
-                    </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Title -->
+                <div class="md:col-span-2 group">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Title</label>
+                    <input type="text" formControlName="title" placeholder="e.g. Two Sum"
+                        class="w-full px-4 py-3 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 font-medium">
                 </div>
 
-                <!-- Test Cases Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-5 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1 h-5 bg-rose-500 rounded-full"></div>
-                            <h3 class="text-base font-bold text-slate-800">Test Cases</h3>
-                            <span
-                                class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full border border-slate-200">{{testCases.length}}
-                                case(s)</span>
-                        </div>
-                        <button type="button" (click)="addTestCase()"
-                            class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
-                            title="Add Test Case">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <!-- Difficulty -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Difficulty</label>
+                    <div class="relative">
+                        <button type="button" (click)="$event.stopPropagation(); difficultyOpen = !difficultyOpen"
+                            class="w-full flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:border-slate-300 focus:bg-white focus:border-indigo-500 transition-all outline-none text-left">
+                            <span>{{ questionForm.get('difficulty')?.value }}</span>
+                            <svg class="w-4 h-4 text-slate-500 transition-transform duration-200"
+                                [class.rotate-180]="difficultyOpen" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
-                    </div>
 
-                    <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar" formArrayName="testCases">
-                        <div *ngFor="let item of testCases.controls; let i=index" [formGroupName]="i"
-                            class="group bg-slate-50/50 rounded-xl border border-slate-200 p-4 relative transition-all hover:border-indigo-200 hover:bg-white hover:shadow-sm">
-
-                            <button type="button" (click)="removeTestCase(i)"
-                                class="absolute top-3 right-3 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-
-                            <div class="space-y-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Case
-                                        {{i+1}}</span>
-                                    <label class="flex items-center gap-2 cursor-pointer group/toggle">
-                                        <input type="checkbox" formControlName="isSample"
-                                            class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
-                                        <span
-                                            class="text-xs text-slate-500 group-hover/toggle:text-indigo-600 font-medium select-none transition-colors">Sample</span>
-                                    </label>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] uppercase font-bold text-slate-400">Input JSON</label>
-                                    <textarea formControlName="input" rows="2"
-                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono resize-none text-slate-700 font-medium"></textarea>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] uppercase font-bold text-slate-400">Expected
-                                        Output</label>
-                                    <input type="text" formControlName="expectedOutput"
-                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700 font-medium">
-                                </div>
+                        <!-- Dropdown Menu -->
+                        <div *ngIf="difficultyOpen"
+                            class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[60] animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                            <div class="p-1 flex flex-col">
+                                <button type="button" *ngFor="let diff of difficulties" (click)="selectDifficulty(diff)"
+                                    class="w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-between group hover:bg-slate-50 text-slate-600 hover:text-slate-900"
+                                    [class.bg-slate-50]="questionForm.get('difficulty')?.value === diff"
+                                    [class.text-indigo-600]="questionForm.get('difficulty')?.value === diff"
+                                    [class.font-semibold]="questionForm.get('difficulty')?.value === diff">
+                                    <span>{{ diff }}</span>
+                                    <svg *ngIf="questionForm.get('difficulty')?.value === diff"
+                                        class="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Category -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+                    <input type="text" formControlName="category" placeholder="e.g. Dynamic Programming"
+                        class="w-full px-4 py-3 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none font-medium">
+                </div>
+
+                <!-- Function Signature -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Function Signature</label>
+                    <div class="bg-slate-900 rounded-xl p-1 shadow-inner">
+                        <textarea formControlName="functionSignature" rows="6"
+                            placeholder="function twoSum(nums, target) {&#10;  // Your code here&#10;}"
+                            class="w-full px-4 py-3 bg-slate-900 border-none focus:ring-0 rounded-lg text-xs font-mono text-emerald-400 placeholder:text-slate-600 leading-relaxed resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                    <div class="relative group">
+                        <textarea formControlName="description" rows="12"
+                            placeholder="Describe the problem statement, input format, and output format..."
+                            class="w-full px-5 py-4 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 font-sans leading-relaxed resize-y"></textarea>
+                        <div
+                            class="absolute bottom-3 right-4 text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-1 rounded">
+                            Markdown Supported</div>
+                    </div>
+                </div>
+
+                <!-- Constraints -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Constraints</label>
+                    <div class="bg-slate-900 rounded-xl p-1">
+                        <textarea formControlName="constraints" rows="4"
+                            placeholder="- 1 <= nums.length <= 10^4&#10;- -10^9 <= nums[i] <= 10^9"
+                            class="w-full px-4 py-3 bg-slate-900 text-slate-300 border-none focus:ring-0 rounded-lg text-sm font-mono leading-relaxed placeholder:text-slate-600"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Examples Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
+                    <h3 class="text-lg font-bold text-slate-800">Examples</h3>
+                </div>
+                <button type="button" (click)="addExample()"
+                    class="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-all border border-indigo-100">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                    </svg> Add Example
+                </button>
+            </div>
+            <div class="p-6 space-y-4" formArrayName="examples">
+                <div *ngFor="let item of examples.controls; let i=index" [formGroupName]="i"
+                    class="group relative bg-slate-50/80 rounded-2xl border border-slate-200 p-6 transition-all hover:bg-white hover:border-indigo-200 hover:shadow-md">
+
+                    <button type="button" (click)="removeExample(i)"
+                        class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-lg p-1.5 opacity-0 group-hover:opacity-100 shadow-sm border border-slate-100 hover:border-rose-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">#{{i+1}}</span>
+                        Example
+                    </h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Input</label>
+                            <textarea formControlName="input" rows="3"
+                                class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700 resize-y"
+                                placeholder="nums = [2,7,11,15], target = 9"></textarea>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Output</label>
+                            <textarea formControlName="output" rows="3"
+                                class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700 resize-y"
+                                placeholder="[0,1]"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label
+                                class="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Explanation</label>
+                            <textarea formControlName="explanation" rows="3"
+                                class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none placeholder:text-slate-300 resize-y"
+                                placeholder="Because nums[0] + nums[1] == 9, we return [0, 1]."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Cases Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-1 h-5 bg-rose-500 rounded-full"></div>
+                    <h3 class="text-base font-bold text-slate-800">Test Cases</h3>
+                    <span
+                        class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full border border-slate-200">{{testCases.length}}
+                        case(s)</span>
+                </div>
+                <button type="button" (click)="addTestCase()"
+                    class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                    title="Add Test Case">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar" formArrayName="testCases">
+                <div *ngFor="let item of testCases.controls; let i=index" [formGroupName]="i"
+                    class="group bg-slate-50/50 rounded-xl border border-slate-200 p-4 relative transition-all hover:border-indigo-200 hover:bg-white hover:shadow-sm">
+
+                    <button type="button" (click)="removeTestCase(i)"
+                        class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors bg-white rounded-lg p-1.5 opacity-0 group-hover:opacity-100 shadow-sm border border-slate-100 hover:border-rose-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[10px]">#{{i+1}}</span>
+                        Case
+                        <label class="ml-auto flex items-center gap-2 cursor-pointer group/toggle mr-12">
+                            <input type="checkbox" formControlName="isSample"
+                                class="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                            <span
+                                class="text-xs text-slate-500 group-hover/toggle:text-indigo-600 font-medium select-none transition-colors">Sample</span>
+                        </label>
+                    </h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-slate-400">Input JSON</label>
+                            <textarea formControlName="input" rows="5"
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700 font-medium"></textarea>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-slate-400">Expected
+                                Output</label>
+                            <textarea formControlName="expectedOutput" rows="5"
+                                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none font-mono text-slate-700 font-medium"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Solution Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-6 border-b border-slate-50 bg-slate-50/50">
+                <div class="flex items-center gap-2">
+                    <div class="w-1 h-6 bg-blue-500 rounded-full"></div>
+                    <h3 class="text-lg font-bold text-slate-800">Solution</h3>
+                </div>
+            </div>
+            <div class="p-6">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Solution / Explanation
+                    (required)</label>
+                <div class="relative group">
+                    <textarea formControlName="referenceSolution" rows="10"
+                        placeholder="Example JavaScript solution or explanation..."
+                        class="w-full px-5 py-4 bg-slate-50 border-slate-200 border focus:bg-white focus:border-indigo-500 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 font-mono leading-relaxed resize-y"></textarea>
+                </div>
             </div>
         </div>
     </form>

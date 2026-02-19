@@ -51,6 +51,8 @@ exports.addQuestion = async (req, res, next) => {
 // @access  Private (Admin)
 exports.getQuestions = async (req, res, next) => {
     try {
+        console.log('AdminController: getQuestions called');
+        console.log('User:', req.user?._id, req.user?.role);
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         const startIndex = (page - 1) * limit;
@@ -93,6 +95,7 @@ exports.getQuestions = async (req, res, next) => {
             totalPages: Math.ceil(total / limit)
         };
 
+        res.set('Cache-Control', 'no-store');
         sendSuccess(res, { questions: questionsWithStats, pagination });
     } catch (error) {
         next(error);

@@ -1,8 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, HostListener, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { AdminService } from '../../services/admin.service';
+import { QuestionService } from '../../services/question.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -13,11 +13,28 @@ import Swal from 'sweetalert2';
 })
 export class AddQuestionComponent implements OnInit {
     fb = inject(FormBuilder);
-    adminService = inject(AdminService);
+    questionService = inject(QuestionService);
     router = inject(Router);
+    el = inject(ElementRef);
 
     questionForm: FormGroup;
     isSubmitting = false;
+
+    // Custom Dropdown State
+    difficultyOpen = false;
+    difficulties = ['Easy', 'Medium', 'Hard'];
+
+    @HostListener('document:click', ['$event'])
+    onClick(event: MouseEvent) {
+        if (!this.el.nativeElement.contains(event.target)) {
+            this.difficultyOpen = false;
+        }
+    }
+
+    selectDifficulty(value: string) {
+        this.questionForm.patchValue({ difficulty: value });
+        this.difficultyOpen = false;
+    }
 
     constructor() {
         this.questionForm = this.fb.group({
@@ -29,7 +46,7 @@ export class AddQuestionComponent implements OnInit {
             constraints: [''],
             testCases: this.fb.array([], Validators.required),
             functionSignature: ['', Validators.required],
-            referenceSolution: ['']
+            referenceSolution: ['', Validators.required]
         });
     }
 
@@ -73,15 +90,6 @@ export class AddQuestionComponent implements OnInit {
     }
 
     minTestCasesValidator(control: AbstractControl) {
-        if (control instanceof FormArray) {
-            if (control.length < 3) {
-                return { minTestCases: true };
-            }
-            const hasSample = control.controls.some(c => c.value.isSample === true);
-            if (!hasSample) {
-                return { noSample: true };
-            }
-        }
         return null;
     }
 
@@ -106,14 +114,14 @@ export class AddQuestionComponent implements OnInit {
 
         const payload = { ...formData, testCases: processedTestCases };
 
-        this.adminService.addQuestion(payload).subscribe({
+        this.questionService.createQuestion(payload).subscribe({
             next: (res) => {
                 this.isSubmitting = false;
                 Swal.fire({
                     title: 'Success!',
                     text: 'Question added successfully',
                     icon: 'success',
-                    timer: 2000,
+                    timer: 1500,
                     showConfirmButton: false
                 }).then(() => {
                     this.router.navigate(['/admin/questions']);

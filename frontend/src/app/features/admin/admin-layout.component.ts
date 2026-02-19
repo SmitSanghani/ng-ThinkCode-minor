@@ -8,82 +8,87 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="flex h-screen bg-slate-50 font-inter">
-      <!-- Fixed Sidebar -->
-      <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300">
-        <div class="h-16 flex items-center px-6 border-b border-slate-800">
+    <div class="flex h-screen bg-background font-sans overflow-hidden text-text-primary">
+      <!-- Sidebar -->
+      <aside class="w-[260px] bg-[#1E2532] text-slate-400 flex flex-col transition-all duration-300 relative z-40">
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center px-6 mb-4">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <div class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
               <span class="text-white font-bold text-xl">T</span>
             </div>
-            <span class="text-white font-bold text-lg tracking-tight">ThinkCode</span>
+            <span class="text-white font-semibold text-xl tracking-tight">ThinkCode</span>
           </div>
         </div>
 
-        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-          <a routerLink="/admin/dashboard" routerLinkActive="bg-slate-800 text-white" 
-             class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all group">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <!-- Navigation -->
+        <nav class="flex-1 space-y-1 overflow-y-auto">
+          <a routerLink="/admin/dashboard" routerLinkActive="bg-[#1E2532] text-white !border-cyan-400" 
+             class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/5 hover:text-white transition-all duration-150 group border-l-[4px] border-transparent">
+            <svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
             <span class="font-medium text-[15px]">Dashboard</span>
           </a>
 
-          <a routerLink="/admin/questions/add" routerLinkActive="bg-slate-800 text-white" 
-             class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all group">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <a routerLink="/admin/questions/add" routerLinkActive="bg-[#1E2532] text-white !border-cyan-400" 
+             class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/5 hover:text-white transition-all duration-150 group border-l-[4px] border-transparent">
+            <svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <span class="font-medium text-[15px]">Add Question</span>
           </a>
 
-          <a routerLink="/admin/questions" routerLinkActive="bg-slate-800 text-white" [routerLinkActiveOptions]="{exact: true}"
-             class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all group">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-            <span class="font-medium text-[15px]">Manage Questions</span>
+          <a routerLink="/admin/questions" routerLinkActive="bg-[#1E2532] text-white !border-cyan-400" [routerLinkActiveOptions]="{exact: false}"
+             class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/5 hover:text-white transition-all duration-150 group border-l-[4px] border-transparent">
+            <svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            <span class="font-medium text-[15px]">All Questions</span>
           </a>
 
-          <a routerLink="/admin/submissions" routerLinkActive="bg-slate-800 text-white" 
-             class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all group">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <a routerLink="/admin/submissions" routerLinkActive="bg-[#1E2532] text-white !border-cyan-400" 
+             class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/5 hover:text-white transition-all duration-150 group border-l-[4px] border-transparent">
+            <svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="font-medium text-[15px]">Submissions</span>
           </a>
 
-          <a routerLink="/admin/statistics" routerLinkActive="bg-slate-800 text-white" 
-             class="flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all group">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <a routerLink="/admin/statistics" routerLinkActive="bg-[#1E2532] text-white !border-cyan-400" 
+             class="flex items-center gap-3 px-6 py-3.5 hover:bg-white/5 hover:text-white transition-all duration-150 group border-l-[4px] border-transparent">
+            <svg class="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
             <span class="font-medium text-[15px]">Statistics</span>
           </a>
         </nav>
 
-        <div class="p-4 border-t border-slate-800">
+        <!-- Logout -->
+        <div class="p-6">
           <button (click)="logout()" 
-             class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-all group">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+             class="flex items-center gap-3 text-slate-400 hover:text-rose-400 transition-all duration-150 group">
+            <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             <span class="font-medium text-[15px]">Logout</span>
           </button>
         </div>
       </aside>
 
       <!-- Main Content Container -->
-      <div class="flex-1 flex flex-col min-w-0">
-        <!-- Header -->
-        <header class="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center justify-between px-8">
-          <div class="flex flex-col">
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-none">ThinkCode Console</h1>
+      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-border sticky top-0 z-30 flex items-center justify-between px-8">
+          <!-- Breadcrumb -->
+          <div class="flex items-center gap-4 text-[14px]">
+            <span class="font-bold text-[#111827] text-[16px]">All Questions</span>
+            <span class="text-slate-300 font-light scale-y-125 mx-1">|</span>
+            <div class="flex items-center gap-2 text-slate-400">
+              <span class="hover:text-primary cursor-pointer transition-colors">Questions</span>
+              <span class="text-slate-300">/</span>
+              <span class="font-medium text-[#111827]">Manage</span>
+            </div>
           </div>
 
           <div class="flex items-center gap-6">
-            <!-- Search -->
-            <div class="hidden md:flex relative group">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              <input type="text" placeholder="Search Console... (⌘K)" 
-                     class="w-80 bg-slate-100 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-0 rounded-lg pl-10 pr-4 py-2 text-sm transition-all">
-            </div>
-
             <!-- Profile -->
-            <div class="flex items-center gap-3 pl-6 border-l border-slate-200">
+            <div class="flex items-center gap-3">
               <div class="text-right hidden sm:block">
-                <p class="text-sm font-semibold text-slate-900 leading-none">{{ user()?.username }}</p>
-                <p class="text-xs text-slate-500 mt-1 uppercase tracking-wider font-bold">Admin</p>
+                <p class="text-[13px] font-bold text-[#111827] leading-none">Admin User</p>
+                <div class="inline-flex items-center px-2 py-0.5 mt-1.5 rounded bg-cyan-50 border border-cyan-100">
+                  <span class="text-[9px] text-cyan-500 uppercase tracking-widest font-black">Admin</span>
+                </div>
               </div>
-              <div class="w-9 h-9 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">
+              <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary/20 cursor-pointer hover:border-primary/30 transition-all border-2 border-white">
                 {{ user()?.username?.substring(0, 1) | uppercase }}
               </div>
             </div>
@@ -91,8 +96,10 @@ import { AuthService } from '../../core/services/auth.service';
         </header>
 
         <!-- Dynamic Page Content -->
-        <main class="flex-1 overflow-y-auto p-5 max-w-[1600px] mx-auto w-full">
-          <router-outlet></router-outlet>
+        <main class="flex-1 overflow-y-auto bg-background p-8">
+          <div class="max-w-[1400px] mx-auto">
+            <router-outlet></router-outlet>
+          </div>
         </main>
       </div>
     </div>

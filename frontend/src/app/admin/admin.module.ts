@@ -8,7 +8,7 @@ import { AdminRoutingModule } from './admin-routing.module';
 
 // Components
 import { AddQuestionComponent } from './components/add-question/add-question.component';
-import { ManageQuestionsComponent } from './components/manage-questions/manage-questions.component';
+import { AllQuestionsComponent } from './components/all-questions/all-questions.component';
 import { EditQuestionComponent } from './components/edit-question/edit-question.component';
 
 @NgModule({
@@ -20,12 +20,12 @@ import { EditQuestionComponent } from './components/edit-question/edit-question.
         HttpClientModule,
         RouterModule,
         AddQuestionComponent,
-        ManageQuestionsComponent,
+        AllQuestionsComponent,
         EditQuestionComponent
     ],
     exports: [
         AddQuestionComponent,
-        ManageQuestionsComponent,
+        AllQuestionsComponent,
         EditQuestionComponent
     ]
 })

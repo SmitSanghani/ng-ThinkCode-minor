@@ -31,8 +31,7 @@ const QuestionSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: [true, 'Please add a description'],
-        minlength: [50, 'Description must be at least 50 characters']
+        required: [true, 'Please add a description']
     },
     examples: [TextBoxSchema],
     constraints: {
@@ -42,18 +41,8 @@ const QuestionSchema = new mongoose.Schema({
         type: [TestCaseSchema],
         required: [true, 'Please add at least one test case'],
         validate: [
-            {
-                validator: function (v) {
-                    return v.length >= 3;
-                },
-                message: 'Question must have at least 3 test cases'
-            },
-            {
-                validator: function (v) {
-                    return v.some(tc => tc.isSample === true);
-                },
-                message: 'At least one test case must be a sample (isSample: true)'
-            }
+
+
         ]
     },
     functionSignature: {

@@ -1,0 +1,270 @@
+<div class="space-y-6 animate-in fade-in duration-500">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
+        <div>
+            <h1 class="text-[28px] font-bold text-[#111827] tracking-tight">Question Bank</h1>
+            <p class="text-[14px] text-slate-500 mt-1">Manage and organize your coding problems efficiently.</p>
+        </div>
+        <a routerLink="/admin/questions/add"
+            class="inline-flex items-center justify-center px-5 py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white text-[14px] font-semibold rounded-[10px] shadow-button transition-all duration-150 gap-2 active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Question
+        </a>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="bg-card rounded-[14px] border border-slate-200 p-6 shadow-soft relative z-40" [formGroup]="filterForm">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Search -->
+            <div class="md:col-span-5 space-y-2">
+                <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Search</label>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-slate-300 group-focus-within:text-[#6366F1] transition-colors"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" formControlName="search" placeholder="Search questions..."
+                        class="w-full pl-12 pr-4 py-2.5 bg-white border border-slate-200 rounded-[10px] text-[15px] text-[#111827] placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#6366F1]/5 focus:border-[#6366F1] transition-all">
+                </div>
+            </div>
+
+            <!-- Difficulty Filter (Custom Dropdown) -->
+            <div class="md:col-span-3 space-y-2">
+                <label
+                    class="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Difficulty</label>
+                <div class="relative">
+                    <button type="button"
+                        (click)="$event.stopPropagation(); difficultyOpen = !difficultyOpen; categoryOpen = false"
+                        class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-[10px] text-[15px] text-[#111827] hover:border-slate-300 focus:border-[#6366F1] focus:ring-4 focus:ring-[#6366F1]/5 transition-all text-left">
+                        <span [class.text-slate-400]="filterForm.get('difficulty')?.value === 'All'">
+                            {{ filterForm.get('difficulty')?.value === 'All' ? 'Select Difficulty' :
+                            filterForm.get('difficulty')?.value }}
+                        </span>
+                        <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                            [class.rotate-180]="difficultyOpen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div *ngIf="difficultyOpen"
+                        class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-[12px] shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                        <div class="p-1 flex flex-col">
+                            <button type="button" *ngFor="let diff of difficulties" (click)="selectDifficulty(diff)"
+                                class="w-full text-left px-4 py-2.5 rounded-lg text-[14px] transition-colors flex items-center justify-between group hover:bg-slate-50 text-slate-600 hover:text-[#111827]"
+                                [class.bg-slate-50]="filterForm.get('difficulty')?.value === diff"
+                                [class.text-[#6366F1]]="filterForm.get('difficulty')?.value === diff"
+                                [class.font-semibold]="filterForm.get('difficulty')?.value === diff">
+                                <span>{{ diff === 'All' ? 'All Levels' : diff }}</span>
+                                <svg *ngIf="filterForm.get('difficulty')?.value === diff" class="w-4 h-4 text-[#6366F1]"
+                                    fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Filter (Custom Dropdown) -->
+            <div class="md:col-span-3 space-y-2">
+                <label
+                    class="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                <div class="relative">
+                    <button type="button"
+                        (click)="$event.stopPropagation(); categoryOpen = !categoryOpen; difficultyOpen = false"
+                        class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-[10px] text-[15px] text-[#111827] hover:border-slate-300 focus:border-[#6366F1] focus:ring-4 focus:ring-[#6366F1]/5 transition-all text-left">
+                        <span [class.text-slate-400]="filterForm.get('category')?.value === 'All'">
+                            {{ filterForm.get('category')?.value === 'All' ? 'Select Category' :
+                            filterForm.get('category')?.value }}
+                        </span>
+                        <svg class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                            [class.rotate-180]="categoryOpen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div *ngIf="categoryOpen"
+                        class="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-[12px] shadow-xl z-50 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                        <div class="p-1 flex flex-col">
+                            <button type="button" *ngFor="let cat of categories" (click)="selectCategory(cat)"
+                                class="w-full text-left px-4 py-2.5 rounded-lg text-[14px] transition-colors flex items-center justify-between group hover:bg-slate-50 text-slate-600 hover:text-[#111827]"
+                                [class.bg-slate-50]="filterForm.get('category')?.value === cat"
+                                [class.text-[#6366F1]]="filterForm.get('category')?.value === cat"
+                                [class.font-semibold]="filterForm.get('category')?.value === cat">
+                                <span>{{ cat === 'All' ? 'All Categories' : cat }}</span>
+                                <svg *ngIf="filterForm.get('category')?.value === cat" class="w-4 h-4 text-[#6366F1]"
+                                    fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset -->
+            <div class="md:col-span-1 flex items-end">
+                <button (click)="clearFilters()"
+                    class="w-full h-[45px] flex items-center justify-center border border-slate-200 rounded-[10px] text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all group"
+                    title="Reset Filters">
+                    <svg class="w-5 h-5 opacity-60 group-hover:opacity-100 transition-all" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div
+        class="bg-white rounded-[14px] border border-slate-200 shadow-soft overflow-hidden relative min-h-[500px] z-10">
+        <!-- Loading State -->
+        <div *ngIf="loading$ | async"
+            class="absolute inset-0 bg-white/60 z-10 backdrop-blur-[2px] flex flex-col items-center justify-center">
+            <div class="flex space-x-2">
+                <div class="w-2.5 h-2.5 bg-[#6366F1] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div class="w-2.5 h-2.5 bg-[#6366F1] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div class="w-2.5 h-2.5 bg-[#6366F1] rounded-full animate-bounce"></div>
+            </div>
+        </div>
+
+        <ng-container *ngIf="questions$ | async as questions">
+            <!-- Table View -->
+            <div class="overflow-x-auto" *ngIf="questions.length > 0">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-[#F9FAFB] border-b border-slate-100">
+                            <th
+                                class="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.12em] w-[40%]">
+                                Title</th>
+                            <th class="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.12em]">
+                                Difficulty</th>
+                            <th class="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.12em]">
+                                Category</th>
+                            <th class="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.12em]">
+                                Submissions</th>
+                            <th
+                                class="px-8 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.12em] text-right">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr *ngFor="let q of questions; trackBy: trackByFn"
+                            class="group hover:bg-slate-50/50 transition-colors duration-150">
+                            <td class="px-8 py-5">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[15px] font-bold text-[#111827] tracking-tight">{{q.title}}</span>
+                                    <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">ID:
+                                        #{{q._id | slice:-4 | uppercase}}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5">
+                                <span [ngClass]="{
+                  'bg-[#DCFCE7] text-[#15803D]': q.difficulty === 'Easy',
+                  'bg-[#FEF3C7] text-[#92400E]': q.difficulty === 'Medium',
+                  'bg-[#FEE2E2] text-[#B91C1C]': q.difficulty === 'Hard'
+                }" class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black tracking-tight">
+                                    {{q.difficulty}}
+                                </span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <span class="text-[14px] text-slate-500 font-medium">{{q.category}}</span>
+                            </td>
+                            <td class="px-8 py-5">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 bg-slate-50 rounded-lg text-slate-300">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                    </div>
+                                    <span class="text-[16px] font-bold text-[#111827]">{{q.totalSubmissions ||
+                                        0}}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a [routerLink]="['/admin/questions/edit', q._id]"
+                                        class="p-2 text-slate-300 hover:text-[#6366F1] hover:bg-[#6366F1]/5 rounded-lg transition-all"
+                                        title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </a>
+                                    <button (click)="deleteQuestion(q._id!)"
+                                        class="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                        title="Delete">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div *ngIf="meta$ | async as meta"
+                class="px-8 py-6 bg-white border-t border-slate-100 flex items-center justify-between">
+                <div class="text-[14px] text-slate-500">
+                    Showing <span class="font-bold text-[#111827]">{{(meta.page - 1) * meta.limit + 1}}</span> to
+                    <span class="font-bold text-[#111827]">{{(meta.page * meta.limit) > meta.total ? meta.total :
+                        (meta.page * meta.limit)}}</span> of
+                    <span class="font-bold text-[#111827]">{{meta.total}}</span> results
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <button (click)="onPageChange(meta.page - 1)" [disabled]="meta.page === 1"
+                        class="w-9 h-9 flex items-center justify-center rounded-[8px] border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    <div class="flex items-center gap-1.5 mx-1">
+                        <ng-container *ngFor="let p of getPages(meta.totalPages, meta.page)">
+                            <button *ngIf="p !== -1" (click)="onPageChange(p)"
+                                [ngClass]="p === meta.page ? 'bg-[#6366F1] text-white border-[#6366F1] shadow-lg shadow-[#6366F1]/20 scale-105' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
+                                class="min-w-[36px] h-9 flex items-center justify-center rounded-[8px] border text-[14px] font-black transition-all active:scale-90">
+                                {{p}}
+                            </button>
+                            <span *ngIf="p === -1" class="px-1 text-slate-300">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                        d="M5 12h.01M12 12h.01M19 12h.01" />
+                                </svg>
+                            </span>
+                        </ng-container>
+                    </div>
+
+                    <button (click)="onPageChange(meta.page + 1)" [disabled]="meta.page === meta.totalPages"
+                        class="w-9 h-9 flex items-center justify-center rounded-[8px] border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </ng-container>
+    </div>
+</div>

@@ -12,7 +12,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             setHeaders: { Authorization: `Bearer ${token}` }
         });
     } else {
-        // console.warn('AuthInterceptor: No token found for request:', req.url);
+        console.warn('AuthInterceptor: No token found for request:', req.url);
     }
 
     return next(req).pipe(

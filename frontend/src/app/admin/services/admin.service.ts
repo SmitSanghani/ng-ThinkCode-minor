@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface Question {
@@ -50,22 +51,29 @@ export interface QuestionsResponse {
 })
 export class AdminService {
     private http = inject(HttpClient);
-    // Assuming environment.apiUrl is base URL e.g. 'http://localhost:5000/api'
-    // But AuthService used 'http://localhost:5000/api/auth' hardcoded.
-    // I will use specific URL for now or environment if available.
-    // Let's assume standard '/api' base.
     private apiUrl = '/api/admin/questions';
+
+    private _refreshNeeded$ = new Subject<void>();
+
+    get refreshNeeded$() {
+        return this._refreshNeeded$;
+    }
 
     constructor() { }
 
     addQuestion(data: Question): Observable<any> {
-        return this.http.post(`${this.apiUrl}/add`, data);
+        return this.http.post(`${this.apiUrl}/add`, data).pipe(
+            tap(() => {
+                this._refreshNeeded$.next();
+            })
+        );
     }
 
     getAllQuestions(page: number = 1, limit: number = 10, filters?: any): Observable<QuestionsResponse> {
         let params = new HttpParams()
             .set('page', page.toString())
-            .set('limit', limit.toString());
+            .set('limit', limit.toString())
+            .set('_t', Date.now().toString()); // Cache busting
 
         if (filters) {
             if (filters.difficulty && filters.difficulty !== 'All') {
@@ -87,10 +95,18 @@ export class AdminService {
     }
 
     updateQuestion(id: string, data: Question): Observable<any> {
-        return this.http.put(`${this.apiUrl}/${id}`, data);
+        return this.http.put(`${this.apiUrl}/${id}`, data).pipe(
+            tap(() => {
+                this._refreshNeeded$.next();
+            })
+        );
     }
 
     deleteQuestion(id: string): Observable<any> {
-        return this.http.delete(`${this.apiUrl}/${id}`);
+        return this.http.delete(`${this.apiUrl}/${id}`).pipe(
+            tap(() => {
+                this._refreshNeeded$.next();
+            })
+        );
     }
 }

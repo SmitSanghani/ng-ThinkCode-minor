@@ -2,7 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { AddQuestionComponent } from './components/add-question/add-question.component';
-import { ManageQuestionsComponent } from './components/manage-questions/manage-questions.component';
+import { AllQuestionsComponent } from './components/all-questions/all-questions.component';
+
 import { EditQuestionComponent } from './components/edit-question/edit-question.component';
 import { AdminGuard } from './guards/admin.guard';
 
@@ -10,7 +11,8 @@ const routes: Routes = [
     {
         path: '',
         children: [
-            { path: 'questions', component: ManageQuestionsComponent, canActivate: [AdminGuard] },
+
+            { path: 'questions', component: AllQuestionsComponent, canActivate: [AdminGuard] },
             { path: 'questions/add', component: AddQuestionComponent, canActivate: [AdminGuard] },
             { path: 'questions/edit/:id', component: EditQuestionComponent, canActivate: [AdminGuard] }
         ]
