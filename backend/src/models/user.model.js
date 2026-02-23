@@ -23,6 +23,11 @@ const UserSchema = new mongoose.Schema({
         enum: ['student', 'admin'],
         default: 'student'
     },
+    plan: {
+        type: String,
+        enum: ['Free', 'Basic', 'Premium'],
+        default: 'Free'
+    },
     passwordHash: {
         type: String,
         required: [true, 'Please add a password'],

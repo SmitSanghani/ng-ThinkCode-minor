@@ -4,4 +4,48 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --bg-deep: #FFFFFF;
+    --bg-card: #F9FAFB;
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --accent-primary: #7C3AED;
+    --border-subtle: #E5E7EB;
+
+    --easy-bg: rgba(34, 197, 94, 0.1);
+    --easy-text: #16A34A;
+    --medium-bg: rgba(217, 119, 6, 0.1);
+    --medium-text: #D97706;
+    --hard-bg: rgba(220, 38, 38, 0.1);
+    --hard-text: #DC2626;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* Custom Scrollbar for Light Theme */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #F3F4F6;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 10px;
+    border: 2px solid #F3F4F6;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
+}
+
 /* You can add global styles to this file, and also import other style files */

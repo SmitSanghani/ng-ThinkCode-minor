@@ -1,0 +1,11 @@
+<div class="p-5 max-w-[600px] mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Welcome, {{ user()?.email }}!</h1>
+    <p class="mb-4 text-gray-700">This is a protected dashboard.</p>
+    <div class="bg-gray-50 p-4 rounded-md my-5 border border-gray-200">
+        <p class="mb-2"><strong class="font-semibold">Email:</strong> {{ user()?.email }}</p>
+        <p class="mb-2"><strong class="font-semibold">Role:</strong> {{ user()?.role }}</p>
+        <p class="mb-0"><strong class="font-semibold">User ID:</strong> {{ user()?.id }}</p>
+    </div>
+    <button (click)="logout()"
+        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">Logout</button>
+</div>

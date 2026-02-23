@@ -1,0 +1,259 @@
+<app-navbar></app-navbar>
+
+<div class="leetcode-layout bg-[#1a1a1a] text-[#eff1f6] min-h-screen flex flex-col pt-14 selection:bg-[#3b82f6]/30">
+
+    <!-- Loading Overlay -->
+    <div *ngIf="isLoading" class="absolute inset-0 z-[100] bg-[#1a1a1a] flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-2 border-white/5 border-t-[#3b82f6] rounded-full animate-spin mb-4"></div>
+        <p class="text-[#94a3b8] font-medium tracking-wide animate-pulse">Loading Environment...</p>
+    </div>
+
+    <!-- Error/Not Found/Locked State (Centered) -->
+    <div *ngIf="!isLoading && (hasError || isNotFound || isLocked)"
+        class="flex-1 flex items-center justify-center p-6 text-center">
+        <div class="max-w-md">
+            <div [ngClass]="isLocked ? 'text-amber-500' : 'text-red-500'" class="mb-6">
+                <i [class]="isLocked ? 'bi bi-lock-fill' : 'bi bi-exclamation-triangle-fill'" class="text-6xl"></i>
+            </div>
+            <h2 class="text-3xl font-bold mb-3">
+                {{ isNotFound ? 'Problem Not Found' : (isLocked ? 'Locked Content' : 'System Error') }}
+            </h2>
+            <p class="text-[#94a3b8] text-lg mb-8 leading-relaxed">
+                {{ isNotFound ? "This challenge doesn't exist or was removed." : errorMessage }}
+            </p>
+            <div class="flex gap-4 justify-center">
+                <button routerLink="/student/problems"
+                    class="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-bold transition-all outline-none cursor-pointer">
+                    View List
+                </button>
+                <button *ngIf="isLocked" routerLink="/student/plans"
+                    class="px-8 py-3 bg-[#3b82f6] hover:bg-[#2563eb] rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 outline-none cursor-pointer">
+                    Unlock Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="leetcode-layout" *ngIf="!isLoading && problem">
+        <!-- TOP HEADER -->
+        <header class="page-header">
+            <div class="flex items-center gap-5">
+                <button routerLink="/student/problems"
+                    class="group flex items-center gap-2 px-3 h-9 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-[14px] font-semibold text-[#94a3b8] hover:text-white transition-all outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="transition-transform group-hover:-translate-x-1" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd"
+                            d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                    </svg>
+                    Back
+                </button>
+                <div class="h-6 w-[1px] bg-white/10"></div>
+                <h1 class="text-[20px] font-bold text-white flex items-center gap-2 m-0">
+                    <span class="text-white/30">{{ problem.index }}.</span>
+                    <span>{{ problem.title }}</span>
+                </h1>
+            </div>
+        </header>
+
+        <!-- CONTENT BODY (Flexible) -->
+        <main class="page-body">
+
+            <!-- LEFT PANEL: Description & Constraints (45%) -->
+            <section class="left-panel">
+                <div class="scrollable-content custom-scrollbar animate-fadeIn">
+                    <!-- Meta Badges -->
+                    <div class="flex items-center gap-3 mb-6">
+                        <span [ngClass]="{
+                        'text-[#00af9b] bg-[#00af9b]/10': problem.difficulty.toLowerCase() === 'easy',
+                        'text-[#ffb800] bg-[#ffb800]/10': problem.difficulty.toLowerCase() === 'medium',
+                        'text-[#ff2d55] bg-[#ff2d55]/10': problem.difficulty.toLowerCase() === 'hard'
+                    }" class="px-3 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider">
+                            {{ problem.difficulty }}
+                        </span>
+                        <span class="bg-white/5 text-[#94a3b8] px-3 py-1 rounded-full text-[12px] font-bold">
+                            {{ problem.category }}
+                        </span>
+                        <span class="flex items-center gap-1.5 text-[#00af9b] text-[12px] font-bold">
+                            <i class="bi bi-check-circle-fill"></i> Solved
+                        </span>
+                    </div>
+
+                    <!-- Problem Description -->
+                    <div class="problem-content text-[#eff1f6] leading-relaxed text-[15px]"
+                        [innerHTML]="safeDescription"></div>
+
+                    <!-- Examples Section -->
+                    <div class="mt-10 space-y-8" *ngIf="problem.examples && problem.examples.length > 0">
+                        <div *ngFor="let ex of problem.examples; let idx = index" class="space-y-4">
+                            <h4 class="text-[16px] font-bold text-white tracking-wide">Example {{ idx + 1 }}:</h4>
+                            <div
+                                class="bg-white/5 border-l-4 border-[#3b82f6] rounded-r-lg p-5 font-mono text-[14px] space-y-3">
+                                <div class="flex gap-4">
+                                    <span class="text-[#94a3b8] font-bold w-12 shrink-0">Input:</span>
+                                    <span class="text-[#eff1f6]">{{ ex.input }}</span>
+                                </div>
+                                <div class="flex gap-4">
+                                    <span class="text-[#94a3b8] font-bold w-12 shrink-0">Output:</span>
+                                    <span class="text-[#eff1f6]">{{ ex.output }}</span>
+                                </div>
+                                <div class="flex gap-4" *ngIf="ex.explanation">
+                                    <span class="text-[#94a3b8] font-bold w-12 shrink-0">Exp:</span>
+                                    <span class="text-[#eff1f6] italic opacity-80">{{ ex.explanation }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Constraints -->
+                    <div class="mt-10" *ngIf="constraintsList && constraintsList.length > 0">
+                        <h4 class="text-[16px] font-bold text-white tracking-wide mb-4 flex items-center gap-2">
+                            <i class="bi bi-shield-check text-[#3b82f6]"></i> Constraints
+                        </h4>
+                        <ul class="space-y-3 pl-2">
+                            <li *ngFor="let constraint of constraintsList"
+                                class="flex items-start gap-3 text-[#94a3b8] text-[14px]">
+                                <div class="w-1.5 h-1.5 rounded-full bg-[#3b82f6] mt-2 shrink-0"></div>
+                                <span class="leading-relaxed font-mono">{{ constraint }}</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Dynamic Testcases -->
+                    <div class="mt-12 pt-8 border-t border-white/10"
+                        *ngIf="sampleTestCases && sampleTestCases.length > 0">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-1 h-5 bg-[#ff2d55] rounded-full"></div>
+                            <h3 class="text-[18px] font-bold text-white">Sample Cases</h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div *ngFor="let tc of sampleTestCases; let idx = index"
+                                class="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                                <div
+                                    class="flex items-center justify-between px-6 py-2 bg-black/20 border-b border-white/10">
+                                    <span class="text-[#3b82f6] text-[12px] font-bold uppercase">Case #{{ idx + 1
+                                        }}</span>
+                                    <span class="text-[#94a3b8] text-[11px] font-bold">SAMPLE</span>
+                                </div>
+                                <div class="p-4 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label
+                                            class="text-[11px] font-bold text-[#94a3b8] uppercase mb-2 block">Input</label>
+                                        <div
+                                            class="bg-black/40 p-2 rounded text-[13px] text-[#eff1f6] font-mono custom-scrollbar max-h-24 overflow-y-auto whitespace-pre-wrap">
+                                            {{ formatTestCaseInput(tc.input) }}</div>
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="text-[11px] font-bold text-[#94a3b8] uppercase mb-2 block">Expected</label>
+                                        <div
+                                            class="bg-black/40 p-2 rounded text-[13px] text-[#eff1f6] font-mono custom-scrollbar max-h-24 overflow-y-auto">
+                                            {{ tc.expectedOutput }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: Editor & Output -->
+            <section class="right-panel">
+
+                <!-- Editor Toolbar -->
+                <div class="editor-toolbar">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[13px] font-bold text-white flex items-center gap-2">
+                            <i class="bi bi-code-slash text-[#3b82f6]"></i>
+                            Code
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button (click)="resetCode()"
+                            class="text-[#94a3b8] hover:text-white transition-all flex items-center gap-1.5 text-[13px] font-bold px-2 py-1 rounded bg-white/5"
+                            title="Reset to Starter Code">
+                            <i class="bi bi-arrow-counterclockwise text-[14px]"></i>
+                            Reset
+                        </button>
+                        <button class="text-[#94a3b8] hover:text-white transition-colors text-[14px]">
+                            <i class="bi bi-gear-fill"></i>
+                        </button>
+                        <div class="h-4 w-[1px] bg-white/20"></div>
+                        <div class="flex items-center gap-3">
+                            <button (click)="runCode()" class="btn-action btn-run !rounded-md !px-4 !h-8">
+                                <i class="bi bi-play-fill text-[16px]"></i>
+                                Run
+                            </button>
+                            <button (click)="submitCode()" class="btn-action btn-submit !rounded-md !px-4 !h-8">
+                                <i class="bi bi-cloud-arrow-up-fill text-[14px]"></i>
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editor Container (Auto-fills space) -->
+                <div class="editor-container">
+                    <ngx-monaco-editor class="w-full h-full" [options]="editorOptions" [(ngModel)]="studentCode"
+                        style="display: block; width: 100%; height: 100%;">
+                    </ngx-monaco-editor>
+                </div>
+
+                <!-- Output Panel (Fixed 250px) -->
+                <div class="output-panel">
+                    <div class="output-header">
+                        <button class="text-[13px] font-bold text-[#eff1f6] flex items-center gap-2">
+                            <i class="bi bi-terminal text-[#00af9b]"></i>
+                            Console
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <button class="p-1.5 hover:bg-white/10 rounded transition-all text-[#94a3b8]">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="output-body custom-scrollbar">
+                        <div
+                            class="text-[#94a3b8] text-[14px] italic opacity-60 flex flex-col items-center justify-center h-full">
+                            <i class="bi bi-info-circle text-[24px] mb-2"></i>
+                            <span>You must run your code first to see results.</span>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="h-screen w-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-6">
+        <div class="relative w-20 h-20">
+            <div class="absolute inset-0 border-4 border-[#3b82f6]/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-[#3b82f6] rounded-full border-t-transparent animate-spin">
+            </div>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+            <h2 class="text-xl font-bold text-white tracking-widest uppercase">Initializing</h2>
+            <p class="text-[#94a3b8] text-[14px] animate-pulse">Syncing environment...</p>
+        </div>
+    </div>
+
+    <!-- Error/Not Found State -->
+    <div *ngIf="!isLoading && (isNotFound || hasError)"
+        class="h-screen w-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+            <i class="bi bi-exclamation-triangle text-red-500 text-5xl"></i>
+        </div>
+        <h2 class="text-3xl font-bold text-white mb-4">{{ isNotFound ? 'Problem Not Found' : 'System Error' }}</h2>
+        <p class="text-[#94a3b8] max-w-md mb-8 leading-relaxed">
+            {{ errorMessage || 'The problem you are looking for might have been removed or is temporarily unavailable.'
+            }}
+        </p>
+        <button routerLink="/student/problems"
+            class="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg font-bold transition-all">
+            Back to Problems
+        </button>
+    </div>
+</div>

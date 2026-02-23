@@ -1,0 +1,12 @@
+<div class="plan-badge-container d-flex align-items-center gap-2 p-2 rounded shadow-sm" [ngClass]="getBadgeClass()">
+    <span class="badge-icon">
+        <i class="bi" [ngClass]="getIconClass()"></i>
+    </span>
+    <div class="plan-info">
+        <span class="plan-label d-block text-xs uppercase fw-bold">Current Plan</span>
+        <span class="plan-name fw-bolder">{{ plan }}</span>
+    </div>
+    <button *ngIf="plan !== 'Premium'" class="btn btn-sm btn-light ms-auto upgrade-btn fw-bold" (click)="onUpgrade()">
+        UPGRADE
+    </button>
+</div>

@@ -6,10 +6,12 @@ import { AdminOverviewComponent } from './features/admin/overview/overview.compo
 import { SubmissionsComponent } from './features/admin/submissions/submissions.component';
 import { StatisticsComponent } from './features/admin/statistics/statistics.component';
 import { StudentHomeComponent } from './features/student/home/home.component';
+import { ProblemsListComponent } from './features/student/problems-list/problems-list.component';
+import { ProblemDetailComponent } from './features/student/problem-detail/problem-detail.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'login', pathMatch: 'full' },
+    { path: '', redirectTo: 'website/home', pathMatch: 'full' },
     { path: 'login', component: LoginComponent },
     { path: 'register', component: RegisterComponent },
     {
@@ -29,7 +31,15 @@ export const routes: Routes = [
     },
     {
         path: 'website/home',
-        component: StudentHomeComponent,
-        canActivate: [authGuard]
+        component: StudentHomeComponent
+    },
+    {
+        path: 'student',
+        canActivate: [authGuard],
+        children: [
+            { path: 'problems', component: ProblemsListComponent },
+            { path: 'problems/:id', component: ProblemDetailComponent },
+            { path: '', redirectTo: 'problems', pathMatch: 'full' }
+        ]
     }
 ];

@@ -4,12 +4,8 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, throwError, tap, catchError, map, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: 'student' | 'admin';
-}
+import type { User } from '../models/user.model';
+export type { User };
 
 export interface AuthResponse {
     success: boolean;

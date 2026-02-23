@@ -1,0 +1,70 @@
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">ThinkCode <span class="badge">Admin</span></div>
+        <nav class="side-nav">
+            <a class="nav-link active">Dashboard</a>
+            <a class="nav-link">Students</a>
+            <a class="nav-link">Courses</a>
+            <a class="nav-link">Settings</a>
+        </nav>
+        <button (click)="logout()" class="btn-logout">Logout</button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+        <header class="top-header">
+            <h2>Admin Overview</h2>
+            <div class="user-profile">
+                <span class="user-name">{{ user()?.username }}</span>
+                <div class="avatar">A</div>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <p>Total Students</p>
+                <h3>1,284</h3>
+                <span class="trend up">+12.5%</span>
+            </div>
+            <div class="stat-card">
+                <p>Active Courses</p>
+                <h3>42</h3>
+                <span class="trend">Stable</span>
+            </div>
+            <div class="stat-card">
+                <p>Total Revenue</p>
+                <h3>$48,500</h3>
+                <span class="trend up">+8.2%</span>
+            </div>
+        </section>
+
+        <section class="recent-activity">
+            <h3>Recent Registrations</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>John Doe</td>
+                        <td>Student</td>
+                        <td>2 mins ago</td>
+                        <td><span class="tag active">Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td>Admin User</td>
+                        <td>Admin</td>
+                        <td>1 hour ago</td>
+                        <td><span class="tag active">System</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>

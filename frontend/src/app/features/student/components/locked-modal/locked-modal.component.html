@@ -1,0 +1,77 @@
+<div class="modal d-block" tabindex="-1" style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 overflow-hidden shadow-2xl"
+            style="border-radius: 24px; background: #FFFFFF;">
+            <div class="modal-header border-0 bg-white p-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark fs-4">Upgrade Your Learning</h5>
+                <button type="button" class="btn-close shadow-none" (click)="onClose()"></button>
+            </div>
+            <div class="modal-body p-5">
+                <div class="text-center mb-5">
+                    <div class="lock-indicator mb-4">
+                        <div class="icon-circle mx-auto d-flex align-items-center justify-content-center"
+                            style="width: 80px; height: 80px; background: #FFF7ED; border-radius: 50%;">
+                            <i class="bi bi-lock-fill text-warning" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-2">Access Restricted</h2>
+                    <p class="text-secondary mx-auto" style="max-width: 500px;">Unlock this problem and thousands more
+                        by upgrading to a premium plan designed for serious developers.</p>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Free -->
+                    <div class="col-md-4">
+                        <div class="plan-card h-100 p-4 rounded-4 border border-subtle text-center">
+                            <h6 class="fw-bold uppercase text-secondary mb-3 small">Free</h6>
+                            <h2 class="fw-bold mb-4">$0 <span class="fs-6 text-secondary fw-normal">/mo</span></h2>
+                            <ul class="list-unstyled text-start mb-0">
+                                <li class="mb-2 small"><i class="bi bi-check2 text-success me-2"></i> 10 Easy Problems
+                                </li>
+                                <li class="text-secondary mb-2 small"><i class="bi bi-x-lg text-danger me-2"></i> All
+                                    Medium</li>
+                                <li class="text-secondary small"><i class="bi bi-x-lg text-danger me-2"></i> All Hard
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Basic -->
+                    <div class="col-md-4">
+                        <div class="plan-card h-100 p-4 rounded-4 text-center active-plan"
+                            style="border: 2px solid #7C3AED; box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.1);">
+                            <span class="badge rounded-pill mb-2 small" style="background: #7C3AED; color: white;">MOST
+                                POPULAR</span>
+                            <h6 class="fw-bold uppercase text-primary mb-3 small">Pro</h6>
+                            <h2 class="fw-bold mb-4">$9 <span class="fs-6 text-secondary fw-normal">/mo</span></h2>
+                            <ul class="list-unstyled text-start mb-4">
+                                <li class="mb-2 small"><i class="bi bi-check2 text-success me-2"></i> All Easy Problems
+                                </li>
+                                <li class="mb-2 small"><i class="bi bi-check2 text-success me-2"></i> 50 Medium Problems
+                                </li>
+                                <li class="text-secondary small"><i class="bi bi-x-lg text-danger me-2"></i> All Hard
+                                </li>
+                            </ul>
+                            <button class="btn w-100 rounded-3 fw-bold py-2"
+                                style="background: #7C3AED; color: white;">Get Pro</button>
+                        </div>
+                    </div>
+                    <!-- Premium -->
+                    <div class="col-md-4">
+                        <div class="plan-card h-100 p-4 rounded-4 border border-subtle text-center bg-dark text-white">
+                            <h6 class="fw-bold uppercase opacity-75 mb-3 small">Elite</h6>
+                            <h2 class="fw-bold mb-4">$19 <span class="fs-6 opacity-75 fw-normal">/mo</span></h2>
+                            <ul class="list-unstyled text-start mb-4">
+                                <li class="mb-2 small"><i class="bi bi-check2 text-warning me-2"></i> Everything
+                                    Included</li>
+                                <li class="mb-2 small"><i class="bi bi-check2 text-warning me-2"></i> Personalized
+                                    Mentorship</li>
+                                <li class="small"><i class="bi bi-check2 text-warning me-2"></i> Ad-free platform</li>
+                            </ul>
+                            <button class="btn btn-warning w-100 rounded-3 fw-bold py-2">Go Elite</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const questionRoutes = require('./routes/question.routes');
 const submissionRoutes = require('./routes/submission.routes');
 const adminRoutes = require('./routes/admin.routes');
+const studentRoutes = require('./routes/student.routes');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/admin/questions', adminRoutes);
+app.use('/api/student', studentRoutes);
 
 app.get('/', (req, res) => {
     res.send('ThinkCode API is running...');
