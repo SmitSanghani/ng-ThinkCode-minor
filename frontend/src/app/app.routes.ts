@@ -38,6 +38,7 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
             { path: 'problems', component: ProblemsListComponent },
+            { path: 'favorites', component: ProblemsListComponent },
             { path: 'problems/:id', component: ProblemDetailComponent },
             { path: '', redirectTo: 'problems', pathMatch: 'full' }
         ]

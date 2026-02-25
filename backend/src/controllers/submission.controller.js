@@ -4,12 +4,25 @@ const { sendSuccess } = require('../utils/responseHandler');
 class SubmissionController {
     async submitSolution(req, res, next) {
         try {
+            console.log(`[SubmissionController] Attempting submit for user: ${req.user.id}, question: ${req.body.questionId}`);
             const submission = await submissionService.submitSolution(
                 req.user.id,
                 req.body.questionId,
                 req.body.code
             );
-            sendSuccess(res, submission, 'Solution submitted successfully', 201);
+            res.status(200).json({ success: true, data: submission });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getLatestSubmission(req, res, next) {
+        try {
+            const submission = await submissionService.getLatestAcceptedSubmission(
+                req.user.id,
+                req.params.questionId
+            );
+            res.status(200).json({ success: true, data: submission });
         } catch (error) {
             next(error);
         }
@@ -55,6 +68,15 @@ class SubmissionController {
         try {
             const submission = await submissionService.updateGrade(req.params.id, req.body.grade);
             sendSuccess(res, submission, 'Submission grade updated successfully');
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deleteSubmission(req, res, next) {
+        try {
+            await submissionService.deleteSubmission(req.params.id);
+            sendSuccess(res, null, 'Submission deleted successfully');
         } catch (error) {
             next(error);
         }

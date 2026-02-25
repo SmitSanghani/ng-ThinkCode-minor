@@ -14,7 +14,16 @@ const studentRoutes = require('./routes/student.routes');
 
 const app = express();
 
-// Security Middleware
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`[REQ] ${req.method} ${req.url}`);
+    res.on('finish', () => {
+        if (res.statusCode >= 400) {
+            console.log(`[RES] ${req.method} ${req.url} -> ${res.statusCode}`);
+        }
+    });
+    next();
+});
 app.use(helmet());
 app.use(mongoSanitize());
 app.use(xss());

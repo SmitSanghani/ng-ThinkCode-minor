@@ -1,20 +1,26 @@
+/**
+ * @fileoverview Authentication Middleware.
+ */
+
+'use strict';
+
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const User = require('../models/user.model');
-const { responseHandler } = require('../utils/responseHandler');
+const logger = require('../utils/logger');
 
+/**
+ * Protect routes - only authenticated users.
+ */
 const protect = async (req, res, next) => {
     let token;
 
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith('Bearer')
-    ) {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
     }
 
     if (!token) {
-        return responseHandler(res, 401, false, null, 'Not authorized to access this route');
+        return res.status(401).json({ success: false, message: 'Not authorized.' });
     }
 
     try {
@@ -22,25 +28,31 @@ const protect = async (req, res, next) => {
         req.user = await User.findById(decoded.id).select('-passwordHash');
 
         if (!req.user) {
-            return responseHandler(res, 401, false, null, 'User not found');
+            return res.status(401).json({ success: false, message: 'User not found.' });
         }
 
         next();
     } catch (err) {
-        return responseHandler(res, 401, false, null, 'Not authorized to access this route');
+        logger.error(`Auth Middleware Error: ${err.message}`);
+        return res.status(401).json({ success: false, message: 'Invalid token.' });
     }
 };
 
+/**
+ * Authorize roles.
+ */
 const authorize = (...roles) => {
     return (req, res, next) => {
+        // Admin bypasses all role checks
+        if (req.user.role === 'admin') {
+            return next();
+        }
+
         if (!roles.includes(req.user.role)) {
-            return responseHandler(
-                res,
-                403,
-                false,
-                null,
-                `User role ${req.user.role} is not authorized to access this route`
-            );
+            return res.status(403).json({
+                success: false,
+                message: `User role ${req.user.role} is not authorized.`
+            });
         }
         next();
     };

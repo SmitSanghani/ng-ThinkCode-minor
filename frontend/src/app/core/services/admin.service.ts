@@ -47,4 +47,8 @@ export class AdminService {
     updateSubmissionGrade(id: string, grade: string): Observable<any> {
         return this.http.put(`${this.apiUrl}/submissions/${id}/grade`, { grade });
     }
+
+    deleteSubmission(id: string): Observable<any> {
+        return this.http.delete(`${this.apiUrl}/submissions/${id}`);
+    }
 }

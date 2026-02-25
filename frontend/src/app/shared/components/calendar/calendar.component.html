@@ -1,0 +1,42 @@
+<div class="calendar-card">
+    <div class="calendar-header">
+        <div class="month-year">
+            <span class="month">{{ monthName }}</span>
+            <span class="year">{{ year }}</span>
+        </div>
+        <div class="nav-btns">
+            <button (click)="prevMonth()" class="nav-btn">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button (click)="nextMonth()" class="nav-btn">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="calendar-grid">
+        <!-- Weekday headers -->
+        <span class="weekday">Su</span>
+        <span class="weekday">Mo</span>
+        <span class="weekday">Tu</span>
+        <span class="weekday">We</span>
+        <span class="weekday">Th</span>
+        <span class="weekday">Fr</span>
+        <span class="weekday">Sa</span>
+
+        <!-- Empty slots for previous month -->
+        <span *ngFor="let empty of [].constructor(startDay)" class="day-empty"></span>
+
+        <!-- Actual days -->
+        <span *ngFor="let day of daysInMonth" class="day" [class.today]="isToday(day)">
+            {{ day }}
+        </span>
+    </div>
+
+    <div class="calendar-footer">
+        <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-[#3b82f6]"></div>
+            <span class="text-[11px] text-[#94a3b8] font-medium">12 problems solved this month</span>
+        </div>
+    </div>
+</div>

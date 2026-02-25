@@ -1,16 +1,16 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StudentService, ProblemDetail } from '../../../core/services/student.service';
-import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-problem-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent, MonacoEditorModule, FormsModule],
+  imports: [CommonModule, RouterLink, MonacoEditorModule, FormsModule],
   templateUrl: './problem-detail.component.html',
   styleUrls: ['./problem-detail.component.css']
 })
@@ -38,6 +38,40 @@ export class ProblemDetailComponent implements OnInit {
   // Editor State
   studentCode: string = '';
   selectedLanguage: string = 'javascript';
+
+  // Panel toggle state
+  leftCollapsed: boolean = false;
+  rightCollapsed: boolean = false;
+  consoleExpanded: boolean = false;
+  consoleCollapsed: boolean = false;
+  editorBodyCollapsed: boolean = false;
+  get windowHeight(): number { return window.innerHeight; }
+
+  private editorInstance: any = null;
+
+  // Execution & Submission State
+  isExecuting: boolean = false;
+  isSubmitting: boolean = false;
+  canSubmit: boolean = false;
+  executionResult: any = null;
+  submissionResult: any = null;
+  selectedResultTab: number = 0;
+
+  // Resizable Console Panel (vertical)
+  outputPanelHeight: number = 250;
+  private isResizing: boolean = false;
+  private resizeStartY: number = 0;
+  private resizeStartHeight: number = 250;
+  private boundMouseMove = this.onResizeMouseMove.bind(this);
+  private boundMouseUp = this.stopResize.bind(this);
+
+  // Resizable Side Panels (horizontal)
+  leftPanelWidth: number = 45;
+  private isHorizontalResizing: boolean = false;
+  private hResizeStartX: number = 0;
+  private hResizeStartWidth: number = 45;
+  private boundHMouseMove = this.onHorizontalResizeMouseMove.bind(this);
+  private boundHMouseUp = this.stopHorizontalResize.bind(this);
 
   editorOptions = {
     theme: 'vs-dark',
@@ -131,16 +165,27 @@ export class ProblemDetailComponent implements OnInit {
           this.sampleTestCases = filtered.length > 0 ? filtered : res.testCases.slice(0, 2);
         }
 
-        // Robust Code Injection: 
-        // We set the code and then notify the editor via a small timeout 
-        // to ensure the Monaco instance is ready to render the new content.
-        const initialCode = res.functionSignature || '// Start coding here...';
-        this.studentCode = initialCode;
+        // Set Default starter code
+        this.studentCode = res.functionSignature || '// Start coding here...';
 
-        // Auto-detect language
-        this.detectLanguage(initialCode);
-
-        this.isLoading = false;
+        // 🟢 Fetch Latest Submission to pre-fill editor
+        this.studentService.getLatestSubmission(res.id).subscribe({
+          next: (subRes) => {
+            if (subRes.success && subRes.data && subRes.data.code) {
+              this.studentCode = subRes.data.code;
+              this.detectLanguage(this.studentCode);
+            } else {
+              this.detectLanguage(res.functionSignature || '');
+            }
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.detectLanguage(res.functionSignature || '');
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
 
         // Force a re-render cycle
         setTimeout(() => {
@@ -179,41 +224,240 @@ export class ProblemDetailComponent implements OnInit {
 
   resetCode() {
     if (this.problem) {
-      if (confirm('Are you sure you want to reset your code to the starter signature?')) {
-        this.studentCode = this.problem.functionSignature || '';
-        this.cdr.detectChanges();
-      }
+      Swal.fire({
+        title: 'Reset Code?',
+        text: 'This will replace your current code with the original function signature.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Yes, reset it!',
+        cancelButtonText: 'Cancel',
+        background: '#1e293b',
+        color: '#f8fafc'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.studentCode = this.problem!.functionSignature || '';
+          this.cdr.detectChanges();
+          this.showToast('success', 'Code reset successfully');
+        }
+      });
     }
+  }
+
+  private showToast(icon: 'success' | 'error' | 'warning' | 'info', title: string) {
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+      }
+    });
+
+    Toast.fire({
+      icon: icon,
+      title: title
+    });
   }
 
   // --- Utility for Formatting Test Cases ---
   formatTestCaseInput(input: any): string {
     if (input === null || input === undefined) return 'No input provided';
 
-    // If it's a string, try parsing it to see if it's JSON, otherwise return as is
+    let obj = input;
     if (typeof input === 'string') {
       try {
-        const parsed = JSON.parse(input);
-        return JSON.stringify(parsed);
+        obj = JSON.parse(input);
       } catch (e) {
         return input;
       }
     }
 
-    // Return as compact JSON (handles arrays and objects)
-    return JSON.stringify(input);
+    // If it's an object (and not an array), format as "key = value, key = value"
+    if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+      return Object.entries(obj)
+        .map(([key, value]) => `${key} = ${JSON.stringify(value)}`)
+        .join(', ');
+    }
+
+    // Otherwise return as compact JSON (standard for arrays/primitives)
+    return JSON.stringify(obj);
+  }
+
+  /**
+   * Safe output formatter — only treats `undefined` as N/A.
+   * 0, false, null, "" are all valid outputs and must be shown as-is.
+   */
+  safeOutput(value: any): any {
+    return value === undefined ? 'N/A' : value;
   }
 
   runCode() {
+    if (!this.problem || !this.studentCode || this.isExecuting) return;
+
+    this.isExecuting = true;
+    this.executionResult = null;
     this.activeEditorTab = 'result';
-    console.log('Running code...', this.studentCode);
-    // Logic for running code via backend
+    this.cdr.detectChanges();
+
+    this.studentService.executeCode(this.problem.id, this.studentCode, this.selectedLanguage).subscribe({
+      next: (res) => {
+        this.executionResult = res;
+        this.canSubmit = res.canSubmit || false;
+        this.isExecuting = false;
+
+        if (res.syntaxError) {
+          this.showToast('error', 'Compilation Error');
+        } else if (res.summary?.allPassed) {
+          this.showToast('success', 'Test cases passed!');
+        } else {
+          this.showToast('info', 'Check execution results');
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Execution error:', err);
+        this.executionResult = {
+          success: false,
+          message: err.error?.message || 'Code execution failed due to an internal error.',
+        };
+        this.isExecuting = false;
+        this.canSubmit = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   submitCode() {
-    this.activeEditorTab = 'result';
-    console.log('Submitting code...', this.studentCode);
-    // Logic for submitting code via backend
+    if (!this.problem || !this.studentCode || this.isSubmitting || !this.canSubmit) return;
+
+    this.isSubmitting = true;
+    this.submissionResult = null;
+    this.cdr.detectChanges();
+
+    this.studentService.submitSolution(this.problem.id, this.studentCode).subscribe({
+      next: (res) => {
+        this.isSubmitting = false;
+        const result = res.data;
+
+        if (result.status === 'Accepted') {
+          Swal.fire({
+            title: 'Accepted!',
+            text: '🎉 Congratulations! Your solution passed all test cases.',
+            icon: 'success',
+            confirmButtonColor: '#3b82f6',
+            background: '#1e293b',
+            color: '#f8fafc'
+          }).then(() => {
+            this.router.navigate(['/student/problems']);
+          });
+        } else {
+          Swal.fire({
+            title: result.status,
+            text: `${result.passedCount} / ${result.totalTests} test cases passed.`,
+            icon: 'error',
+            confirmButtonColor: '#3b82f6',
+            background: '#1e293b',
+            color: '#f8fafc'
+          }).then(() => {
+            this.router.navigate(['/student/problems']);
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Submission error:', err);
+        this.showToast('error', err.error?.message || 'Failed to submit solution.');
+        this.isSubmitting = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // --- Better Panel Toggles with Resize Refresh ---
+  toggleEditorBody() {
+    this.editorBodyCollapsed = !this.editorBodyCollapsed;
+    // If we hide editor, make sure console is not collapsed
+    if (this.editorBodyCollapsed) this.consoleCollapsed = false;
+    this.refreshEditorLayout();
+  }
+
+  toggleConsoleCollapse() {
+    this.consoleCollapsed = !this.consoleCollapsed;
+    if (this.consoleCollapsed) {
+      this.consoleExpanded = false;
+    } else {
+      // If we show console, make sure editor isn't full-screen hidden
+      if (this.editorBodyCollapsed && !this.leftCollapsed) this.editorBodyCollapsed = false;
+    }
+    this.refreshEditorLayout();
+  }
+
+  toggleConsoleExpand() {
+    this.consoleExpanded = !this.consoleExpanded;
+    if (this.consoleExpanded) {
+      this.consoleCollapsed = false;
+      this.editorBodyCollapsed = false; // Don't hide editor, just make console big
+    }
+    this.refreshEditorLayout();
+  }
+
+  // --- Real Maximize Logic for the Square Buttons ---
+  maximizeDescription() {
+    // If already maximized, restore (show right panel)
+    if (this.rightCollapsed) {
+      this.rightCollapsed = false;
+    } else {
+      // Maximize: show left, hide right
+      this.leftCollapsed = false;
+      this.rightCollapsed = true;
+    }
+    this.refreshEditorLayout();
+  }
+
+  maximizeEditor() {
+    // If already maximized, restore (show left and console)
+    const isFull = this.leftCollapsed && !this.rightCollapsed && this.consoleCollapsed;
+    if (isFull) {
+      this.leftCollapsed = false;
+      this.consoleCollapsed = false;
+    } else {
+      // Maximize: hide left, hide console, show editor
+      this.leftCollapsed = true;
+      this.rightCollapsed = false;
+      this.consoleCollapsed = true;
+      this.editorBodyCollapsed = false;
+    }
+    this.refreshEditorLayout();
+  }
+
+  maximizeConsole() {
+    // If already maximized, restore (show left and editor)
+    const isFull = this.leftCollapsed && !this.rightCollapsed && this.editorBodyCollapsed;
+    if (isFull) {
+      this.leftCollapsed = false;
+      this.editorBodyCollapsed = false;
+    } else {
+      // Maximize: hide left, hide editor, show console
+      this.leftCollapsed = true;
+      this.rightCollapsed = false;
+      this.editorBodyCollapsed = true;
+      this.consoleCollapsed = false;
+      this.consoleExpanded = false; // console is flex-1 anyway when editor is hidden
+    }
+    this.refreshEditorLayout();
+  }
+
+  private refreshEditorLayout() {
+    // Monaco needs a resize event to recalculate its width/height when containers change
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      this.cdr.detectChanges();
+    }, 100);
   }
 
   private showError(msg: string) {
@@ -221,5 +465,76 @@ export class ProblemDetailComponent implements OnInit {
     this.errorMessage = msg;
     this.isLoading = false;
     this.cdr.detectChanges();
+  }
+
+  // --- Resizable Console Panel (vertical) ---
+  startResize(event: MouseEvent) {
+    event.preventDefault();
+    this.isResizing = true;
+    this.resizeStartY = event.clientY;
+    this.resizeStartHeight = this.outputPanelHeight;
+    // Add global class to prevent interaction/lag during drag
+    document.body.classList.add('resizing-vertical');
+    document.addEventListener('mousemove', this.boundMouseMove);
+    document.addEventListener('mouseup', this.boundMouseUp);
+  }
+
+  private _rafV: number | null = null;
+  private onResizeMouseMove(event: MouseEvent) {
+    if (!this.isResizing) return;
+    if (this._rafV) return; // already a frame queued
+    this._rafV = requestAnimationFrame(() => {
+      const delta = this.resizeStartY - event.clientY;
+      this.outputPanelHeight = Math.min(Math.max(this.resizeStartHeight + delta, 80), window.innerHeight * 0.7);
+      this.cdr.detectChanges();
+      this._rafV = null;
+    });
+  }
+
+  private stopResize() {
+    this.isResizing = false;
+    document.body.classList.remove('resizing-vertical');
+    if (this._rafV) { cancelAnimationFrame(this._rafV); this._rafV = null; }
+    document.removeEventListener('mousemove', this.boundMouseMove);
+    document.removeEventListener('mouseup', this.boundMouseUp);
+    this.refreshEditorLayout(); // Final refresh when done
+  }
+
+  // --- Resizable Side Panels (horizontal) ---
+  startHorizontalResize(event: MouseEvent) {
+    event.preventDefault();
+    this.isHorizontalResizing = true;
+    this.hResizeStartX = event.clientX;
+    this.hResizeStartWidth = this.leftPanelWidth;
+    // Add global class to prevent interaction/lag during drag
+    document.body.classList.add('resizing-horizontal');
+    document.addEventListener('mousemove', this.boundHMouseMove);
+    document.addEventListener('mouseup', this.boundHMouseUp);
+  }
+
+  private _rafH: number | null = null;
+  private onHorizontalResizeMouseMove(event: MouseEvent) {
+    if (!this.isHorizontalResizing) return;
+    if (this._rafH) return; // already a frame queued
+    this._rafH = requestAnimationFrame(() => {
+      const delta = event.clientX - this.hResizeStartX;
+      const newWidthPct = this.hResizeStartWidth + (delta / window.innerWidth) * 100;
+      this.leftPanelWidth = Math.min(Math.max(newWidthPct, 25), 70);
+      this.cdr.detectChanges();
+      this._rafH = null;
+    });
+  }
+
+  private stopHorizontalResize() {
+    this.isHorizontalResizing = false;
+    document.body.classList.remove('resizing-horizontal');
+    if (this._rafH) { cancelAnimationFrame(this._rafH); this._rafH = null; }
+    document.removeEventListener('mousemove', this.boundHMouseMove);
+    document.removeEventListener('mouseup', this.boundHMouseUp);
+    this.refreshEditorLayout(); // Final refresh when done
+  }
+
+  onEditorInit(editor: any) {
+    this.editorInstance = editor;
   }
 }

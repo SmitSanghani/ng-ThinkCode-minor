@@ -17,8 +17,8 @@ const SubmissionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'passed', 'failed', 'compilation_error'],
-        default: 'pending'
+        enum: ['Accepted', 'Wrong Answer', 'Time Limit Exceeded', 'Runtime Error', 'Pending', 'Compilation Error'],
+        default: 'Pending'
     },
     testResults: [{
         testCase: mongoose.Schema.Types.ObjectId,
@@ -36,8 +36,12 @@ const SubmissionSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    executionTime: Number, // in ms
-    memoryUsage: Number, // in KB
+    runtime: Number, // in ms
+    memory: Number, // in MB
+    language: {
+        type: String,
+        default: 'javascript'
+    },
     grade: {
         type: String,
         enum: ['A', 'B', 'C', 'F', 'Pending'],
@@ -50,6 +54,10 @@ const SubmissionSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-});
+}, { timestamps: true });
+
+// Performance Indexes for high-scale querying
+SubmissionSchema.index({ student: 1, question: 1, status: 1 });
+SubmissionSchema.index({ submittedAt: -1 });
 
 module.exports = mongoose.model('Submission', SubmissionSchema);

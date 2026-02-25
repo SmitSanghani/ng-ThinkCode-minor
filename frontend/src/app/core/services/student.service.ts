@@ -11,6 +11,7 @@ export interface Problem {
     status: 'solved' | 'attempted' | 'unsolved' | 'locked';
     isLocked: boolean;
     solvedCount: number;
+    acceptanceRate?: string;
 }
 
 export interface ProblemDetail extends Problem {
@@ -63,5 +64,43 @@ export class StudentService {
 
     checkAccess(id: string): Observable<{ hasAccess: boolean; plan: string; reason: string }> {
         return this.http.get<any>(`${this.apiUrl}/problems/${id}/check-access`);
+    }
+
+    executeCode(problemId: string, code: string, language: string): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/execute-code`, { problemId, code, language });
+    }
+
+    submitSolution(questionId: string, code: string): Observable<any> {
+        return this.http.post<any>(`/api/submissions/submit`, { questionId, code });
+    }
+
+    getLatestSubmission(questionId: string): Observable<any> {
+        return this.http.get<any>(`/api/submissions/latest/${questionId}`);
+    }
+
+    // --- Favorite System ---
+    getFavoriteIds(): string[] {
+        const stored = localStorage.getItem('th_fav_ids');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    setFavoriteIds(ids: string[]) {
+        localStorage.setItem('th_fav_ids', JSON.stringify(ids));
+    }
+
+    toggleFavorite(problemId: string): boolean {
+        let ids = this.getFavoriteIds();
+        const index = ids.indexOf(problemId);
+        let active = false;
+
+        if (index > -1) {
+            ids.splice(index, 1);
+        } else {
+            ids.push(problemId);
+            active = true;
+        }
+
+        this.setFavoriteIds(ids);
+        return active;
     }
 }

@@ -1,6 +1,4 @@
-<app-navbar></app-navbar>
-
-<div class="leetcode-layout bg-[#1a1a1a] text-[#eff1f6] min-h-screen flex flex-col pt-14 selection:bg-[#3b82f6]/30">
+<div class="leetcode-layout bg-[#1a1a1a] text-[#eff1f6] min-h-screen flex flex-col selection:bg-[#3b82f6]/30">
 
     <!-- Loading Overlay -->
     <div *ngIf="isLoading" class="absolute inset-0 z-[100] bg-[#1a1a1a] flex flex-col items-center justify-center">
@@ -37,7 +35,7 @@
     <div class="leetcode-layout" *ngIf="!isLoading && problem">
         <!-- TOP HEADER -->
         <header class="page-header">
-            <div class="flex items-center gap-5">
+            <div class="flex items-center gap-5 mt-3">
                 <button routerLink="/student/problems"
                     class="group flex items-center gap-2 px-3 h-9 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-[14px] font-semibold text-[#94a3b8] hover:text-white transition-all outline-none">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -47,24 +45,47 @@
                     </svg>
                     Back
                 </button>
-                <div class="h-6 w-[1px] bg-white/10"></div>
-                <h1 class="text-[20px] font-bold text-white flex items-center gap-2 m-0">
-                    <span class="text-white/30">{{ problem.index }}.</span>
-                    <span>{{ problem.title }}</span>
-                </h1>
             </div>
         </header>
 
         <!-- CONTENT BODY (Flexible) -->
         <main class="page-body">
 
-            <!-- LEFT PANEL: Description & Constraints (45%) -->
-            <section class="left-panel">
-                <div class="scrollable-content custom-scrollbar animate-fadeIn">
+            <!-- LEFT PANEL -->
+            <section class="left-panel" [style.width.%]="leftCollapsed ? null : (rightCollapsed ? 100 : leftPanelWidth)"
+                [class.collapsed]="leftCollapsed" [class.full-width]="rightCollapsed">
+
+                <!-- Problem title row with collapse buttons -->
+                <div class="left-title-row" *ngIf="!leftCollapsed">
+                    <div class="flex items-center gap-2 overflow-hidden flex-1 ms-3">
+                        <span class="text-white/30 font-bold text-[15px] flex-shrink-0">{{ problem.index }}.</span>
+                        <span class="text-white font-bold text-[15px] truncate">{{ problem.title }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <!-- Square: Maximize Description -->
+                        <button (click)="maximizeDescription()" class="panel-toggle-btn"
+                            [title]="rightCollapsed ? 'Restore Split' : 'Maximize Description'">
+                            <i [class]="rightCollapsed ? 'bi bi-fullscreen-exit' : 'bi bi-square'"></i>
+                        </button>
+                        <!-- Left Chevron: collapse left panel -->
+                        <button (click)="leftCollapsed = true" class="panel-toggle-btn" title="Collapse panel">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collapsed thin bar -->
+                <div class="left-collapsed-bar" *ngIf="leftCollapsed" (click)="leftCollapsed = false"
+                    title="Expand panel">
+                    <i class="bi bi-chevron-right text-[12px] mb-4"></i>
+                    <span class="vertical-text">Description</span>
+                </div>
+
+                <div class="scrollable-content custom-scrollbar animate-fadeIn" *ngIf="!leftCollapsed">
                     <!-- Meta Badges -->
                     <div class="flex items-center gap-3 mb-6">
                         <span [ngClass]="{
-                        'text-[#00af9b] bg-[#00af9b]/10': problem.difficulty.toLowerCase() === 'easy',
+                        'text-[#0de84b] bg-[#0de84b]/10': problem.difficulty.toLowerCase() === 'easy',
                         'text-[#ffb800] bg-[#ffb800]/10': problem.difficulty.toLowerCase() === 'medium',
                         'text-[#ff2d55] bg-[#ff2d55]/10': problem.difficulty.toLowerCase() === 'hard'
                     }" class="px-3 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider">
@@ -73,7 +94,7 @@
                         <span class="bg-white/5 text-[#94a3b8] px-3 py-1 rounded-full text-[12px] font-bold">
                             {{ problem.category }}
                         </span>
-                        <span class="flex items-center gap-1.5 text-[#00af9b] text-[12px] font-bold">
+                        <span class="flex items-center gap-1.5 text-[#0de84b] text-[12px] font-bold">
                             <i class="bi bi-check-circle-fill"></i> Solved
                         </span>
                     </div>
@@ -122,33 +143,37 @@
                     <div class="mt-12 pt-8 border-t border-white/10"
                         *ngIf="sampleTestCases && sampleTestCases.length > 0">
                         <div class="flex items-center gap-3 mb-6">
-                            <div class="w-1 h-5 bg-[#ff2d55] rounded-full"></div>
-                            <h3 class="text-[18px] font-bold text-white">Sample Cases</h3>
+                            <div class="w-1 h-5 bg-[#3b82f6] rounded-full"></div>
+                            <h3 class="text-[18px] font-bold text-white tracking-tight">Test Cases</h3>
                         </div>
 
                         <div class="space-y-6">
                             <div *ngFor="let tc of sampleTestCases; let idx = index"
-                                class="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                                class="bg-white/[0.03] border border-white/10 rounded-xl overflow-hidden shadow-sm">
                                 <div
-                                    class="flex items-center justify-between px-6 py-2 bg-black/20 border-b border-white/10">
-                                    <span class="text-[#3b82f6] text-[12px] font-bold uppercase">Case #{{ idx + 1
-                                        }}</span>
-                                    <span class="text-[#94a3b8] text-[11px] font-bold">SAMPLE</span>
+                                    class="flex items-center justify-between px-6 py-2.5 bg-white/[0.05] border-b border-white/10">
+                                    <span class="text-[#3b82f6] text-[12px] font-bold uppercase tracking-wider">Case #{{
+                                        idx + 1 }}</span>
+                                    <span
+                                        class="text-[#94a3b8] text-[10px] font-bold bg-white/10 px-2 py-0.5 rounded uppercase">Sample</span>
                                 </div>
-                                <div class="p-4 grid grid-cols-2 gap-4">
+                                <div class="p-5 space-y-4">
                                     <div>
                                         <label
-                                            class="text-[11px] font-bold text-[#94a3b8] uppercase mb-2 block">Input</label>
+                                            class="text-[11px] font-bold text-[#94a3b8] uppercase mb-2 block tracking-widest opacity-60">Input</label>
                                         <div
-                                            class="bg-black/40 p-2 rounded text-[13px] text-[#eff1f6] font-mono custom-scrollbar max-h-24 overflow-y-auto whitespace-pre-wrap">
-                                            {{ formatTestCaseInput(tc.input) }}</div>
+                                            class="bg-black/20 p-3 rounded-lg text-[14px] text-[#eff1f6] font-mono border border-white/5 leading-relaxed">
+                                            {{ formatTestCaseInput(tc.input) }}
+                                        </div>
                                     </div>
                                     <div>
                                         <label
-                                            class="text-[11px] font-bold text-[#94a3b8] uppercase mb-2 block">Expected</label>
+                                            class="text-[11px] font-bold text-[#94a3b8] uppercase mb-2 block tracking-widest opacity-60">Expected
+                                            Output</label>
                                         <div
-                                            class="bg-black/40 p-2 rounded text-[13px] text-[#eff1f6] font-mono custom-scrollbar max-h-24 overflow-y-auto">
-                                            {{ tc.expectedOutput }}</div>
+                                            class="bg-black/20 p-3 rounded-lg text-[14px] text-[#eff1f6] font-mono border border-white/5 leading-relaxed">
+                                            {{ formatTestCaseInput(tc.expectedOutput) }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -157,8 +182,12 @@
                 </div>
             </section>
 
+            <!-- Horizontal Drag to Resize Handle -->
+            <div *ngIf="!leftCollapsed && !rightCollapsed" class="horizontal-resize-handle"
+                (mousedown)="startHorizontalResize($event)" title="Drag to resize panels"></div>
+
             <!-- RIGHT PANEL: Editor & Output -->
-            <section class="right-panel">
+            <section class="right-panel" [class.collapsed]="rightCollapsed">
 
                 <!-- Editor Toolbar -->
                 <div class="editor-toolbar">
@@ -181,47 +210,239 @@
                         </button>
                         <div class="h-4 w-[1px] bg-white/20"></div>
                         <div class="flex items-center gap-3">
-                            <button (click)="runCode()" class="btn-action btn-run !rounded-md !px-4 !h-8">
-                                <i class="bi bi-play-fill text-[16px]"></i>
-                                Run
+                            <button (click)="runCode()" [disabled]="isExecuting || isSubmitting"
+                                class="btn-action btn-run !rounded-md !px-4 !h-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i *ngIf="!isExecuting" class="bi bi-play-fill text-[16px]"></i>
+                                <span *ngIf="isExecuting"
+                                    class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2"></span>
+                                {{ isExecuting ? 'Running...' : 'Run' }}
                             </button>
-                            <button (click)="submitCode()" class="btn-action btn-submit !rounded-md !px-4 !h-8">
-                                <i class="bi bi-cloud-arrow-up-fill text-[14px]"></i>
-                                Submit
+                            <button (click)="submitCode()" [disabled]="!canSubmit || isExecuting || isSubmitting"
+                                class="btn-action btn-submit !rounded-md !px-4 !h-8 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i *ngIf="!isSubmitting" class="bi bi-cloud-arrow-up-fill text-[14px]"></i>
+                                <span *ngIf="isSubmitting"
+                                    class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2"></span>
+                                {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+                            </button>
+                            <!-- Square: Maximize Editor (Full Width & Height) -->
+                            <button (click)="maximizeEditor()" class="panel-toggle-btn"
+                                [title]="leftCollapsed && consoleCollapsed ? 'Restore Split' : 'Maximize Editor'">
+                                <i
+                                    [class]="leftCollapsed && consoleCollapsed ? 'bi bi-fullscreen-exit' : 'bi bi-square'"></i>
+                            </button>
+                            <!-- Chevron: toggle editor visibility -->
+                            <button (click)="toggleEditorBody()" class="panel-toggle-btn"
+                                [title]="editorBodyCollapsed ? 'Show Editor' : 'Hide Editor'">
+                                <i [class]="editorBodyCollapsed ? 'bi bi-chevron-down' : 'bi bi-chevron-up'"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Editor Container (Auto-fills space) -->
-                <div class="editor-container">
+                <!-- Main Area: Editor Container (Hidden when collapsed) -->
+                <div class="editor-container transition-all" [class.hidden]="editorBodyCollapsed">
                     <ngx-monaco-editor class="w-full h-full" [options]="editorOptions" [(ngModel)]="studentCode"
                         style="display: block; width: 100%; height: 100%;">
                     </ngx-monaco-editor>
                 </div>
 
-                <!-- Output Panel (Fixed 250px) -->
-                <div class="output-panel">
+                <!-- Drag to Resize Handle (Hidden when editor is collapsed) -->
+                <div class="resize-handle" *ngIf="!editorBodyCollapsed" (mousedown)="startResize($event)"
+                    title="Drag to resize console"></div>
+
+                <!-- Output Panel (Resizable) -->
+                <div class="output-panel" [class.flex-1]="editorBodyCollapsed"
+                    [style.height.px]="consoleCollapsed ? 38 : consoleExpanded ? (0.7 * windowHeight) : (editorBodyCollapsed ? null : outputPanelHeight)">
+
+                    <!-- Console Header -->
                     <div class="output-header">
-                        <button class="text-[13px] font-bold text-[#eff1f6] flex items-center gap-2">
-                            <i class="bi bi-terminal text-[#00af9b]"></i>
-                            Console
-                        </button>
                         <div class="flex items-center gap-2">
-                            <button class="p-1.5 hover:bg-white/10 rounded transition-all text-[#94a3b8]">
-                                <i class="bi bi-chevron-down"></i>
+                            <i class="bi bi-terminal text-[#0de84b]"></i>
+                            <span class="text-[13px] font-bold text-[#eff1f6]">Console</span>
+                        </div>
+
+                        <div class="ml-auto flex items-center gap-2">
+                            <!-- Maximize Console (Full Right Panel) -->
+                            <button (click)="maximizeConsole()" class="panel-toggle-btn !w-6 !h-6 !text-[11px]"
+                                [title]="leftCollapsed && editorBodyCollapsed ? 'Restore Split' : 'Maximize Console'">
+                                <i
+                                    [class]="leftCollapsed && editorBodyCollapsed ? 'bi bi-fullscreen-exit' : 'bi bi-square'"></i>
                             </button>
+                            <!-- Minimize Console (To Header) -->
+                            <button (click)="toggleConsoleCollapse()" class="panel-toggle-btn !w-6 !h-6 !text-[11px]"
+                                [title]="consoleCollapsed ? 'Show Console' : 'Minimize Console'">
+                                <i [class]="consoleCollapsed ? 'bi bi-chevron-up' : 'bi bi-dash-lg'"></i>
+                            </button>
+
                         </div>
                     </div>
-                    <div class="output-body custom-scrollbar">
-                        <div
+
+                    <!-- Output Body -->
+                    <div class="output-body custom-scrollbar flex flex-col p-0 overflow-hidden"
+                        *ngIf="!consoleCollapsed">
+
+                        <!-- Initial Message -->
+                        <div *ngIf="!executionResult && !isExecuting"
                             class="text-[#94a3b8] text-[14px] italic opacity-60 flex flex-col items-center justify-center h-full">
                             <i class="bi bi-info-circle text-[24px] mb-2"></i>
                             <span>You must run your code first to see results.</span>
                         </div>
+
+                        <!-- Executing State -->
+                        <div *ngIf="isExecuting" class="p-6 flex flex-col items-center justify-center h-full space-y-4">
+                            <div
+                                class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin">
+                            </div>
+                            <p class="text-[#94a3b8] animate-pulse">Running test cases...</p>
+                        </div>
+
+                        <!-- ══════════════════════════════════ -->
+                        <!-- COMPILE / RUNTIME ERROR BLOCK     -->
+                        <!-- ══════════════════════════════════ -->
+                        <div *ngIf="executionResult && executionResult.errorType"
+                            class="flex flex-col p-5 gap-4 animate-fadeIn">
+
+                            <!-- Error type heading -->
+                            <h3 class="text-[#ff2d55] font-black text-[18px] m-0">
+                                {{ executionResult.errorType === 'SyntaxError' ? 'Compile Error' : 'Runtime Error'
+                                }}
+                            </h3>
+
+                            <!-- Error message block -->
+                            <div
+                                class="bg-[#1a0a0a] border border-[#ff2d55]/25 rounded-lg p-4 font-mono text-[13px] text-[#ff6b6b] leading-relaxed whitespace-pre-wrap">
+                                {{ executionResult.message }}<span *ngIf="executionResult.line"
+                                    class="block mt-2 text-[#ff2d55]/60 text-[11px]">at line {{ executionResult.line
+                                    }}{{ executionResult.column ? ', col ' + executionResult.column : '' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- ══════════════════════════════════ -->
+                        <!-- TABBED RESULTS (DB Test Cases)    -->
+                        <!-- ══════════════════════════════════ -->
+                        <div *ngIf="executionResult && executionResult.results"
+                            class="flex flex-col h-full animate-fadeIn overflow-hidden">
+
+                            <!-- ✅ ACCEPTED BANNER -->
+                            <div *ngIf="executionResult.summary?.allPassed"
+                                class="flex items-center gap-3 px-5 py-3 bg-[#161b22] border-b border-[#0de84b]/20 flex-shrink-0 border-l-4 border-l-[#0de84b]">
+                                <i class="bi bi-check-circle-fill text-[18px] text-[#0de84b] flex-shrink-0"></i>
+                                <div class="flex items-baseline gap-3 flex-wrap">
+                                    <span class="font-black text-[17px] text-[#0de84b] tracking-tight">Accepted</span>
+                                    <span class="text-[#94a3b8] text-[12px] font-medium">
+                                        {{ executionResult.summary.passed }}/{{ executionResult.summary.totalTests
+                                        }}
+                                        test cases passed
+                                    </span>
+                                    <span *ngIf="executionResult.summary.totalExecutionTime"
+                                        class="text-[11px] text-[#94a3b8]/60 font-mono bg-white/5 px-2 py-0.5 rounded-full">
+                                        ⏱ {{ executionResult.summary.totalExecutionTime }}ms
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- ❌ WRONG ANSWER BANNER -->
+                            <div *ngIf="!executionResult.summary?.allPassed"
+                                class="flex items-center gap-3 px-5 py-3 bg-[#1e1015] border-b border-[#ff2d55]/20 flex-shrink-0 border-l-4 border-l-[#ff2d55]">
+                                <i class="bi bi-x-circle-fill text-[18px] text-[#ff2d55] flex-shrink-0"></i>
+                                <div class="flex items-baseline gap-3 flex-wrap">
+                                    <span class="font-black text-[17px] text-[#ff2d55] tracking-tight">Wrong
+                                        Answer</span>
+                                    <span class="text-[#94a3b8] text-[12px] font-medium">
+                                        {{ executionResult.summary?.passed }}/{{ executionResult.summary?.totalTests
+                                        }}
+                                        test cases passed
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- CASE TAB BAR -->
+                            <div
+                                class="flex items-end gap-1 px-4 pt-2 border-b border-white/[0.07] flex-shrink-0 bg-[#161616]">
+                                <button *ngFor="let res of executionResult.results; let i = index"
+                                    (click)="selectedResultTab = i"
+                                    class="flex items-center gap-2 px-3.5 py-2 text-[12px] font-semibold transition-all whitespace-nowrap outline-none rounded-t border-b-2 -mb-px"
+                                    [ngClass]="selectedResultTab === i
+                                        ? 'border-white text-white bg-white/5'
+                                        : 'border-transparent text-[#555] hover:text-[#94a3b8]'">
+                                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                        [class.bg-[#0de84b]]="res.passed" [class.bg-[#ff2d55]]="!res.passed">
+                                    </span>
+                                    Case {{ res.testNumber }}
+                                </button>
+                            </div>
+
+                            <!-- ACTIVE TAB CONTENT -->
+                            <div class="flex-1 overflow-y-auto custom-scrollbar px-0 py-4 space-y-4">
+                                <ng-container *ngFor="let res of executionResult.results; let i = index">
+                                    <ng-container *ngIf="selectedResultTab === i">
+                                        <!-- Error -->
+                                        <div *ngIf="res.error"
+                                            class="font-mono bg-[#ff2d55]/10 px-4 py-3 rounded-lg border border-[#ff2d55]/20 text-[13px] text-[#ff2d55] border-l-4 border-l-[#ff2d55]">
+                                            <div
+                                                class="font-bold mb-1.5 uppercase text-[10px] tracking-widest opacity-60">
+                                                Error</div>
+                                            {{ res.error.message }}
+                                        </div>
+
+                                        <!-- Input -->
+                                        <div class="space-y-1.5">
+                                            <div class="text-[10px] font-black uppercase tracking-[0.15em] text-[#555]">
+                                                Input</div>
+                                            <div
+                                                class="bg-[#0d0d0d] border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-[13px] text-[#c9d1d9] leading-relaxed">
+                                                {{ formatTestCaseInput(res.input) }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Output -->
+                                        <div class="space-y-1.5">
+                                            <div class="text-[10px] font-black uppercase tracking-[0.15em] text-[#555]">
+                                                Output</div>
+                                            <div class="rounded-lg px-4 py-3 font-mono text-[13px] leading-relaxed border-l-4"
+                                                [ngClass]="res.passed
+                                                    ? 'bg-[#0de84b]/5 border border-[#0de84b]/20 border-l-[#0de84b] text-[#0de84b]'
+                                                    : 'bg-[#ff2d55]/5 border border-[#ff2d55]/20 border-l-[#ff2d55] text-[#ff2d55]'">
+                                                {{ formatTestCaseInput(safeOutput(res.actualOutput)) }}
+                                            </div>
+                                        </div>
+
+                                        <!-- Expected (only on fail) -->
+                                        <div *ngIf="!res.passed && res.expectedOutput !== undefined"
+                                            class="space-y-1.5">
+                                            <div class="text-[10px] font-black uppercase tracking-[0.15em] text-[#555]">
+                                                Expected Output</div>
+                                            <div
+                                                class="bg-[#0d0d0d] border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-[13px] text-[#c9d1d9] leading-relaxed border-l-4 border-l-white/20">
+                                                {{ formatTestCaseInput(res.expectedOutput) }}
+                                            </div>
+                                        </div>
+
+                                    </ng-container>
+                                </ng-container>
+                            </div>
+                        </div>
+
+                        <!-- Syntax / Critical Error result -->
+                        <div *ngIf="executionResult && executionResult.errorType" class="p-5 animate-fadeIn">
+                            <div
+                                class="bg-[#ff2d55]/5 border border-[#ff2d55]/20 border-l-4 border-l-[#ff2d55] rounded-lg px-5 py-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="bi bi-exclamation-circle-fill text-[#ff2d55] text-[16px]"></i>
+                                    <span class="text-[#ff2d55] font-black text-[14px]">{{ executionResult.errorType
+                                        }}</span>
+                                </div>
+                                <div class="text-[#ff2d55]/80 font-mono text-[13px] leading-relaxed">{{
+                                    executionResult.message }}</div>
+                                <div *ngIf="executionResult.line"
+                                    class="text-[#94a3b8] text-[11px] mt-3 font-mono opacity-50">
+                                    at line {{ executionResult.line }}, col {{ executionResult.column }}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-
             </section>
 
         </main>
@@ -256,4 +477,5 @@
             Back to Problems
         </button>
     </div>
+
 </div>

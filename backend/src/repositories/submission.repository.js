@@ -2,6 +2,7 @@ const Submission = require('../models/submission.model');
 
 class SubmissionRepository {
     async create(data) {
+        console.log(`[SubmissionRepository] Creating submission with status: ${data.status}`);
         return await Submission.create(data);
     }
 
@@ -10,6 +11,10 @@ class SubmissionRepository {
             .populate('student', 'username email')
             .populate('question', 'title difficulty')
             .sort({ submittedAt: -1 });
+    }
+
+    async findOne(query = {}, sort = {}) {
+        return await Submission.findOne(query).sort(sort);
     }
 
     async findById(id) {
@@ -29,6 +34,10 @@ class SubmissionRepository {
             new: true,
             runValidators: true
         });
+    }
+
+    async deleteById(id) {
+        return await Submission.findByIdAndDelete(id);
     }
 
     async count(query = {}) {

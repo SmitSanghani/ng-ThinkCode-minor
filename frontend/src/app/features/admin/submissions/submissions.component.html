@@ -1,129 +1,275 @@
-<div class="space-y-8 animate-in fade-in duration-500">
+<div class="submissions-page animate-in fade-in duration-500">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-        <div class="flex flex-col gap-1">
-            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Student Submissions</h2>
-            <p class="text-slate-500 font-medium">Track and review student solutions in real-time.</p>
+    <div class="page-header">
+        <div class="title-group">
+            <h2>Submission History</h2>
+            <p>Real-time overview of code submissions across the platform.</p>
         </div>
-        <button (click)="loadSubmissions()" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+        <button (click)="exportToCSV()" class="export-btn">
+            <i class="bi bi-download"></i>
+            <span>Export CSV</span>
         </button>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center">
-        <select
-            class="bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition-all">
-            <option value="">All Statuses</option>
-            <option value="passed">Passed</option>
-            <option value="failed">Failed</option>
-            <option value="pending">Pending</option>
-        </select>
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-item">
+            <span class="filter-label">Status</span>
+            <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()" class="filter-input">
+                <option value="">All Statuses</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Wrong Answer">Wrong Answer</option>
+                <option value="Time Limit Exceeded">Time Limit Exceeded</option>
+                <option value="Runtime Error">Runtime Error</option>
+                <option value="Compilation Error">Compilation Error</option>
+            </select>
+        </div>
 
-        <select
-            class="bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition-all">
-            <option value="">All Grades</option>
-            <option value="A">Grade A</option>
-            <option value="B">Grade B</option>
-            <option value="C">Grade C</option>
-            <option value="F">Grade F</option>
-        </select>
+        <div class="filter-item">
+            <span class="filter-label">Date Range</span>
+            <input type="date" [(ngModel)]="dateFilter" (ngModelChange)="onFilterChange()" class="filter-input">
+        </div>
+
+        <div class="filter-item">
+            <span class="filter-label">Sort By</span>
+            <select [(ngModel)]="sortBy" (ngModelChange)="onFilterChange()" class="filter-input">
+                <option value="date">Newest First</option>
+                <option value="runtime">Fastest (Runtime)</option>
+                <option value="status">Status (A-Z)</option>
+            </select>
+        </div>
+
+        <button *ngIf="statusFilter || dateFilter || sortBy !== 'date'" (click)="resetFilters()"
+            class="clear-filters-btn animate-in fade-in zoom-in duration-200" title="Clear All Filters">
+            <i class="bi bi-x-lg"></i>
+            <span>Clear Filters</span>
+        </button>
     </div>
 
-    <!-- Table Card -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <!-- Table Section -->
+    <div class="table-card shadow-sm">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-50 border-b border-slate-100">
+            <table class="modern-table">
+                <thead>
                     <tr>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Student</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Question</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Execution</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Grade</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Submitted</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
-                            Action</th>
+                        <th class="text-left">Status</th>
+                        <th class="text-left">Problem</th>
+                        <th class="text-left">Student</th>
+                        <th class="text-center">Runtime</th>
+                        <th class="text-center">Memory</th>
+                        <th class="text-right">Time</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
-                    <tr *ngFor="let s of submissions" class="hover:bg-slate-50/50 transition-colors group">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                                    {{ s.student?.username?.substring(0, 1) | uppercase }}
-                                </div>
-                                <div class="flex flex-col">
-                                    <span class="font-bold text-slate-900 leading-tight">{{ s.student?.username
-                                        }}</span>
-                                    <span class="text-[11px] text-slate-400 font-medium">{{ s.student?.email }}</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="text-slate-700 font-semibold">{{ s.question?.title }}</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-2">
-                                <span [ngClass]="{
-                  'text-emerald-600': s.status === 'passed',
-                  'text-rose-600': s.status === 'failed',
-                  'text-slate-400': s.status === 'pending'
-                }" class="inline-flex items-center gap-1.5 font-bold text-xs uppercase tracking-tight">
-                                    <svg *ngIf="s.status === 'passed'" class="w-4 h-4" fill="currentColor"
-                                        viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    <svg *ngIf="s.status === 'failed'" class="w-4 h-4" fill="currentColor"
-                                        viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                    {{ s.status }}
-                                </span>
-                                <span class="text-[11px] text-slate-400 font-bold" *ngIf="s.totalTests > 0">
-                                    ({{ s.passedCount }}/{{ s.totalTests }})
-                                </span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span [ngClass]="{
-                'bg-emerald-100 text-emerald-700': s.grade === 'A',
-                'bg-blue-100 text-blue-700': s.grade === 'B',
-                'bg-amber-100 text-amber-700': s.grade === 'C',
-                'bg-rose-100 text-rose-700': s.grade === 'F',
-                'bg-slate-100 text-slate-500': s.grade === 'Pending'
-              }" class="px-2.5 py-0.5 rounded-md text-xs font-extrabold">
-                                {{ s.grade }}
+                <tbody>
+                    <tr *ngFor="let s of paginatedSubmissions" class="table-row">
+                        <td>
+                            <span [ngClass]="getStatusClass(s.status)" class="status-badge">
+                                {{ s.status === 'passed' ? 'Accepted' : (s.status === 'failed' ? 'Wrong Answer' :
+                                s.status) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="text-slate-400 text-sm leading-none italic">{{ s.submittedAt | date:'shortTime'
+                        <td>
+                            <span class="problem-link">{{ s.question?.title }}</span>
+                            <span class="difficulty-tag">{{ s.question?.difficulty }}</span>
+                        </td>
+                        <td>
+                            <div class="student-info">
+                                <div class="avatar">{{ s.student?.username?.substring(0, 1) | uppercase }}</div>
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-slate-700">{{ s.student?.username }}</span>
+                                    <span class="text-[11px] text-slate-400">{{ s.student?.email }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="runtime-val">{{ s.runtime != null ? s.runtime + ' ms' : 'N/A' }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="memory-val">{{ s.memory != null ? (s.memory | number:'1.0-2') + ' MB' : 'N/A'
                                 }}</span>
                         </td>
-                        <td class="px-6 py-4 text-right">
-                            <button
-                                class="text-indigo-600 font-bold text-xs uppercase tracking-widest hover:underline">Details</button>
+                        <td class="text-right">
+                            <span class="date-val" [title]="s.submittedAt | date:'medium'">{{ timeAgo(s.submittedAt)
+                                }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="action-btns">
+                                <!-- View Button -->
+                                <button class="action-btn view-btn" (click)="openView(s)" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <!-- Delete Button -->
+                                <button class="action-btn delete-btn" (click)="deleteSubmission(s)"
+                                    title="Delete Submission">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
-                    <!-- Empty state -->
-                    <tr *ngIf="submissions.length === 0 && !isLoading">
-                        <td colspan="6" class="px-6 py-20 text-center text-slate-400 font-medium">No submissions
-                            recorded yet.</td>
+
+                    <!-- Empty State -->
+                    <tr *ngIf="paginatedSubmissions.length === 0 && !isLoading">
+                        <td colspan="7" class="px-6 py-32 text-center">
+                            <div class="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-2">
+                                    <i class="bi bi-database-exclamation text-4xl text-slate-300"></i>
+                                </div>
+                                <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">No data found</h2>
+                                <p class="max-w-xs text-sm text-slate-500 mx-auto leading-relaxed">
+                                    We couldn't find any submissions matching your current criteria.
+                                    {{ (statusFilter || dateFilter) ? 'Try adjusting your filters or clear them to see
+                                    all records.' : 'No submissions have been recorded on the platform yet.' }}
+                                </p>
+                                <button *ngIf="statusFilter || dateFilter || sortBy !== 'date'" (click)="resetFilters()"
+                                    class="mt-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">
+                                    Clear all filters
+                                </button>
+                            </div>
+                        </td>
                     </tr>
+
                     <!-- Loading -->
                     <tr *ngIf="isLoading">
-                        <td colspan="6" class="px-6 py-20 text-center text-slate-400 font-medium">Fetching history...
+                        <td colspan="7" class="px-6 py-20 text-center text-slate-400 font-medium">
+                            <div class="flex flex-col items-center gap-3">
+                                <div
+                                    class="w-8 h-8 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin">
+                                </div>
+                                <span>Fetching submission history...</span>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-area" *ngIf="!isLoading && pagination.totalPages > 1">
+            <span class="pagination-info">
+                Showing <b>{{ (pagination.currentPage - 1) * pagination.pageSize + 1 }}</b> -
+                <b>{{ showingTo }}</b>
+                of <b>{{ pagination.totalItems }}</b> submissions
+            </span>
+            <div class="pagination-controls">
+                <button (click)="onPageChange(pagination.currentPage - 1)" [disabled]="pagination.currentPage === 1"
+                    class="page-link">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <button *ngFor="let p of [].constructor(pagination.totalPages); let idx = index"
+                    (click)="onPageChange(idx + 1)" [class.active]="pagination.currentPage === idx + 1"
+                    class="page-link">
+                    {{ idx + 1 }}
+                </button>
+
+                <button (click)="onPageChange(pagination.currentPage + 1)"
+                    [disabled]="pagination.currentPage === pagination.totalPages" class="page-link">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── View Detail Modal ──────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showViewModal" (click)="closeView()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div class="modal-title-group">
+                <h3>Submission Details</h3>
+                <span [ngClass]="getStatusClass(selectedSubmission?.status)" class="status-badge">
+                    {{ selectedSubmission?.status }}
+                </span>
+            </div>
+            <button class="modal-close-btn" (click)="closeView()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Meta Info -->
+        <div class="modal-meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Student</span>
+                <span class="meta-value">{{ selectedSubmission?.student?.username }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Problem</span>
+                <span class="meta-value">{{ selectedSubmission?.question?.title }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Difficulty</span>
+                <span class="meta-value capitalize">{{ selectedSubmission?.question?.difficulty }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Runtime</span>
+                <span class="meta-value">{{ selectedSubmission?.runtime != null ? selectedSubmission?.runtime + ' ms' :
+                    'N/A' }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Memory</span>
+                <span class="meta-value">{{ selectedSubmission?.memory != null ? (selectedSubmission?.memory |
+                    number:'1.0-2') + ' MB' : 'N/A' }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Submitted</span>
+                <span class="meta-value">{{ selectedSubmission?.submittedAt | date:'medium' }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Test Cases</span>
+                <span class="meta-value">{{ selectedSubmission?.passedCount }} / {{ selectedSubmission?.totalTests }}
+                    passed</span>
+            </div>
+        </div>
+
+        <!-- Submitted Code -->
+        <div class="modal-section">
+            <div class="section-label">
+                <i class="bi bi-code-slash"></i> Submitted Code
+            </div>
+            <pre class="code-block"><code>{{ selectedSubmission?.code }}</code></pre>
+        </div>
+
+        <!-- Test Case Results -->
+        <div class="modal-section" *ngIf="selectedSubmission?.testResults?.length > 0">
+            <div class="section-label">
+                <i class="bi bi-clipboard-check"></i> Test Case Results
+            </div>
+            <div class="test-results-list">
+                <div *ngFor="let tc of selectedSubmission?.testResults; let i = index"
+                    [ngClass]="{'tc-passed': tc.passed, 'tc-failed': !tc.passed}" class="tc-row">
+                    <div class="tc-header">
+                        <span class="tc-num">Test #{{ i + 1 }}</span>
+                        <span class="tc-badge">{{ tc.passed ? '✓ Passed' : '✗ Failed' }}</span>
+                    </div>
+                    <div class="tc-details">
+                        <div class="tc-detail-item">
+                            <span class="tc-detail-label">Input</span>
+                            <code class="tc-detail-val">{{ tc.input }}</code>
+                        </div>
+                        <div class="tc-detail-item">
+                            <span class="tc-detail-label">Expected</span>
+                            <code class="tc-detail-val">{{ tc.expectedOutput }}</code>
+                        </div>
+                        <div class="tc-detail-item">
+                            <span class="tc-detail-label">Got</span>
+                            <code class="tc-detail-val"
+                                [class.text-red-500]="!tc.passed">{{ tc.output ?? 'N/A' }}</code>
+                        </div>
+                        <div class="tc-detail-item" *ngIf="tc.error">
+                            <span class="tc-detail-label tc-error-label">Error</span>
+                            <code class="tc-detail-val text-red-500">{{ tc.error }}</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No test results message -->
+        <div class="modal-section" *ngIf="!selectedSubmission?.testResults?.length">
+            <div class="section-label"><i class="bi bi-clipboard-x"></i> Test Case Results</div>
+            <p class="no-tc-msg">No test case results available for this submission.</p>
         </div>
     </div>
 </div>

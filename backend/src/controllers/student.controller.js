@@ -25,27 +25,40 @@ class StudentController {
                 .skip(skip)
                 .limit(parseInt(limit));
 
-            // 3. Process each question
-            const studentPlan = req.user.plan || 'Free';
-            const processedProblems = await Promise.all(questions.map(async (q) => {
-                // Determine worldwide index for plan-based locking (rank by createdAt among SAME difficulty)
-                const index = await Question.countDocuments({
-                    difficulty: q.difficulty,
-                    createdAt: { $lt: q.createdAt }
-                });
+            // 3. Optimized Status Fetch: Get all submissions for these questions for this user in ONE query
+            const questionIds = questions.map(q => q._id);
+            const userSubmissions = await Submission.find({
+                student: req.user.id,
+                question: { $in: questionIds }
+            }).select('question status').lean();
 
-                const isLocked = false; // Temporarily unlocked for testing
+            // Create a lookup map: questionId -> best status
+            // Priority: Accepted/passed > any other status
+            const statusMap = {};
+            userSubmissions.forEach(sub => {
+                const qId = sub.question.toString();
+                const s = (sub.status || '').toLowerCase();
+                const currentBest = (statusMap[qId] || '').toLowerCase();
 
-                // Check submission status
-                const submissions = await Submission.find({
-                    student: req.user.id,
-                    question: q._id
-                });
+                // If we found a success, or if we haven't found anything yet, update
+                if (s === 'accepted' || s === 'passed') {
+                    statusMap[qId] = 'Accepted';
+                } else if (!statusMap[qId]) {
+                    statusMap[qId] = sub.status; // Keep original for reference
+                }
+            });
 
-                let problemStatus = isLocked ? 'locked' : 'unsolved';
-                if (submissions.length > 0) {
-                    const hasPassed = submissions.some(s => s.status === 'passed');
-                    problemStatus = hasPassed ? 'solved' : 'attempted';
+            // 4. Process each question
+            const processedProblems = questions.map(q => {
+                const qId = q._id.toString();
+                const rawStatus = statusMap[qId];
+                const cleanStatus = (rawStatus || '').toLowerCase();
+
+                let problemStatus = 'unsolved';
+                if (cleanStatus === 'accepted' || cleanStatus === 'passed') {
+                    problemStatus = 'solved';
+                } else if (rawStatus) {
+                    problemStatus = 'attempted';
                 }
 
                 return {
@@ -54,10 +67,13 @@ class StudentController {
                     difficulty: q.difficulty,
                     category: q.category,
                     status: problemStatus,
-                    isLocked: isLocked,
+                    isLocked: false,
+                    acceptanceRate: q.totalSubmissions > 0
+                        ? (q.totalAccepted / q.totalSubmissions * 100).toFixed(1) + '%'
+                        : '0.0%',
                     solvedCount: q.totalAccepted || 0
                 };
-            }));
+            });
 
             res.status(200).json({
                 success: true,
