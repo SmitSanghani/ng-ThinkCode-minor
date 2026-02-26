@@ -35,9 +35,16 @@ export class AdminService {
         return this.http.get(`${this.apiUrl}/questions/admin/stats`);
     }
 
-    // Submission endpoints
     getSubmissions(params?: any): Observable<any> {
         return this.http.get(`${this.apiUrl}/submissions`, { params });
+    }
+
+    getUserSubmissions(userId: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/user-submissions/${userId}`);
+    }
+
+    getSubmissionDetail(id: string): Observable<any> {
+        return this.http.get(`${this.apiUrl}/submissions/${id}`);
     }
 
     getSubmissionStats(): Observable<any> {

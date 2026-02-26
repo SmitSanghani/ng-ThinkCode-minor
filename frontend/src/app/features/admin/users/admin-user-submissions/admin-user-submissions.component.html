@@ -1,0 +1,195 @@
+<div class="submissions-page-wrapper p-8 animate-fade-in">
+    <!-- Page Header & Title -->
+    <div class="header-section mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Student Submissions</h1>
+            <p class="text-sm text-slate-500 mt-1">Review all coding attempts and solutions for user: <span
+                    class="font-semibold text-primary">{{ userId }}</span></p>
+        </div>
+        <button (click)="goBack()"
+            class="btn-back-main flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-primary transition-all shadow-sm font-medium text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Back to User Management
+        </button>
+    </div>
+
+    <!-- Page Body -->
+    <div
+        class="main-content-card bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px] relative">
+
+        <!-- Loading State Overlay -->
+        <div *ngIf="loading"
+            class="absolute inset-0 z-10 bg-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center p-20">
+            <div class="spinner-xl mb-4"></div>
+            <p class="text-slate-500 font-medium animate-pulse">Filtering and fetching student solutions...</p>
+        </div>
+
+        <!-- Error State Banner -->
+        <div *ngIf="!loading && error"
+            class="m-8 p-6 bg-rose-50 border border-rose-100 rounded-xl flex items-center gap-4 text-rose-600">
+            <i class="bi bi-exclamation-triangle text-2xl"></i>
+            <div class="flex-1">
+                <h4 class="font-bold">Fetch Error</h4>
+                <p class="text-sm opacity-90">{{ error }}</p>
+            </div>
+            <button (click)="loadSubmissions()"
+                class="px-3 py-1 bg-white border border-rose-200 rounded text-xs font-bold hover:bg-rose-100 transition-colors uppercase tracking-widest">Retry</button>
+        </div>
+
+        <!-- Table Content -->
+        <div *ngIf="!loading && !error" class="table-container p-4 overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-100">
+                        <th
+                            class="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            # Index</th>
+                        <th
+                            class="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            Problem Details</th>
+                        <th
+                            class="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            Difficulty</th>
+                        <th
+                            class="px-6 py-4 text-left text-[11px] font-black text text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            Submission Status</th>
+                        <th
+                            class="px-6 py-4 text-center text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <tr *ngFor="let sub of submissions; let i = index"
+                        class="hover:bg-slate-50 transition-colors group">
+                        <td class="px-6 py-5 text-sm font-mono text-slate-400">{{ i + 1 }}</td>
+                        <td class="px-6 py-5">
+                            <div class="flex flex-col">
+                                <span
+                                    class="text-[15px] font-bold text-slate-700 leading-tight group-hover:text-primary transition-colors cursor-default">
+                                    {{ sub.question?.title || 'Unknown Question' }}
+                                </span>
+                                <span class="text-[11px] text-slate-400 font-medium mt-0.5">{{ sub.submittedAt |
+                                    date:'medium' }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="diff-badge" [ngClass]="sub.question?.difficulty?.toLowerCase()">
+                                {{ sub.question?.difficulty }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="status-pill inline-flex items-center gap-2"
+                                [ngClass]="sub.status?.replace(' ', '-').toLowerCase()">
+                                <span class="w-2 h-2 rounded-full dot"></span>
+                                {{ sub.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5 text-center">
+                            <button (click)="openAnswerPopup(sub._id)" title="View Student Answer"
+                                class="btn-eye inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 text-slate-400 hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20 hover:scale-105 active:scale-95 shadow-sm">
+                                <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Only Answer Popup -->
+<div *ngIf="showAnswerModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-[10px] overlay-fade-in" (click)="closeAnswerPopup()"></div>
+
+    <div
+        class="answer-modal relative bg-[#0f172a] w-full max-w-4xl max-h-[85vh] rounded-[24px] shadow-2xl flex flex-col overflow-hidden border border-slate-700/50 scale-in-animation">
+
+        <!-- Header (Answer Specific) -->
+        <div
+            class="px-6 py-5 bg-[#1e293b]/50 border-b border-slate-700/50 flex items-center justify-between pointer-events-none select-none">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-lg leading-tight">{{ selectedSubmission.question?.title }}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Student Implementation</p>
+                </div>
+            </div>
+            <button (click)="closeAnswerPopup(); $event.stopPropagation()"
+                class="absolute top-4 right-4 p-2.5 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-all pointer-events-auto shadow-sm backdrop-blur-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Scrollable Code Section -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar-dark bg-[#0f172a]">
+            <!-- Question Description -->
+            <div class="px-6 py-4 bg-[#1e293b]/30 border-b border-slate-800">
+                <h4 class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Problem Description</h4>
+                <div class="text-xs text-slate-400 leading-relaxed font-medium">
+                    {{ selectedSubmission.question?.description || 'No description available.' }}
+                </div>
+            </div>
+
+            <!-- Test Case Outcome Overview -->
+            <div *ngIf="selectedSubmission.testResults?.length > 0"
+                class="px-6 py-4 border-b border-slate-800/80 bg-slate-900/40">
+                <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Unit Test Results ({{
+                    selectedSubmission.passedCount }}/{{ selectedSubmission.totalTests }})</h4>
+                <div class="flex flex-wrap gap-2">
+                    <div *ngFor="let tr of selectedSubmission.testResults; let idx = index"
+                        class="test-case-pip px-2.5 py-1 rounded text-[10px] font-bold border flex items-center gap-1.5"
+                        [ngClass]="tr.passed ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'">
+                        <span class="w-1.5 h-1.5 rounded-full"
+                            [ngClass]="tr.passed ? 'bg-emerald-400' : 'bg-rose-400'"></span>
+                        Test #{{ idx + 1 }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative group">
+                <!-- Line Numbers Sidebar -->
+                <div
+                    class="absolute left-0 top-0 bottom-0 w-12 bg-slate-900/50 border-r border-slate-800/50 flex flex-col items-center pt-6 text-[10px] font-mono text-slate-500/50 select-none pointer-events-none">
+                    <div *ngFor="let n of lineNumbers">{{ n }}</div>
+                </div>
+
+                <div class="pl-12">
+                    <pre
+                        class="m-0 p-6 text-[14px] leading-relaxed text-slate-300 font-mono overflow-visible selection:bg-primary/30"><code class="block whitespace-pre whitespace-pre-wrap">{{ selectedSubmission.code }}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-800/50 flex items-center justify-between bg-slate-900/50">
+            <div class="flex items-center gap-2">
+                <span
+                    class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[9px] font-black uppercase tracking-widest">Javascript</span>
+                <span class="text-[10px] text-slate-500 font-medium">Submitted on {{ selectedSubmission.submittedAt |
+                    date:'medium' }}</span>
+            </div>
+            <button (click)="closeAnswerPopup()"
+                class="px-5 py-2 rounded-xl bg-white/5 border border-slate-700/50 text-white font-bold text-xs hover:bg-white/10 transition-all shadow-lg active:scale-95">Close
+                View</button>
+        </div>
+    </div>
+</div>

@@ -7,11 +7,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const authService = inject(AuthService);
     const token = authService.token;
 
+    const isPublicRoute = req.url.includes('login') || req.url.includes('register') || req.url.includes('refresh-token');
+
     if (token) {
         req = req.clone({
             setHeaders: { Authorization: `Bearer ${token}` }
         });
-    } else {
+    } else if (!isPublicRoute) {
         console.warn('AuthInterceptor: No token found for request:', req.url);
     }
 

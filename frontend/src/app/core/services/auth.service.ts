@@ -122,6 +122,7 @@ export class AuthService {
     }
 
     private handleError(error: HttpErrorResponse) {
-        return throwError(() => new Error(error.error.error || 'Server error'));
+        const message = error.error?.message || error.error?.error || 'Server error';
+        return throwError(() => new Error(message));
     }
 }

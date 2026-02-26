@@ -1,0 +1,112 @@
+<div class="admin-users-container">
+    <!-- Header & Toolbar -->
+    <div class="toolbar">
+        <div class="title-section">
+            <h1>Users Management</h1>
+            <p>Manage and monitor all platform users</p>
+        </div>
+
+        <div class="actions">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Search by name or email..." [(ngModel)]="searchTerm"
+                    (input)="onSearchChange($event)">
+            </div>
+
+            <select class="filter-dropdown" [(ngModel)]="statusFilter" (change)="onStatusChange()">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Banned">Banned</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading$ | async" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error$ | async as error" class="error-banner">
+        <i class="bi bi-exclamation-circle"></i>
+        {{ error }}
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>USER</th>
+                        <th>ROLE</th>
+                        <th>STATUS</th>
+                        <th>JOINED DATE</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let user of users; trackBy: trackByUserId">
+                        <td>
+                            <div class="user-info">
+                                <div class="avatar-circle">
+                                    {{ getInitials(user.name) }}
+                                </div>
+                                <div class="user-details">
+                                    <span class="user-name">{{ user.name }}</span>
+                                    <span class="user-email">{{ user.email }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-role">{{ user.role | titlecase }}</span>
+                        </td>
+                        <td>
+                            <span class="badge" [ngClass]="{
+                'badge-active': user.status === 'Active',
+                'badge-inactive': user.status === 'Inactive',
+                'badge-banned': user.status === 'Banned'
+              }">
+                                {{ user.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="date-text">{{ user.createdAt | date:'dd-MMM-yyyy' }}</span>
+                        </td>
+                        <td>
+                            <button class="btn-view" (click)="viewUser(user._id)">View Details</button>
+                        </td>
+                    </tr>
+
+                    <tr *ngIf="users.length === 0 && !(loading$ | async)">
+                        <td colspan="6" class="empty-state">
+                            No users found matching your criteria.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-section" *ngIf="totalPages > 1">
+            <span class="pagination-info">
+                Showing {{ users.length }} of {{ totalUsers }} users
+            </span>
+            <div class="pagination-controls">
+                <button [disabled]="currentPage === 1" (click)="onPageChange(currentPage - 1)" class="btn-page">
+                    Previous
+                </button>
+
+                <span class="page-numbers">
+                    Page {{ currentPage }} of {{ totalPages }}
+                </span>
+
+                <button [disabled]="currentPage === totalPages" (click)="onPageChange(currentPage + 1)"
+                    class="btn-page">
+                    Next
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

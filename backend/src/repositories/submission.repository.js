@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Submission = require('../models/submission.model');
 
 class SubmissionRepository {
@@ -24,9 +25,11 @@ class SubmissionRepository {
     }
 
     async findByStudent(studentId) {
-        return await Submission.find({ student: studentId })
+        const query = { student: new mongoose.Types.ObjectId(studentId) };
+        return await Submission.find(query)
             .populate('question', 'title difficulty')
-            .sort({ submittedAt: -1 });
+            .sort({ submittedAt: -1 })
+            .lean();
     }
 
     async update(id, data) {

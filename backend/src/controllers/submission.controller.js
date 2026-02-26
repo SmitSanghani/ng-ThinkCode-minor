@@ -81,6 +81,15 @@ class SubmissionController {
             next(error);
         }
     }
+
+    async getUserSubmissions(req, res, next) {
+        try {
+            const submissions = await submissionService.getStudentSubmissions(req.params.userId);
+            sendSuccess(res, submissions, 'User submissions retrieved successfully');
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new SubmissionController();

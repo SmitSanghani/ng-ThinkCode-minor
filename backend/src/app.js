@@ -11,6 +11,9 @@ const questionRoutes = require('./routes/question.routes');
 const submissionRoutes = require('./routes/submission.routes');
 const adminRoutes = require('./routes/admin.routes');
 const studentRoutes = require('./routes/student.routes');
+const adminUserRoutes = require('./routes/adminUser.routes');
+const { protect, authorize } = require('./middleware/auth.middleware');
+const submissionController = require('./controllers/submission.controller');
 
 const app = express();
 
@@ -42,6 +45,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/admin/questions', adminRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.get('/api/admin/user-submissions/:userId', protect, authorize('admin'), submissionController.getUserSubmissions);
 app.use('/api/student', studentRoutes);
 
 app.get('/', (req, res) => {

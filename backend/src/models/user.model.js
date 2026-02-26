@@ -9,6 +9,9 @@ const UserSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
+    name: {
+        type: String
+    },
     email: {
         type: String,
         required: [true, 'Please add an email'],
@@ -20,8 +23,13 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['student', 'admin'],
+        enum: ['student', 'admin', 'User'],
         default: 'student'
+    },
+    status: {
+        type: String,
+        enum: ['Active', 'Inactive', 'Banned'],
+        default: 'Active'
     },
     plan: {
         type: String,
