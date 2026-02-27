@@ -1,4 +1,4 @@
-<div class="submissions-page animate-in fade-in duration-500">
+<div class="submissions-page animate-in fade-in duration-500 ">
     <!-- Header -->
     <div class="page-header">
         <div class="title-group">
@@ -47,12 +47,13 @@
     </div>
 
     <!-- Table Section -->
-    <div class="table-card shadow-sm">
+    <div class="table-card shadow-sm ">
         <div class="overflow-x-auto">
             <table class="modern-table">
                 <thead>
                     <tr>
                         <th class="text-left">Status</th>
+                        <th class="text-left">Grade</th>
                         <th class="text-left">Problem</th>
                         <th class="text-left">Student</th>
                         <th class="text-center">Runtime</th>
@@ -67,6 +68,11 @@
                             <span [ngClass]="getStatusClass(s.status)" class="status-badge">
                                 {{ s.status === 'passed' ? 'Accepted' : (s.status === 'failed' ? 'Wrong Answer' :
                                 s.status) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="grade-badge" [attr.data-grade]="s.grade">
+                                {{ s.grade || 'N/A' }}
                             </span>
                         </td>
                         <td>
@@ -220,6 +226,21 @@
                 <span class="meta-label">Test Cases</span>
                 <span class="meta-value">{{ selectedSubmission?.passedCount }} / {{ selectedSubmission?.totalTests }}
                     passed</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Final Grade</span>
+                <span class="meta-value font-black text-indigo-600">{{ selectedSubmission?.grade || 'Pending' }}</span>
+            </div>
+        </div>
+
+        <!-- AI Feedback Section -->
+        <div class="modal-section" *ngIf="selectedSubmission?.aiExplanation">
+            <div class="section-label">
+                <i class="bi bi-robot"></i> AI Assessment
+            </div>
+            <div
+                class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-5 text-indigo-900/80 italic text-[14px] leading-relaxed">
+                {{ selectedSubmission?.aiExplanation }}
             </div>
         </div>
 

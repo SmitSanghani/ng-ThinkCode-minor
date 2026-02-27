@@ -52,10 +52,201 @@ export class ProblemDetailComponent implements OnInit {
   // Execution & Submission State
   isExecuting: boolean = false;
   isSubmitting: boolean = false;
+  isAskingAI: boolean = false;
   canSubmit: boolean = false;
   executionResult: any = null;
   submissionResult: any = null;
+  aiFeedback: any = null;
+  latestGrade: string | null = null;
+
+  // Chat Mentor State
+  showAIPanel: boolean = false;
+  isThreeColumn: boolean = false;
+  chatMessages: any[] = [];
+  chatInput: string = '';
   selectedResultTab: number = 0;
+
+  toggleThreeColumn() {
+    this.isThreeColumn = !this.isThreeColumn;
+    this.showAIPanel = this.isThreeColumn;
+
+    if (this.isThreeColumn) {
+      this.leftPanelWidth = 25; // Narrower description
+      this.chatPanelWidth = 25; // Right chat panel
+
+      // Auto-start chat with first analysis if empty
+      if (this.chatMessages.length === 0) {
+        this.askAI();
+      }
+    } else {
+      this.leftPanelWidth = 45; // Restore split
+    }
+
+    this.refreshEditorLayout();
+  }
+
+  askAI() {
+    if (!this.problem || !this.studentCode || this.isAskingAI) return;
+
+    this.isAskingAI = true;
+    this.showAIPanel = true;
+    this.cdr.detectChanges();
+
+    this.studentService.getAIFeedback(this.problem.id, this.studentCode, this.chatMessages).subscribe({
+      next: (res) => {
+        const feedback = res.data;
+        this.aiFeedback = feedback;
+
+        // Add to chat history
+        this.chatMessages.push({
+          role: 'assistant',
+          grade: feedback.grade,
+          explanation: feedback.explanation,
+          hints: feedback.improvementHints,
+          time: new Date()
+        });
+
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+        this.scrollToBottom();
+      },
+      error: (err) => {
+        console.error('AI Feedback error:', err);
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  sendChatMessage() {
+    if (!this.chatInput.trim() || this.isAskingAI) return;
+
+    const userMsg = this.chatInput.trim();
+    this.chatMessages.push({
+      role: 'user',
+      content: userMsg,
+      time: new Date()
+    });
+    this.chatInput = '';
+
+    this.isAskingAI = true;
+    this.cdr.detectChanges();
+    this.scrollToBottom();
+
+    // Context-aware chat using history
+    this.studentService.getAIFeedback(this.problem!.id, this.studentCode, this.chatMessages).subscribe({
+      next: (res) => {
+        const feedback = res.data;
+        this.chatMessages.push({
+          role: 'assistant',
+          grade: feedback.grade,
+          explanation: feedback.explanation,
+          hints: feedback.improvementHints,
+          time: new Date()
+        });
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+        this.scrollToBottom();
+      },
+      error: () => {
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  copiedMessageIndex: number | null = null;
+  copiedEditor: boolean = false;
+
+  copyEditorCode() {
+    if (!this.studentCode) return;
+    navigator.clipboard.writeText(this.studentCode).then(() => {
+      this.copiedEditor = true;
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.copiedEditor = false;
+        this.cdr.detectChanges();
+      }, 2000);
+    });
+  }
+  copyToClipboard(text: string, index: number) {
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedMessageIndex = index;
+      this.cdr.detectChanges();
+
+      setTimeout(() => {
+        if (this.copiedMessageIndex === index) {
+          this.copiedMessageIndex = null;
+          this.cdr.detectChanges();
+        }
+      }, 2000);
+    });
+  }
+
+  editingMessageIndex: number | null = null;
+  editInput: string = '';
+
+  editMessage(msg: any, index: number) {
+    if (msg.role !== 'user') return;
+    this.editingMessageIndex = index;
+    this.editInput = msg.content;
+  }
+
+  cancelEdit() {
+    this.editingMessageIndex = null;
+    this.editInput = '';
+  }
+
+  saveEdit(index: number) {
+    if (!this.editInput.trim() || this.isAskingAI) return;
+
+    // Update the message content
+    this.chatMessages[index].content = this.editInput.trim();
+
+    // Remove all messages AFTER this one
+    this.chatMessages.splice(index + 1);
+
+    this.editingMessageIndex = null;
+    this.isAskingAI = true;
+    this.cdr.detectChanges();
+    this.scrollToBottom();
+
+    this.studentService.getAIFeedback(this.problem!.id, this.studentCode, this.chatMessages).subscribe({
+      next: (res) => {
+        const feedback = res.data;
+        this.chatMessages.push({
+          role: 'assistant',
+          grade: feedback.grade,
+          explanation: feedback.explanation,
+          hints: feedback.improvementHints,
+          time: new Date()
+        });
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+        this.scrollToBottom();
+      },
+      error: () => {
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  scrollToBottom() {
+    setTimeout(() => {
+      const container = document.getElementById('chat-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
+  }
+
+  closeAIPanel() {
+    this.showAIPanel = false;
+    this.isThreeColumn = false;
+    this.leftPanelWidth = 45;
+    this.refreshEditorLayout();
+  }
 
   // Resizable Console Panel (vertical)
   outputPanelHeight: number = 250;
@@ -67,11 +258,17 @@ export class ProblemDetailComponent implements OnInit {
 
   // Resizable Side Panels (horizontal)
   leftPanelWidth: number = 45;
+  chatPanelWidth: number = 25;
   private isHorizontalResizing: boolean = false;
+  private isChatResizing: boolean = false;
   private hResizeStartX: number = 0;
   private hResizeStartWidth: number = 45;
+
   private boundHMouseMove = this.onHorizontalResizeMouseMove.bind(this);
   private boundHMouseUp = this.stopHorizontalResize.bind(this);
+
+  private boundChatMouseMove = this.onChatResizeMouseMove.bind(this);
+  private boundChatMouseUp = this.stopChatResize.bind(this);
 
   editorOptions = {
     theme: 'vs-dark',
@@ -100,8 +297,17 @@ export class ProblemDetailComponent implements OnInit {
     suggestOnTriggerCharacters: true,
     acceptSuggestionOnEnter: 'on' as const,
     snippetSuggestions: 'top' as const,
-    quickSuggestions: true
+    quickSuggestions: true,
+    autoClosingBrackets: 'always' as const,
+    autoClosingQuotes: 'always' as const,
+    formatOnType: true,
+    formatOnPaste: true,
+    cursorSmoothCaretAnimation: 'on' as const,
+    smoothScrolling: true,
+    mouseWheelZoom: true
   };
+
+  monacoError: { line: number; message: string } | null = null;
 
   safeDescription: SafeHtml = '';
 
@@ -171,17 +377,36 @@ export class ProblemDetailComponent implements OnInit {
         // 🟢 Fetch Latest Submission to pre-fill editor
         this.studentService.getLatestSubmission(res.id).subscribe({
           next: (subRes) => {
-            if (subRes.success && subRes.data && subRes.data.code) {
+            if (subRes && subRes.success && subRes.data && subRes.data.code) {
               this.studentCode = subRes.data.code;
-              this.detectLanguage(this.studentCode);
+            } else if (res.functionSignature) {
+              this.studentCode = res.functionSignature;
             } else {
-              this.detectLanguage(res.functionSignature || '');
+              this.studentCode = '// Start coding here...';
             }
-            this.isLoading = false;
-            this.cdr.detectChanges();
+
+            this.detectLanguage(this.studentCode);
+
+            // 🟦 Fetch Chat History
+            this.studentService.getChatHistory(res.id).subscribe({
+              next: (chatRes) => {
+                if (chatRes.success && chatRes.data) {
+                  this.chatMessages = chatRes.data;
+                }
+                this.isLoading = false;
+                this.refreshEditorLayout();
+                this.cdr.detectChanges();
+                this.scrollToBottom();
+              },
+              error: () => {
+                this.isLoading = false;
+                this.cdr.detectChanges();
+              }
+            });
           },
           error: () => {
-            this.detectLanguage(res.functionSignature || '');
+            this.studentCode = res.functionSignature || '// Start coding here...';
+            this.detectLanguage(this.studentCode);
             this.isLoading = false;
             this.cdr.detectChanges();
           }
@@ -296,14 +521,24 @@ export class ProblemDetailComponent implements OnInit {
     return value === undefined ? 'N/A' : value;
   }
 
+  copySolution() {
+    if (this.problem?.referenceSolution) {
+      navigator.clipboard.writeText(this.problem.referenceSolution).then(() => {
+        this.showToast('success', 'Solution copied to clipboard!');
+      });
+    }
+  }
+
   runCode() {
     if (!this.problem || !this.studentCode || this.isExecuting) return;
 
     this.isExecuting = true;
     this.executionResult = null;
     this.activeEditorTab = 'result';
+    this.latestGrade = null; // Reset previous grade
     this.cdr.detectChanges();
 
+    // 1. Execute the code
     this.studentService.executeCode(this.problem.id, this.studentCode, this.selectedLanguage).subscribe({
       next: (res) => {
         this.executionResult = res;
@@ -312,10 +547,16 @@ export class ProblemDetailComponent implements OnInit {
 
         if (res.syntaxError) {
           this.showToast('error', 'Compilation Error');
+          this.latestGrade = 'Needs Fix';
         } else if (res.summary?.allPassed) {
           this.showToast('success', 'Test cases passed!');
         } else {
           this.showToast('info', 'Check execution results');
+        }
+
+        // 2. Fetch AI Grading in parallel (if not already asking)
+        if (!this.isAskingAI) {
+          this.getAIGradeOnly();
         }
 
         this.cdr.detectChanges();
@@ -333,6 +574,28 @@ export class ProblemDetailComponent implements OnInit {
     });
   }
 
+  // Silent helper to just get the grade/explanation without opening the full chat panel unless requested
+  private getAIGradeOnly() {
+    if (!this.problem) return;
+    this.isAskingAI = true;
+    this.studentService.getAIFeedback(this.problem.id, this.studentCode, []).subscribe({
+      next: (res) => {
+        const feedback = res.data;
+        this.latestGrade = feedback.grade;
+        this.aiFeedback = {
+          grade: feedback.grade,
+          explanation: feedback.explanation
+        };
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isAskingAI = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   submitCode() {
     if (!this.problem || !this.studentCode || this.isSubmitting || !this.canSubmit) return;
 
@@ -345,10 +608,19 @@ export class ProblemDetailComponent implements OnInit {
         this.isSubmitting = false;
         const result = res.data;
 
+        // Capture Grade from submission
+        if (result.grade) {
+          this.latestGrade = result.grade;
+          this.aiFeedback = {
+            grade: result.grade,
+            explanation: result.explanation
+          };
+        }
+
         if (result.status === 'Accepted') {
           Swal.fire({
             title: 'Accepted!',
-            text: '🎉 Congratulations! Your solution passed all test cases.',
+            text: `🎉 Congratulations! Grade: ${result.grade || 'A'}. Your solution passed all test cases.`,
             icon: 'success',
             confirmButtonColor: '#3b82f6',
             background: '#1e293b',
@@ -359,7 +631,7 @@ export class ProblemDetailComponent implements OnInit {
         } else {
           Swal.fire({
             title: result.status,
-            text: `${result.passedCount} / ${result.totalTests} test cases passed.`,
+            text: `${result.passedCount} / ${result.totalTests} test cases passed. Grade: ${result.grade || 'Needs Fix'}`,
             icon: 'error',
             confirmButtonColor: '#3b82f6',
             background: '#1e293b',
@@ -368,6 +640,7 @@ export class ProblemDetailComponent implements OnInit {
             this.router.navigate(['/student/problems']);
           });
         }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Submission error:', err);
@@ -534,7 +807,91 @@ export class ProblemDetailComponent implements OnInit {
     this.refreshEditorLayout(); // Final refresh when done
   }
 
+  // --- Resizable Chat Panel (horizontal) ---
+  startChatResize(event: MouseEvent) {
+    event.preventDefault();
+    this.isChatResizing = true;
+    this.hResizeStartX = event.clientX;
+    this.hResizeStartWidth = this.chatPanelWidth;
+    document.body.classList.add('resizing-horizontal');
+    document.addEventListener('mousemove', this.boundChatMouseMove);
+    document.addEventListener('mouseup', this.boundChatMouseUp);
+  }
+
+  private onChatResizeMouseMove(event: MouseEvent) {
+    if (!this.isChatResizing) return;
+    const delta = this.hResizeStartX - event.clientX;
+    const newWidthPct = this.hResizeStartWidth + (delta / window.innerWidth) * 100;
+    this.chatPanelWidth = Math.min(Math.max(newWidthPct, 20), 40);
+    this.cdr.detectChanges();
+  }
+
+  private stopChatResize() {
+    this.isChatResizing = false;
+    document.body.classList.remove('resizing-horizontal');
+    document.removeEventListener('mousemove', this.boundChatMouseMove);
+    document.removeEventListener('mouseup', this.boundChatMouseUp);
+    this.refreshEditorLayout();
+  }
+
   onEditorInit(editor: any) {
     this.editorInstance = editor;
+
+    // Listen for model markers (syntax errors)
+    const monaco = (window as any).monaco;
+    if (monaco) {
+      // 1. Mandatory JS Validation
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: false,
+        noSyntaxValidation: false,
+        diagnosticCodesToIgnore: [1108]
+      });
+
+      // 2. Strict Mode Enable (VS Code like - adjusted for JS)
+      monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ES2020,
+        allowNonTsExtensions: true,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        module: monaco.languages.typescript.ModuleKind.CommonJS,
+        checkJs: true,
+        strict: false,
+        noImplicitAny: false,
+      });
+
+      // Clear banner early on change to feel more responsive
+      this.editorInstance.onDidChangeModelContent(() => {
+        if (this.monacoError) {
+          this.monacoError = null;
+          this.cdr.detectChanges();
+        }
+      });
+
+      monaco.editor.onDidChangeMarkers(() => {
+        const model = editor.getModel();
+        if (!model) return;
+
+        const markers = monaco.editor.getModelMarkers({ resource: model.uri });
+        // Sort markers by line number so we always show the FIRST error in the banner
+        const errors = markers
+          .filter((m: any) => m.severity === monaco.MarkerSeverity.Error)
+          .sort((a: any, b: any) => a.startLineNumber - b.startLineNumber);
+
+        if (errors.length > 0) {
+          this.monacoError = {
+            line: errors[0].startLineNumber,
+            message: errors[0].message
+          };
+        } else {
+          this.monacoError = null;
+        }
+        this.cdr.detectChanges();
+      });
+    }
+
+    // Force layout update after init
+    setTimeout(() => {
+      editor.layout();
+      this.cdr.detectChanges();
+    }, 100);
   }
 }

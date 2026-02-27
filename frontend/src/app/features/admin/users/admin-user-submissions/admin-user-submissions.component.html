@@ -54,8 +54,11 @@
                             class="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
                             Difficulty</th>
                         <th
-                            class="px-6 py-4 text-left text-[11px] font-black text text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            class="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
                             Submission Status</th>
+                        <th
+                            class="px-6 py-4 text-left text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
+                            Grade</th>
                         <th
                             class="px-6 py-4 text-center text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] whitespace-nowrap">
                             Action</th>
@@ -85,6 +88,17 @@
                                 [ngClass]="sub.status?.replace(' ', '-').toLowerCase()">
                                 <span class="w-2 h-2 rounded-full dot"></span>
                                 {{ sub.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold border" [ngClass]="{
+                                    'bg-emerald-50 border-emerald-100 text-emerald-600': sub.grade === 'A',
+                                    'bg-blue-50 border-blue-100 text-blue-600': sub.grade === 'B',
+                                    'bg-amber-50 border-amber-100 text-amber-600': sub.grade === 'C',
+                                    'bg-rose-50 border-rose-100 text-rose-600': sub.grade === 'Needs Fix' || sub.grade === 'F',
+                                    'bg-slate-50 border-slate-100 text-slate-500': !sub.grade || sub.grade === 'Pending'
+                                }">
+                                {{ sub.grade || 'Pending' }}
                             </span>
                         </td>
                         <td class="px-6 py-5 text-center">
@@ -146,6 +160,19 @@
                 <h4 class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Problem Description</h4>
                 <div class="text-xs text-slate-400 leading-relaxed font-medium">
                     {{ selectedSubmission.question?.description || 'No description available.' }}
+                </div>
+            </div>
+
+            <!-- AI Feedback Overview -->
+            <div *ngIf="selectedSubmission.aiExplanation" class="px-6 py-4 border-b border-primary/20 bg-primary/5">
+                <div class="flex items-center gap-2 mb-2">
+                    <span
+                        class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary">AI
+                        Grade: {{ selectedSubmission.grade }}</span>
+                    <h4 class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">AI Assessment</h4>
+                </div>
+                <div class="text-[13px] text-slate-300 leading-relaxed italic border-l-2 border-primary/30 pl-4 py-1">
+                    {{ selectedSubmission.aiExplanation }}
                 </div>
             </div>
 

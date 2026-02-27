@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 
 export interface AdminUser {
     _id: string;
+    username?: string;
     name: string;
     email: string;
     role: string;

@@ -195,6 +195,43 @@
     color: #64748b;
 }
 
+/* Grade Badges */
+.grade-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.grade-badge[data-grade="A"] {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border-color: #bbf7d0;
+}
+
+.grade-badge[data-grade="B"] {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+
+.grade-badge[data-grade="C"] {
+    background-color: #fffbeb;
+    color: #d97706;
+    border-color: #fef3c7;
+}
+
+.grade-badge[data-grade="Needs Fix"],
+.grade-badge[data-grade="F"] {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
 .runtime-val,
 .memory-val {
     color: #475569;

@@ -1,6 +1,7 @@
 const submissionRepository = require('../repositories/submission.repository');
 const Question = require('../models/question.model');
 const { executeCode } = require('./codeExecutionEngine');
+const aiService = require('./ai.service');
 const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
@@ -25,30 +26,24 @@ class SubmissionService {
             const execution = await executeCode(code, problem.testCases);
             log(`Execution result: Success=${execution.success}, SyntaxError=${!!execution.syntaxError}`);
             log(`Execution results count: ${execution.results?.length || 0}`);
-            if (execution.results?.length > 0) {
-                log(`First result passed: ${execution.results[0].passed}`);
-            }
 
             const results = execution.results || [];
             const totalTests = results.length;
             const passedCount = results.filter(r => r.passed).length;
 
             // 3. Robust Status Determination
-            let status = 'Pending'; // Default
+            let status = 'Pending';
 
             if (execution.syntaxError) {
                 status = 'Compilation Error';
             } else if (execution.errorType === 'TimeoutError' || (execution.summary && execution.summary.timeoutOccurred)) {
                 status = 'Time Limit Exceeded';
             } else if (totalTests === 0 && !execution.syntaxError) {
-                // If no test cases are defined, we assume it's Accepted (or you could mark as WA/Pending)
-                // For a better UX, we'll mark as Accepted if it executed without crash
                 status = 'Accepted';
             } else if (passedCount === totalTests) {
                 status = 'Accepted';
             } else {
                 status = 'Wrong Answer';
-                // Check for deeper errors
                 const hasRuntimeError = results.some(r => r.error && !r.error.includes('timeout'));
                 const hasTLE = results.some(r => r.error && r.error.includes('timeout'));
                 if (hasRuntimeError) status = 'Runtime Error';
@@ -56,13 +51,25 @@ class SubmissionService {
             }
             log(`Determined Status: ${status}, Passed: ${passedCount}/${totalTests}`);
 
-            // 4. Save Submission
+            // 4. Get AI Feedback (Grade & Explanation)
+            let aiFeedback = { grade: 'Pending', explanation: '', improvementHints: '' };
+            try {
+                aiFeedback = await aiService.getCodeFeedback(code, problem, []);
+                log(`AI Feedback successfully retrieved. Grade: ${aiFeedback.grade}`);
+            } catch (aiErr) {
+                log(`AI Feedback Error (Non-critical): ${aiErr.message}`);
+                // If AI fails, we still proceed with submission
+            }
+
+            // 5. Save Submission
             const submission = await submissionRepository.create({
                 student: studentId,
                 question: questionId,
                 code,
                 language,
                 status,
+                grade: aiFeedback.grade,
+                aiExplanation: aiFeedback.explanation,
                 passedCount,
                 totalTests,
                 runtime: execution.summary?.totalExecutionTime || 0,
@@ -86,6 +93,8 @@ class SubmissionService {
             return {
                 _id: submission._id,
                 status: submission.status,
+                grade: submission.grade,
+                explanation: submission.aiExplanation,
                 passedCount: submission.passedCount,
                 totalTests: submission.totalTests,
                 runtime: submission.runtime,

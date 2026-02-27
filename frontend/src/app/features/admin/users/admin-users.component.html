@@ -43,7 +43,7 @@
                         <th>ROLE</th>
                         <th>STATUS</th>
                         <th>JOINED DATE</th>
-                        <th>ACTION</th>
+                        <th>SOLVED</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -51,10 +51,10 @@
                         <td>
                             <div class="user-info">
                                 <div class="avatar-circle">
-                                    {{ getInitials(user.name) }}
+                                    {{ getInitials(user) }}
                                 </div>
                                 <div class="user-details">
-                                    <span class="user-name">{{ user.name }}</span>
+                                    <span class="user-name">{{ user.name || user.username }}</span>
                                     <span class="user-email">{{ user.email }}</span>
                                 </div>
                             </div>
@@ -75,7 +75,7 @@
                             <span class="date-text">{{ user.createdAt | date:'dd-MMM-yyyy' }}</span>
                         </td>
                         <td>
-                            <button class="btn-view" (click)="viewUser(user._id)">View Details</button>
+                            <span class="count-badge">{{ user.submissionCount || 0 }}</span>
                         </td>
                     </tr>
 

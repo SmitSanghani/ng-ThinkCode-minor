@@ -97,9 +97,10 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
         this.router.navigate(['/admin/users', userId]);
     }
 
-    getInitials(name: string): string {
-        if (!name) return '??';
-        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    getInitials(user: any): string {
+        const displayName = user.name || user.username || user.email;
+        if (!displayName) return '??';
+        return displayName.split(' ').filter((n: string) => n).map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
     }
 
     trackByUserId(index: number, user: AdminUser): string {

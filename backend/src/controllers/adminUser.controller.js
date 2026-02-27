@@ -28,12 +28,16 @@ exports.getUsers = async (req, res, next) => {
             .skip(skip)
             .limit(limit);
 
-        // Enhance users with submission count
+        // Enhance users with solved questions count
         const usersWithSubmissions = await Promise.all(users.map(async (user) => {
-            const submissionCount = await Submission.countDocuments({ student: user._id });
+            const solvedCount = await Submission.distinct('question', {
+                student: user._id,
+                status: 'Accepted'
+            });
+
             return {
                 ...user.toObject(),
-                submissionCount
+                submissionCount: solvedCount.length
             };
         }));
 

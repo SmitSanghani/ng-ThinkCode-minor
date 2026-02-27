@@ -21,6 +21,7 @@ export interface ProblemDetail extends Problem {
     sampleTestCases: any[];
     testCases?: any[];
     functionSignature: string;
+    referenceSolution?: string;
     index?: number;
 }
 
@@ -72,6 +73,14 @@ export class StudentService {
 
     submitSolution(questionId: string, code: string): Observable<any> {
         return this.http.post<any>(`/api/submissions/submit`, { questionId, code });
+    }
+
+    getAIFeedback(problemId: string, code: string, history: any[] = []): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/ai-feedback`, { problemId, code, history });
+    }
+
+    getChatHistory(problemId: string): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/ai-feedback/history/${problemId}`);
     }
 
     getLatestSubmission(questionId: string): Observable<any> {

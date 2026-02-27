@@ -125,7 +125,8 @@ class StudentController {
                 constraints: q.constraints,
                 sampleTestCases: sampleTestCases,
                 testCases: q.testCases, // Forward all to frontend as a backup
-                functionSignature: q.functionSignature
+                functionSignature: q.functionSignature,
+                referenceSolution: q.referenceSolution
             };
 
             responseHandler(res, 200, true, problemData);

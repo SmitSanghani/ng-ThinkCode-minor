@@ -63,12 +63,16 @@ class CodeExecutionController {
 
             // Handle Syntax Errors (Requirement 5)
             if (execution.syntaxError) {
+                const codeLines = code.split('\n');
+                const faultyLine = execution.line ? codeLines[execution.line - 1] : null;
+
                 return res.status(200).json({
                     success: true,
                     errorType: execution.errorType,
                     message: execution.message,
                     line: execution.line,
-                    column: execution.column
+                    column: execution.column,
+                    codeLine: faultyLine
                 });
             }
 
