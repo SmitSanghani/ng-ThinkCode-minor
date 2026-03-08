@@ -35,20 +35,20 @@ app.use(xss());
 app.use(hpp());
 
 // Middlewares
-const allowedOrigins = [
-    'http://localhost:4200',
-    process.env.FRONTEND_URL  // Set this to Vercel URL on Render e.g. https://thinkcode.vercel.app
-].filter(Boolean);
-
+// CORS Middleware Configuration
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, Postman)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        callback(new Error(`CORS: Origin ${origin} not allowed`));
-    },
+    origin: [
+        "https://ng-think-code-minor.vercel.app",
+        "http://localhost:4200",
+        process.env.FRONTEND_URL
+    ].filter(Boolean),
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
 }));
+
+// Handle preflight requests
+app.options("*", cors());
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
 
