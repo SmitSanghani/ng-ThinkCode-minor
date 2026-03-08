@@ -44,6 +44,7 @@
                         <th>STATUS</th>
                         <th>JOINED DATE</th>
                         <th>SOLVED</th>
+                        <th>ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,10 +85,24 @@
                         <td>
                             <span class="count-badge">{{ user.submissionCount || 0 }}</span>
                         </td>
+                        <td class="actions-cell">
+                            <div class="action-buttons">
+                                <button class="btn-icon btn-chat" (click)="openDirectChat(user)" title="Chat">
+                                    <i class="bi bi-chat-dots"></i>
+                                    <span *ngIf="chatService.unreadCount() > 0" class="unread-badge"></span>
+                                </button>
+                                <button class="btn-interview" (click)="startInterview(user)"
+                                    [disabled]="isCreatingInterview === user._id">
+                                    <i class="bi bi-camera-video"></i>
+                                    <span *ngIf="isCreatingInterview !== user._id">Start Interview</span>
+                                    <span *ngIf="isCreatingInterview === user._id">Creating...</span>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
 
                     <tr *ngIf="users.length === 0 && !(loading$ | async)">
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
                             No users found matching your criteria.
                         </td>
                     </tr>

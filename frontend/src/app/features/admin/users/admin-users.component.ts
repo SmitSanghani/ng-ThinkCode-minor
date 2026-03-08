@@ -4,7 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { AdminUserService, AdminUser } from '../../../core/services/admin-user.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import Swal from 'sweetalert2';
 import { SocketService } from '../../../core/services/socket.service';
+import { ChatStateService } from '../../../core/services/chat-state.service';
 
 @Component({
     selector: 'app-admin-users',
@@ -17,7 +21,9 @@ import { SocketService } from '../../../core/services/socket.service';
 export class AdminUsersComponent implements OnInit, OnDestroy {
     private adminUserService = inject(AdminUserService);
     private socketService = inject(SocketService);
+    public chatService = inject(ChatStateService);
     private router = inject(Router);
+    private http = inject(HttpClient);
     private cdr = inject(ChangeDetectorRef);
     private destroy$ = new Subject<void>();
     private searchSubject = new Subject<string>();
@@ -32,6 +38,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     // Filters
     searchTerm = '';
     statusFilter = '';
+    isCreatingInterview: string | null = null;
 
     // Service Observables
     loading$ = this.adminUserService.loading$;
@@ -108,6 +115,49 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     viewUser(userId: string): void {
         this.router.navigate(['/admin/users', userId]);
     }
+
+    openDirectChat(user: AdminUser): void {
+        this.chatService.toggleChat({
+            id: user._id,
+            name: user.name || user.username || 'User'
+        });
+    }
+
+    startInterview(user: AdminUser): void {
+        if (!user || this.isCreatingInterview) return;
+        this.isCreatingInterview = user._id;
+        this.cdr.markForCheck();
+
+        this.http.post<any>(`${environment.apiUrl}/interview/create`, { candidateId: user._id }).subscribe({
+            next: (res) => {
+                this.isCreatingInterview = null;
+                this.cdr.markForCheck();
+
+                // Show a quick success toast rather than a blocking dialog if navigating
+                Swal.fire({
+                    title: 'Interview Ready!',
+                    text: `Invite sent to ${user.name}. Entering the room now...`,
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                // Auto-open chat with this user (for record/future)
+                this.openDirectChat(user);
+
+                // REDIRECT ADMIN IMMEDIATELY
+                if (res.link) {
+                    this.router.navigateByUrl(res.link);
+                }
+            },
+            error: (err) => {
+                this.isCreatingInterview = null;
+                this.cdr.markForCheck();
+                Swal.fire('Error', err.error?.message || 'Failed to create interview', 'error');
+            }
+        });
+    }
+
 
     getInitials(user: any): string {
         const displayName = user.name || user.username || user.email;

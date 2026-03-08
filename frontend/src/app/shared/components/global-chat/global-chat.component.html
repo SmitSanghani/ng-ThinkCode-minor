@@ -1,0 +1,53 @@
+<div class="global-chat-container" *ngIf="isOpen() && activeRecipient()">
+    <div class="chat-header">
+        <div class="chat-title" [title]="'ID: ' + activeRecipient()?.id">
+            <i class="bi bi-chat-dots-fill"></i> Chat with {{ activeRecipient()?.name }}
+        </div>
+        <button class="close-btn" (click)="toggleChat()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="chat-body" #scrollMe [scrollTop]="scrollMe.scrollHeight">
+        <div class="empty-state" *ngIf="filteredMessages().length === 0">
+            <i class="bi bi-chat-square-text"></i>
+            <p>No messages with {{ activeRecipient()?.name }} yet.</p>
+        </div>
+
+        <div class="message-wrapper" *ngFor="let msg of filteredMessages()"
+            [ngClass]="{'own-message': msg.sender === 'You'}">
+            <div class="message-bubble" [ngClass]="{'invite-bubble': msg.isInvite}">
+                <div class="msg-header">
+                    <span class="sender">{{ msg.sender }}</span>
+                    <span class="time">{{ msg.timestamp | date:'shortTime' }}</span>
+                </div>
+                <div class="msg-content">
+                    <div class="msg-text">{{ msg.text }}</div>
+
+                    <!-- Invite Actions (Join/Reject) -->
+                    <div class="invite-card" *ngIf="msg.isInvite">
+                        <p class="invite-hint">Please join the interview room.</p>
+                        <div class="invite-actions">
+                            <button class="btn-join" (click)="joinMeeting(msg.meetingLink!)">
+                                <i class="bi bi-camera-video"></i> Accept & Join
+                            </button>
+                            <button class="btn-reject" (click)="rejectInvite()">
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-footer">
+        <div class="input-row">
+            <input type="text" [(ngModel)]="inputText" (keyup.enter)="sendMessage()"
+                [placeholder]="'Message ' + activeRecipient()?.name + '...'" class="chat-input">
+            <button class="send-btn" (click)="sendMessage()" [disabled]="!inputText.trim()">
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </div>
+</div>

@@ -24,15 +24,17 @@ export class SocketService {
         });
     }
 
-    private connect() {
+    public connect() {
         if (this.socket?.connected) return;
 
         const token = sessionStorage.getItem('accessToken');
         if (!token) return;
 
         const socketUrl = environment.apiUrl.replace('/api', '');
+        console.log('Connecting to socket at:', socketUrl);
         this.socket = io(socketUrl, {
-            auth: { token }
+            auth: { token },
+            transports: ['websocket', 'polling'] // Ensure fallback
         });
 
         this.socket.on('connect', () => {
@@ -46,9 +48,13 @@ export class SocketService {
         this.socket.on('disconnect', () => {
             console.log('Disconnected from Realtime Server');
         });
+
+        this.socket.on('connect_error', (err) => {
+            console.error('Socket Connection Error:', err);
+        });
     }
 
-    private disconnect() {
+    public disconnect() {
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
@@ -57,7 +63,31 @@ export class SocketService {
 
     on(event: string): Observable<any> {
         return new Observable(observer => {
-            this.socket?.on(event, (data) => observer.next(data));
+            if (!this.socket) {
+                // If not connected yet, periodically check or just wait
+                const interval = setInterval(() => {
+                    if (this.socket) {
+                        this.socket.on(event, (data) => observer.next(data));
+                        clearInterval(interval);
+                    }
+                }, 100);
+                return () => clearInterval(interval);
+            }
+            this.socket.on(event, (data) => observer.next(data));
+            return () => this.socket?.off(event);
         });
     }
+
+    emit(event: string, data: any) {
+        if (this.socket) {
+            this.socket.emit(event, data);
+        } else {
+            console.warn(`Attempted to emit ${event} before socket was ready`);
+        }
+    }
+
+    getSocket(): Socket | null {
+        return this.socket;
+    }
 }
+

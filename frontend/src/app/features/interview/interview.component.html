@@ -1,0 +1,112 @@
+<div class="interview-container">
+    <div *ngIf="isLoading()" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Joining Interview Room...</p>
+    </div>
+
+    <div *ngIf="error() && !isLoading()" class="error-slate">
+        <h2><i class="bi bi-exclamation-triangle-fill"></i> Access Denied</h2>
+        <p>{{ error() }}</p>
+        <button (click)="router.navigate(['/'])" class="btn btn-primary mt-4">Return Home</button>
+    </div>
+
+    <div *ngIf="!isLoading() && !error()" class="interview-layout">
+        <div class="workspace-area">
+            <!-- Left: Video Panel (Face) -->
+            <div class="video-workspace">
+                <div class="videos-grid">
+                    <!-- Local Video -->
+                    <div class="video-card local">
+                        <video #localVideo autoplay muted playsinline></video>
+                        <div class="video-overlay">
+                            <div class="user-info">
+                                <span class="status-dot" [class.active]="isAudioActive"></span>
+                                <span class="name">You</span>
+                                <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
+                                    authService.currentUser()?.id) ? 'Host' : 'Guest' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remote Video -->
+                    <div class="video-card remote" *ngIf="hasRemoteVideo">
+                        <video #remoteVideo autoplay playsinline></video>
+                        <div class="video-overlay">
+                            <div class="user-info">
+                                <span class="status-dot active"></span>
+                                <span class="name">{{ (interviewDetails?.interviewerId?._id ===
+                                    authService.currentUser()?.id) ? (interviewDetails?.candidateId?.username ||
+                                    'Candidate') : (interviewDetails?.interviewerId?.username || 'Interviewer')
+                                    }}</span>
+                                <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
+                                    authService.currentUser()?.id) ? 'Guest' : 'Host' }}</span>
+                            </div>
+                            <span class="live-badge"><i class="bi bi-record-circle-fill"></i> LIVE</span>
+                        </div>
+                    </div>
+
+                    <!-- Remote Waiting State -->
+                    <div class="video-card remote waiting" *ngIf="!hasRemoteVideo">
+                        <div class="pulse-icon">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                        <p>Waiting for {{ (interviewDetails?.interviewerId?._id === authService.currentUser()?.id) ?
+                            'Candidate' : 'Interviewer' }}...</p>
+                    </div>
+                </div>
+
+                <!-- Floating Controls -->
+                <div class="floating-controls">
+                    <button class="btn-ctrl" (click)="toggleAudio()" [class.off]="!isAudioActive">
+                        <i class="bi" [ngClass]="isAudioActive ? 'bi-mic-fill' : 'bi-mic-mute-fill'"></i>
+                    </button>
+                    <button class="btn-ctrl" (click)="toggleVideo()" [class.off]="!isVideoActive">
+                        <i class="bi"
+                            [ngClass]="isVideoActive ? 'bi-camera-video-fill' : 'bi-camera-video-off-fill'"></i>
+                    </button>
+                    <button class="btn-ctrl" (click)="toggleScreenShare()" [class.active]="isSharingScreen">
+                        <i class="bi bi-display"></i>
+                    </button>
+                    <div class="divider"></div>
+                    <button class="btn-ctrl leave" (click)="leaveMeeting()">
+                        <i class="bi bi-telephone-x-fill"></i>
+                        <span>LEAVE</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Collaborative Sidebar (Chat Only) -->
+            <div class="side-panel">
+                <!-- Integrated Chat Tab -->
+                <div class="panel-section chat">
+                    <div class="section-badge"><i class="bi bi-chat-fill"></i> Discussion</div>
+                    <div class="chat-viewport" #chatContainer>
+                        <div *ngFor="let msg of chatMessages" class="chat-msg"
+                            [class.me]="msg.sender === authService.currentUser()?.username">
+                            <div class="bubble">
+                                <div class="meta">
+                                    <span class="author">{{ msg.sender }}</span>
+                                    <span class="time">{{ msg.timestamp | date:'HH:mm' }}</span>
+                                </div>
+                                <div class="text">{{ msg.text }}</div>
+                            </div>
+                        </div>
+                        <div class="empty-state" *ngIf="chatMessages.length === 0">No messages yet...</div>
+                    </div>
+                    <div class="chat-composer">
+                        <div class="reply-preview" *ngIf="replyingToMessage">
+                            <span>Replying to <b>{{replyingToMessage.sender}}</b></span>
+                            <i class="bi bi-x" (click)="cancelReply()"></i>
+                        </div>
+                        <div class="input-wrap">
+                            <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()"
+                                placeholder="Type to discuss...">
+                            <button (click)="sendMessage()" [disabled]="!newMessage.trim()"><i
+                                    class="bi bi-send"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

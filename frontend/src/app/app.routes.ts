@@ -38,6 +38,11 @@ export const routes: Routes = [
         component: StudentHomeComponent
     },
     {
+        path: 'interview/:roomId',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/interview/interview.component').then(m => m.InterviewComponent)
+    },
+    {
         path: 'student',
         canActivate: [authGuard],
         children: [

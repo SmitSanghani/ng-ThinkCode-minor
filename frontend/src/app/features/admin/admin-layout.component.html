@@ -2,7 +2,7 @@
     <!-- Sidebar -->
     <aside class="w-[260px] bg-[#1E2532] text-slate-400 flex flex-col transition-all duration-300 relative z-40">
         <!-- Logo Area -->
-        <div class="h-20 flex items-center px-6 mb-4">
+        <div class="h-20 flex items-center px-6 mb-4 cursor-pointer hover:opacity-80 transition-opacity" routerLink="/">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                     <span class="text-white font-bold text-xl">T</span>
@@ -98,6 +98,25 @@
             </div>
 
             <div class="flex items-center gap-6">
+                <!-- Dashboard Quick Link -->
+                <a *ngIf="user()?.role === 'admin'" routerLink="/admin/dashboard"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-[13px] font-semibold border border-slate-200">
+                    <i class="bi bi-grid-fill"></i>
+                    Dashboard
+                </a>
+
+                <!-- Global Chat Icon -->
+                <div class="chat-icon-wrapper" (click)="toggleChat()"
+                    style="color: #64748b; border: none; background: transparent; margin: 0; padding: 0; width: auto; height: auto;">
+                    <i class="bi bi-chat-dots-fill text-xl hover:text-slate-900 transition-colors relative">
+                        <span
+                            class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold min-w-[15px] h-[15px] rounded-full flex items-center justify-center border-2 border-white"
+                            *ngIf="unreadCount() > 0">
+                            {{ unreadCount() }}
+                        </span>
+                    </i>
+                </div>
+
                 <!-- Profile -->
                 <div class="flex items-center gap-3">
                     <div class="text-right hidden sm:block">
@@ -122,4 +141,5 @@
             </div>
         </main>
     </div>
+    <app-global-chat></app-global-chat>
 </div>

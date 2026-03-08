@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
+import { ChatStateService } from '../../../core/services/chat-state.service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,10 +15,16 @@ import { User } from '../../../core/models/user.model';
 export class NavbarComponent {
   private authService = inject(AuthService);
   private el = inject(ElementRef);
+  private chatService = inject(ChatStateService);
 
   user: Signal<User | null> = this.authService.currentUser as Signal<User | null>;
+  unreadCount = this.chatService.unreadCount;
   showDropdown = false;
   isScrolled = false;
+
+  toggleChat() {
+    this.chatService.toggleChat();
+  }
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {

@@ -22,11 +22,25 @@
 
         <!-- Utility Section -->
         <div class="utility-section">
-            <!-- Search Bar -->
-            <div class="search-wrapper d-none d-md-flex">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" placeholder="Search" class="search-input">
-                <span class="search-shortcut">⌘K</span>
+            <div class="flex items-center gap-6">
+                <!-- Search Bar -->
+                <div class="search-wrapper d-none d-md-flex">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search" class="search-input">
+                    <span class="search-shortcut">⌘K</span>
+                </div>
+                <!-- Dashboard Quick Link -->
+                <a *ngIf="user()?.role === 'admin'" routerLink="/admin/dashboard"
+                    class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-[13px] font-semibold border border-slate-200">
+                    <i class="bi bi-grid-fill"></i>
+                    Dashboard
+                </a>
+
+                <!-- Global Chat Icon -->
+                <div class="chat-icon-wrapper" (click)="toggleChat()">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span class="unread-badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
+                </div>
             </div>
 
             <!-- User Actions -->
@@ -52,6 +66,12 @@
                             <a class="dropdown-item" routerLink="/settings">
                                 <i class="bi bi-gear me-2"></i> Settings
                             </a>
+                            <ng-container *ngIf="user()?.role === 'admin'">
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item admin-link" routerLink="/admin/dashboard">
+                                    <i class="bi bi-shield-lock me-2"></i> Admin Panel
+                                </a>
+                            </ng-container>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item logout" (click)="logout()">
                                 <i class="bi bi-box-arrow-right me-2"></i> Logout
