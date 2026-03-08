@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import Swal from 'sweetalert2';
 
@@ -43,7 +44,7 @@ export class PlansComponent implements OnInit {
 
         if (plan === 'Free') {
             // No payment, just activate Free plan
-            this.http.post<any>('/api/payment/select-free', {}).subscribe({
+            this.http.post<any>(`${environment.apiUrl}/payment/select-free`, {}).subscribe({
                 next: (res) => {
                     if (res.success && res.user) {
                         this.authService.currentUser.set(res.user);
@@ -66,7 +67,7 @@ export class PlansComponent implements OnInit {
             });
         } else {
             // Premium — redirect to Stripe Checkout
-            this.http.post<any>('/api/payment/create-checkout-session', {}).subscribe({
+            this.http.post<any>(`${environment.apiUrl}/payment/create-checkout-session`, {}).subscribe({
                 next: (res) => {
                     if (res.success && res.url) {
                         // Redirect to Stripe hosted checkout page
@@ -85,7 +86,7 @@ export class PlansComponent implements OnInit {
     private verifyPayment(sessionId: string) {
         this.isProcessing = true;
 
-        this.http.post<any>('/api/payment/verify', { sessionId }).subscribe({
+        this.http.post<any>(`${environment.apiUrl}/payment/verify`, { sessionId }).subscribe({
             next: (res) => {
                 if (res.success && res.user) {
                     this.authService.currentUser.set(res.user);

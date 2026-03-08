@@ -42,7 +42,7 @@ export interface ProblemsResponse {
 })
 export class StudentService {
     private http = inject(HttpClient);
-    private apiUrl = '/api/student';
+    private apiUrl = `${environment.apiUrl}/student`;
 
     getProblems(page: number = 1, limit: number = 12, filters: any = {}): Observable<ProblemsResponse> {
         let params = new HttpParams()
@@ -72,17 +72,17 @@ export class StudentService {
     }
 
     submitSolution(questionId: string, code: string): Observable<any> {
-        return this.http.post<any>(`/api/submissions/submit`, { questionId, code });
+        return this.http.post<any>(`${environment.apiUrl}/submissions/submit`, { questionId, code });
     }
 
 
 
     getLatestSubmission(questionId: string): Observable<any> {
-        return this.http.get<any>(`/api/submissions/latest/${questionId}`);
+        return this.http.get<any>(`${environment.apiUrl}/submissions/latest/${questionId}`);
     }
 
     getMySubmissions(): Observable<any> {
-        return this.http.get<any>(`/api/submissions/my`);
+        return this.http.get<any>(`${environment.apiUrl}/submissions/my`);
     }
 
     // --- Favorite System ---

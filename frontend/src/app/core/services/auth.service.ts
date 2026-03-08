@@ -19,7 +19,7 @@ export interface AuthResponse {
     providedIn: 'root'
 })
 export class AuthService {
-    private apiUrl = '/api/auth';
+    private apiUrl = `${environment.apiUrl}/auth`;
 
     currentUser: WritableSignal<User | null> = signal<User | null>(null);
     isAuthenticated: WritableSignal<boolean> = signal<boolean>(false);
