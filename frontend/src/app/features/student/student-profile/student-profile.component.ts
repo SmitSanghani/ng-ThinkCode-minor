@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 
 @Component({
@@ -34,7 +35,7 @@ export class StudentProfileComponent implements OnInit {
 
     loadProfile() {
         this.isLoading = true;
-        this.http.get<any>('/api/student/profile').subscribe({
+        this.http.get<any>(`${environment.apiUrl}/student/profile`).subscribe({
             next: (res) => {
                 if (res.success && res.data) {
                     this.profileData = res.data;

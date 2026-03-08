@@ -42,7 +42,7 @@ export interface QuestionsResponse {
 export class QuestionService {
     private http = inject(HttpClient);
     private authService = inject(AuthService);
-    private apiUrl = '/api/admin/questions';
+    private apiUrl = `${environment.apiUrl}/admin/questions`;
 
     // State
     private _questions = new BehaviorSubject<Question[]>([]);

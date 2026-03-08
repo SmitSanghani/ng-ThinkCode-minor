@@ -51,7 +51,7 @@ export interface QuestionsResponse {
 })
 export class AdminService {
     private http = inject(HttpClient);
-    private apiUrl = '/api/admin/questions';
+    private apiUrl = `${environment.apiUrl}/admin/questions`;
 
     private _refreshNeeded$ = new Subject<void>();
 
