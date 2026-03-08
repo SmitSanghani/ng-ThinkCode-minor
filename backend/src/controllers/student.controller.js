@@ -163,6 +163,93 @@ class StudentController {
             next(err);
         }
     }
+
+    /**
+     * GET /api/student/profile
+     * Returns user plan, stats, and solved questions with grades
+     */
+    async getProfile(req, res, next) {
+        try {
+            const userId = req.user._id;
+            const user = req.user;
+
+            // Fetch submissions (only needed fields)
+            const submissions = await Submission.find({ student: userId })
+                .select('question status grade passedCount totalTests submittedAt')
+                .populate('question', 'title difficulty category')
+                .sort({ submittedAt: -1 })
+                .lean();
+
+            // Build per-question best result (only keep best per question)
+            const questionMap = {};
+            submissions.forEach(sub => {
+                const qId = sub.question?._id?.toString();
+                if (!qId) return;
+
+                const existing = questionMap[qId];
+                const isAccepted = sub.status === 'Accepted';
+
+                if (!existing || (isAccepted && existing.status !== 'Accepted')) {
+                    questionMap[qId] = {
+                        questionId: qId,
+                        title: sub.question.title,
+                        difficulty: sub.question.difficulty,
+                        category: sub.question.category,
+                        status: sub.status,
+                        grade: sub.grade || 'Pending',
+                        submittedAt: sub.submittedAt,
+                        passedCount: sub.passedCount,
+                        totalTests: sub.totalTests
+                    };
+                }
+            });
+
+            const solvedQuestions = Object.values(questionMap);
+
+            // Stats
+            const totalSolved = solvedQuestions.filter(q => q.status === 'Accepted').length;
+            const totalAttempted = solvedQuestions.length;
+
+            // Grade distribution
+            const gradeDistribution = { A: 0, B: 0, C: 0, D: 0, E: 0, Pending: 0 };
+            solvedQuestions.forEach(q => {
+                const g = q.grade || 'Pending';
+                if (gradeDistribution.hasOwnProperty(g)) {
+                    gradeDistribution[g]++;
+                }
+            });
+
+            // Difficulty breakdown
+            const difficultyBreakdown = { Easy: 0, Medium: 0, Hard: 0 };
+            solvedQuestions.filter(q => q.status === 'Accepted').forEach(q => {
+                if (difficultyBreakdown.hasOwnProperty(q.difficulty)) {
+                    difficultyBreakdown[q.difficulty]++;
+                }
+            });
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    user: {
+                        id: user._id,
+                        username: user.username,
+                        email: user.email,
+                        plan: user.plan || 'Free',
+                        createdAt: user.createdAt
+                    },
+                    stats: {
+                        totalSolved,
+                        totalAttempted,
+                        gradeDistribution,
+                        difficultyBreakdown
+                    },
+                    solvedQuestions
+                }
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 module.exports = new StudentController();

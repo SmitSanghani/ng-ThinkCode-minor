@@ -19,16 +19,37 @@ class AuthService {
 
         const hashedPassword = await hashPassword(password);
 
+        // Create user — isEmailVerified: true so they can login right away
         const user = await userRepository.create({
             username,
             email,
-            passwordHash: hashedPassword
+            passwordHash: hashedPassword,
+            isEmailVerified: true
         });
 
-        const verificationToken = user.getEmailVerificationToken();
-        await user.save();
+        // Auto-login after registration
+        const accessToken = generateAccessToken(user);
+        const refreshTokenHash = crypto.randomBytes(40).toString('hex');
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-        return { user, verificationToken };
+        await authRepository.createRefreshToken({
+            userId: user._id,
+            tokenHash: refreshTokenHash,
+            expiresAt,
+            ipAddress: userData.ipAddress || 'unknown'
+        });
+
+        return {
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                plan: user.plan
+            },
+            accessToken,
+            refreshToken: refreshTokenHash
+        };
     }
 
     async login(email, password, ipAddress) {
@@ -65,7 +86,8 @@ class AuthService {
                 id: user._id,
                 username: user.username,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                plan: user.plan || 'Free'
             },
             accessToken,
             refreshToken: refreshTokenHash
@@ -96,7 +118,7 @@ class AuthService {
         }
 
         const accessToken = generateAccessToken(user);
-        return { accessToken, user };
+        return { accessToken, refreshToken: tokenHash, user };
     }
 
     async getMe(userId) {
@@ -108,7 +130,8 @@ class AuthService {
             id: user._id,
             username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role,
+            plan: user.plan || 'Free'
         };
     }
 }

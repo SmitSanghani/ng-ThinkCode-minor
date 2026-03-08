@@ -75,16 +75,14 @@ export class StudentService {
         return this.http.post<any>(`/api/submissions/submit`, { questionId, code });
     }
 
-    getAIFeedback(problemId: string, code: string, history: any[] = []): Observable<any> {
-        return this.http.post<any>(`${this.apiUrl}/ai-feedback`, { problemId, code, history });
-    }
 
-    getChatHistory(problemId: string): Observable<any> {
-        return this.http.get<any>(`${this.apiUrl}/ai-feedback/history/${problemId}`);
-    }
 
     getLatestSubmission(questionId: string): Observable<any> {
         return this.http.get<any>(`/api/submissions/latest/${questionId}`);
+    }
+
+    getMySubmissions(): Observable<any> {
+        return this.http.get<any>(`/api/submissions/my`);
     }
 
     // --- Favorite System ---

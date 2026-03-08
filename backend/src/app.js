@@ -12,6 +12,7 @@ const submissionRoutes = require('./routes/submission.routes');
 const adminRoutes = require('./routes/admin.routes');
 const studentRoutes = require('./routes/student.routes');
 const adminUserRoutes = require('./routes/adminUser.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const { protect, authorize } = require('./middleware/auth.middleware');
 const submissionController = require('./controllers/submission.controller');
 
@@ -48,6 +49,7 @@ app.use('/api/admin/questions', adminRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.get('/api/admin/user-submissions/:userId', protect, authorize('admin'), submissionController.getUserSubmissions);
 app.use('/api/student', studentRoutes);
+app.use('/api/payment', paymentRoutes);
 
 app.get('/', (req, res) => {
     res.send('ThinkCode API is running...');

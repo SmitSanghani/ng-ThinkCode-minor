@@ -43,6 +43,8 @@ export const routes: Routes = [
         path: 'student',
         canActivate: [authGuard],
         children: [
+            { path: 'plans', loadComponent: () => import('./features/student/plans/plans.component').then(m => m.PlansComponent) },
+            { path: 'profile', loadComponent: () => import('./features/student/student-profile/student-profile.component').then(m => m.StudentProfileComponent) },
             { path: 'problems', component: ProblemsListComponent },
             { path: 'favorites', component: ProblemsListComponent },
             { path: 'problems/:id', component: ProblemDetailComponent },

@@ -14,5 +14,8 @@ module.exports = {
     SMTP_PASSWORD: process.env.SMTP_PASSWORD,
     FROM_EMAIL: process.env.FROM_EMAIL,
     FROM_NAME: process.env.FROM_NAME,
-    NODE_ENV: process.env.NODE_ENV || 'development'
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:4200'
 };

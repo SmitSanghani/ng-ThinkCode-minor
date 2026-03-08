@@ -1,0 +1,436 @@
+/* ═══════════════════════════════════════════
+   PLANS PAGE — Compact & Premium CSS
+   ═══════════════════════════════════════════ */
+
+.plans-page {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #fff;
+}
+
+/* ── Plans Container ─────────────────────── */
+.plans-container {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+    padding: 48px 16px 40px;
+}
+
+.plans-inner {
+    max-width: 780px;
+    margin: 0 auto;
+}
+
+.plans-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.plans-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0 0 8px;
+    background: linear-gradient(to right, #1e293b, #334155);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.plans-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ── Grid ─────────────────────────────────── */
+.plans-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+/* ── Card Base ────────────────────────────── */
+.plan-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.35s cubic-bezier(.4, 0, .2, 1), box-shadow 0.35s ease;
+    overflow: hidden;
+}
+
+.plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Premium Highlight ────────────────────── */
+.premium-card {
+    border: 2px solid #2563eb;
+    position: relative;
+}
+
+.premium-card:hover {
+    box-shadow: 0 12px 32px rgba(37, 99, 235, 0.15);
+}
+
+/* ── Card Top ─────────────────────────────── */
+.card-top {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.premium-card .card-top {
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+/* ── Badge ────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.badge-starter {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.badge-popular {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+/* ── Plan Name ────────────────────────────── */
+.plan-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px;
+}
+
+/* ── Price ─────────────────────────────────── */
+.price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.price {
+    font-size: 36px;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.price.text-blue {
+    color: #2563eb;
+}
+
+.price-period {
+    font-size: 14px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.plan-desc {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ── Features ─────────────────────────────── */
+.card-features {
+    padding: 16px 24px;
+    flex-grow: 1;
+}
+
+.card-features ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+}
+
+.feature-item.disabled {
+    opacity: 0.45;
+}
+
+.text-green {
+    color: #10b981;
+    font-size: 14px;
+}
+
+.text-muted {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.text-blue-icon {
+    color: #2563eb;
+    font-size: 14px;
+}
+
+/* ── Card Action ──────────────────────────── */
+.card-action {
+    padding: 0 24px 20px;
+}
+
+.btn-plan {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s ease;
+}
+
+.btn-free {
+    background: #fff;
+    color: #334155;
+    border: 1.5px solid #e2e8f0;
+}
+
+.btn-free:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.btn-premium {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.btn-premium:hover {
+    background: #1d4ed8;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+/* ═══════════════════════════════════════════
+   CTA SECTION
+   ═══════════════════════════════════════════ */
+.cta-section {
+    background: #111827;
+    color: #fff;
+    text-align: center;
+    padding: 52px 24px 44px;
+}
+
+.cta-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 10px;
+    letter-spacing: -0.3px;
+}
+
+.cta-desc {
+    font-size: 14px;
+    color: #94a3b8;
+    max-width: 420px;
+    margin: 0 auto 24px;
+    line-height: 1.5;
+}
+
+.cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.btn-cta-primary {
+    padding: 10px 28px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.btn-cta-primary:hover {
+    background: #1d4ed8;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+}
+
+.btn-cta-secondary {
+    padding: 10px 28px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    background: transparent;
+    color: #fff;
+    border: 1.5px solid #374151;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.btn-cta-secondary:hover {
+    background: #1f2937;
+    border-color: #4b5563;
+}
+
+.cta-trust {
+    font-size: 11px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════ */
+.site-footer {
+    background: #fff;
+    border-top: 1px solid #f1f5f9;
+    padding: 20px 24px;
+}
+
+.footer-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-logo .logo-square {
+    width: 28px;
+    height: 28px;
+    background: #1e293b;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-logo .logo-square span {
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.footer-logo .brand-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.footer-copy {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.footer-socials {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.footer-socials a {
+    color: #94a3b8;
+    font-size: 16px;
+    transition: color 0.2s ease;
+    text-decoration: none;
+}
+
+.footer-socials a:hover {
+    color: #1e293b;
+}
+
+/* ═══════════════════════════════════════════
+   LOADING / SPINNER
+   ═══════════════════════════════════════════ */
+.spin {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-plan:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .plans-title {
+        font-size: 22px;
+    }
+
+    .price {
+        font-size: 28px;
+    }
+
+    .footer-inner {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+}

@@ -49,11 +49,10 @@
         </header>
 
         <!-- CONTENT BODY (Flexible) -->
-        <main class="page-body" [class.three-column]="isThreeColumn">
+        <main class="page-body">
 
             <!-- LEFT PANEL: Description -->
-            <section class="left-panel"
-                [style.width.%]="leftCollapsed ? null : (isThreeColumn ? leftPanelWidth : (rightCollapsed ? 100 : leftPanelWidth))"
+            <section class="left-panel" [style.width.%]="leftCollapsed ? null : (rightCollapsed ? 100 : leftPanelWidth)"
                 [class.collapsed]="leftCollapsed" [class.full-width]="rightCollapsed">
 
                 <!-- Problem title row with collapse buttons -->
@@ -114,6 +113,8 @@
                                 class="flex items-center gap-1.5 text-[#0de84b] text-[12px] font-bold">
                                 <i class="bi bi-check-circle-fill"></i> Solved
                             </span>
+
+
                         </div>
 
                         <!-- Problem Description -->
@@ -206,16 +207,44 @@
                             <h3 class="text-[18px] font-bold text-white tracking-tight">Reference Solution</h3>
                         </div>
 
-                        <div *ngIf="problem.referenceSolution" class="relative group mt-6">
-                            <pre
-                                class="bg-[#111] border border-white/10 rounded-xl p-6 font-mono text-[13px] text-blue-300 leading-relaxed overflow-x-auto custom-scrollbar"><code>{{ problem.referenceSolution }}</code></pre>
+                        <!-- Locked State for Free Plan -->
+                        <div *ngIf="isFreePlan"
+                            class="bg-[#1e1e1e] rounded-xl p-12 text-center flex flex-col items-center justify-center border border-white/10 mt-6 shadow-2xl relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent"></div>
+                            <div
+                                class="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 border border-amber-500/20 group-hover:scale-110 transition-transform duration-500">
+                                <i class="bi bi-lock-fill text-4xl text-amber-500"></i>
+                            </div>
+                            <h4 class="text-xl font-bold text-white mb-2">Premium Feature</h4>
+                            <p class="text-[#94a3b8] max-w-sm mb-8 leading-relaxed">
+                                Detailed optimal solutions, video explanations, and complexity analysis are exclusive to
+                                Premium members.
+                            </p>
+                            <button routerLink="/student/plans"
+                                class="px-8 py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95">
+                                Upgrade to Unlock <i class="bi bi-lightning-charge-fill ml-2"></i>
+                            </button>
                         </div>
 
-                        <div *ngIf="!problem.referenceSolution"
-                            class="bg-white/5 rounded-xl p-12 text-center flex flex-col items-center justify-center border border-dashed border-white/10 mt-6">
-                            <i class="bi bi-lock text-3xl text-white/20 mb-4"></i>
-                            <p class="text-[#94a3b8]">No official solution available for this problem yet.</p>
-                        </div>
+                        <!-- Solution Content for Premium -->
+                        <ng-container *ngIf="!isFreePlan">
+                            <div *ngIf="problem.referenceSolution" class="relative group mt-6">
+                                <div class="absolute top-4 right-4 z-10">
+                                    <button (click)="copySolution()"
+                                        class="p-2 bg-white/5 hover:bg-white/10 rounded-md text-[#94a3b8] hover:text-white transition-all shadow-sm">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                                <pre
+                                    class="bg-[#111] border border-white/10 rounded-xl p-6 font-mono text-[13px] text-blue-300 leading-relaxed overflow-x-auto custom-scrollbar"><code>{{ problem.referenceSolution }}</code></pre>
+                            </div>
+
+                            <div *ngIf="!problem.referenceSolution"
+                                class="bg-white/5 rounded-xl p-12 text-center flex flex-col items-center justify-center border border-dashed border-white/10 mt-6">
+                                <i class="bi bi-code text-3xl text-white/20 mb-4"></i>
+                                <p class="text-[#94a3b8]">No official solution available for this problem yet.</p>
+                            </div>
+                        </ng-container>
                     </div>
                 </div> <!-- End scrollable-content -->
             </section>
@@ -253,15 +282,7 @@
                         <button class="text-[#94a3b8] hover:text-white transition-colors text-[14px]">
                             <i class="bi bi-gear-fill"></i>
                         </button>
-                        <button (click)="toggleThreeColumn()" [disabled]="isAskingAI || !studentCode"
-                            class="transition-all flex items-center gap-1.5 text-[13px] font-bold px-3 py-1 rounded border disabled:opacity-50"
-                            [ngClass]="showAIPanel ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'text-[#3b82f6] hover:text-[#60a5fa] bg-[#3b82f6]/10 border-[#3b82f6]/20'"
-                            title="Toggle AI Mentor Chat">
-                            <i *ngIf="!isAskingAI" class="bi bi-robot"></i>
-                            <span *ngIf="isAskingAI"
-                                class="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                            AI Mentor
-                        </button>
+
                         <div class="h-4 w-[1px] bg-white/20"></div>
                         <div class="flex items-center gap-3">
                             <button (click)="runCode()" [disabled]="isExecuting || isSubmitting"
@@ -363,49 +384,7 @@
                             <p class="text-[#94a3b8] animate-pulse">Running test cases...</p>
                         </div>
 
-                        <!-- 📋 TOP LEVEL AI FEEDBACK (Visible on Run/Submit) -->
-                        <div *ngIf="latestGrade"
-                            class="flex flex-col gap-3 p-6 bg-white/[0.02] border-b border-white/10 animate-fadeIn mb-2">
 
-                            <!-- Header & Grade Badge -->
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                        <i class="bi bi-award-fill text-indigo-400 text-lg"></i>
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <span
-                                            class="text-[12px] font-black text-white/40 uppercase tracking-[0.15em]">AI
-                                            Assessment</span>
-                                        <span class="text-[14px] font-bold text-white tracking-tight">Performance
-                                            Grade</span>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-end">
-                                    <span
-                                        class="px-5 py-1.5 rounded-xl text-[18px] font-black border-2 shadow-[0_0_15px_rgba(0,0,0,0.2)]"
-                                        [ngClass]="{
-                                            'bg-emerald-500/10 border-emerald-500/40 text-emerald-400': latestGrade === 'A',
-                                            'bg-blue-500/10 border-blue-500/40 text-blue-400': latestGrade === 'B',
-                                            'bg-amber-500/10 border-amber-500/40 text-amber-400': latestGrade === 'C',
-                                            'bg-rose-500/10 border-rose-500/40 text-rose-400': latestGrade === 'Needs Fix' || latestGrade === 'F'
-                                        }">
-                                        {{ latestGrade }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Surgical Fix / Explanation -->
-                            <div *ngIf="aiFeedback?.explanation" class="mt-2 group relative">
-                                <div
-                                    class="absolute -left-3 top-0 bottom-0 w-[3px] bg-indigo-500/40 rounded-full group-hover:bg-indigo-500 transition-colors">
-                                </div>
-                                <div class="text-[14px] text-slate-300 leading-relaxed font-medium whitespace-pre-wrap">
-                                    {{ aiFeedback.explanation }}
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- ══════════════════════════════════ -->
                         <!-- COMPILE / RUNTIME ERROR BLOCK     -->
@@ -595,163 +574,7 @@
                 </div>
             </section>
 
-            <!-- RIGHT PANEL: AI Mentor Chat -->
-            <div class="horizontal-resize-handle" *ngIf="isThreeColumn" (mousedown)="startChatResize($event)"></div>
-            <section class="chat-panel" *ngIf="showAIPanel" [style.width.%]="chatPanelWidth">
-                <!-- Header -->
-                <div class="chat-header">
-                    <div class="flex items-center gap-3">
-                        <div class="bot-icon">
-                            <i class="bi bi-robot"></i>
-                        </div>
-                        <span class="bot-name text-white">AI Mentor</span>
-                    </div>
-                    <button (click)="closeAIPanel()" class="text-[#94a3b8] hover:text-white transition-colors">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
-                </div>
 
-                <!-- Chat History -->
-                <div id="chat-container" class="chat-messages custom-scrollbar">
-                    <div *ngFor="let msg of chatMessages; let i = index" class="flex flex-col">
-                        <!-- User Message -->
-                        <div *ngIf="msg.role === 'user'" class="user-msg-container animate-fadeIn">
-                            <!-- Regular Bubble View -->
-                            <div *ngIf="editingMessageIndex !== i" class="user-bubble">
-                                {{ msg.content }}
-
-                                <!-- Message Actions (Copy/Edit) -->
-                                <div class="flex items-center justify-end gap-3 mt-2">
-                                    <div class="relative flex items-center justify-end">
-                                        <!-- Copied Badge -->
-                                        <div *ngIf="copiedMessageIndex === i"
-                                            class="absolute -top-10 right-0 bg-[#252525] text-white text-[11px] px-2 py-1 rounded-lg border border-white/10 shadow-2xl animate-fadeIn whitespace-nowrap">
-                                            Copied!
-                                        </div>
-
-                                        <button (click)="copyToClipboard(msg.content, i)"
-                                            class="text-white transition-all p-1 rounded hover:bg-white/5"
-                                            [class.text-green-500]="copiedMessageIndex === i"
-                                            [class.opacity-50]="copiedMessageIndex !== i" title="Copy">
-                                            <i class="bi" [class.bi-check2]="copiedMessageIndex === i"
-                                                [class.bi-copy]="copiedMessageIndex !== i"></i>
-                                        </button>
-                                    </div>
-
-                                    <button (click)="editMessage(msg, i)"
-                                        class="text-white opacity-50 hover:opacity-100 hover:text-[#3b82f6] text-[15px] p-1 rounded hover:bg-white/5 transition-all"
-                                        title="Edit">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Inline Edit Card View -->
-                            <div *ngIf="editingMessageIndex === i" class="custom-input-card w-full">
-                                <div class="input-top">
-                                    <textarea [(ngModel)]="editInput"
-                                        (keydown.enter)="$event.preventDefault(); saveEdit(i)" rows="1"></textarea>
-                                </div>
-                                <div class="input-bottom-bar">
-                                    <div class="flex items-center gap-2 ml-auto">
-                                        <button (click)="cancelEdit()" class="clear-action-btn" title="Cancel">
-                                            <i class="bi bi-x-lg text-[14px]"></i>
-                                        </button>
-                                        <button (click)="saveEdit(i)" [disabled]="!editInput.trim() || isAskingAI"
-                                            class="send-action-btn">
-                                            <i class="bi bi-arrow-up-short text-[22px]"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Assistant Message -->
-                        <div *ngIf="msg.role === 'assistant'" class="assistant-msg-container animate-fadeIn">
-                            <div class="assistant-header">
-                                <div class="bot-icon">
-                                    <i class="bi bi-robot"></i>
-                                </div>
-                                <span class="bot-name">Mentor</span>
-                            </div>
-
-
-                            <div class="assistant-bubble">
-                                <!-- Grade Badge Inline (if meaningful) -->
-                                <span *ngIf="msg.grade && msg.grade !== 'N/A'" [ngClass]="{
-                                        'text-[#0de84b]': msg.grade === 'A',
-                                        'text-yellow-400': msg.grade === 'B',
-                                        'text-orange-400': msg.grade === 'C',
-                                        'text-[#ff2d55]': msg.grade === 'Needs Fix'
-                                    }" class="font-black mr-2">[{{ msg.grade }}]</span>
-
-                                {{ msg.explanation }}
-
-                                <!-- Mentor Hints (if present and useful) -->
-                                <div *ngIf="msg.hints && msg.hints !== 'N/A' && !msg.hints.includes('Follow the mentor')"
-                                    class="mt-4 p-4 rounded-xl bg-white/[0.03] border border-white/5 border-l-2 border-l-yellow-500/50">
-                                    <div
-                                        class="flex items-center gap-2 mb-2 font-bold text-white/40 text-[10px] uppercase tracking-widest">
-                                        <i class="bi bi-lightbulb-fill text-yellow-500"></i>
-                                        Mentor Hint
-                                    </div>
-                                    <p class="italic text-[#94a3b8] text-[13px]">"{{ msg.hints }}"</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Thinking State -->
-                    <div *ngIf="isAskingAI" class="assistant-msg-container animate-fadeIn">
-                        <div class="assistant-header">
-                            <div class="bot-icon">
-                                <i class="bi bi-robot"></i>
-                            </div>
-                            <span class="bot-name">Mentor</span>
-                        </div>
-                        <div class="typing-dots mt-1">
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Redesigned Input Area -->
-                <div class="chat-input-wrapper">
-                    <div class="custom-input-card">
-                        <div class="input-top">
-                            <textarea [(ngModel)]="chatInput"
-                                (keydown.enter)="$event.preventDefault(); sendChatMessage()"
-                                placeholder="Message Mentor..." rows="1"></textarea>
-                        </div>
-                        <div class="input-bottom-bar">
-                            <div class="model-selectors">
-                                <div class="selector-item">
-                                    <i class="bi bi-stars text-purple-400"></i>
-                                    <span>Gemini</span>
-                                </div>
-                                <div class="selector-item">
-                                    <i class="bi bi-lightning-charge text-yellow-400"></i>
-                                    <span>Flash</span>
-                                    <i class="bi bi-chevron-expand ml-1"></i>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-2 ml-auto">
-                                <button *ngIf="chatInput.trim()" (click)="chatInput = ''" class="clear-action-btn"
-                                    title="Clear">
-                                    <i class="bi bi-x-lg text-[14px]"></i>
-                                </button>
-                                <button (click)="sendChatMessage()" [disabled]="!chatInput.trim() || isAskingAI"
-                                    class="send-action-btn">
-                                    <i class="bi bi-arrow-up-short text-[22px]"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
         </main>
     </div>

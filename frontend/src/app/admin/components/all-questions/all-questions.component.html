@@ -131,8 +131,7 @@
     </div>
 
     <!-- Table Card -->
-    <div
-        class="bg-white rounded-[14px] border border-slate-200 shadow-soft overflow-hidden relative min-h-[500px] z-10">
+    <div class="bg-white rounded-[14px] border border-slate-200 shadow-soft overflow-hidden relative z-10">
         <!-- Loading State -->
         <div *ngIf="loading$ | async"
             class="absolute inset-0 bg-white/60 z-10 backdrop-blur-[2px] flex flex-col items-center justify-center">
@@ -222,49 +221,66 @@
                 </table>
             </div>
 
-            <!-- Pagination Footer -->
-            <div *ngIf="meta$ | async as meta"
-                class="px-8 py-6 bg-white border-t border-slate-100 flex items-center justify-between">
-                <div class="text-[14px] text-slate-500">
-                    Showing <span class="font-bold text-[#111827]">{{(meta.page - 1) * meta.limit + 1}}</span> to
-                    <span class="font-bold text-[#111827]">{{(meta.page * meta.limit) > meta.total ? meta.total :
-                        (meta.page * meta.limit)}}</span> of
-                    <span class="font-bold text-[#111827]">{{meta.total}}</span> results
-                </div>
-
-                <div class="flex items-center gap-1.5">
-                    <button (click)="onPageChange(meta.page - 1)" [disabled]="meta.page === 1"
-                        class="w-9 h-9 flex items-center justify-center rounded-[8px] border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30 transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-
-                    <div class="flex items-center gap-1.5 mx-1">
-                        <ng-container *ngFor="let p of getPages(meta.totalPages, meta.page)">
-                            <button *ngIf="p !== -1" (click)="onPageChange(p)"
-                                [ngClass]="p === meta.page ? 'bg-[#6366F1] text-white border-[#6366F1] shadow-lg shadow-[#6366F1]/20 scale-105' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'"
-                                class="min-w-[36px] h-9 flex items-center justify-center rounded-[8px] border text-[14px] font-black transition-all active:scale-90">
-                                {{p}}
-                            </button>
-                            <span *ngIf="p === -1" class="px-1 text-slate-300">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                        d="M5 12h.01M12 12h.01M19 12h.01" />
-                                </svg>
-                            </span>
-                        </ng-container>
-                    </div>
-
-                    <button (click)="onPageChange(meta.page + 1)" [disabled]="meta.page === meta.totalPages"
-                        class="w-9 h-9 flex items-center justify-center rounded-[8px] border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30 transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
+            <!-- Empty State -->
+            <div *ngIf="questions.length === 0 && !(loading$ | async)" class="px-6 py-20 text-center">
+                <div class="flex flex-col items-center gap-2 text-slate-300">
+                    <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-slate-500 font-bold mt-2">No questions found matching your criteria.</p>
                 </div>
             </div>
         </ng-container>
+    </div>
+
+    <!-- Pagination Footer (Fixed to Page Bottom) -->
+    <div *ngIf="meta$ | async as meta"
+        class="bg-white border border-slate-200 rounded-2xl shadow-xl px-8 py-3 flex items-center justify-between min-h-[64px] sticky bottom-0 z-50 animate-in slide-in-from-bottom-4 duration-300">
+        <!-- Results Info (Left) -->
+        <div class="text-[13px] text-slate-500 font-medium">
+            Showing <span class="font-bold text-slate-900">{{(meta.page - 1) * meta.limit + 1}}</span> to
+            <span class="font-bold text-slate-900">{{(meta.page * meta.limit) > meta.total ? meta.total :
+                (meta.page * meta.limit)}}</span> of
+            <span class="font-bold text-slate-900">{{meta.total}}</span> results
+        </div>
+
+        <!-- Pagination Controls (Right) -->
+        <div class="flex items-center gap-2">
+            <!-- Prev Button -->
+            <button (click)="onPageChange(meta.page - 1)" [disabled]="meta.page === 1"
+                class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-sm disabled:opacity-30 disabled:hover:shadow-none disabled:hover:border-slate-200 transition-all duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <!-- Page Numbers -->
+            <div class="flex items-center gap-2 mx-1">
+                <ng-container *ngFor="let p of getPages(meta.totalPages, meta.page)">
+                    <button *ngIf="p !== -1" (click)="onPageChange(p)" [ngClass]="p === meta.page 
+                            ? 'bg-gradient-to-tr from-indigo-600 to-violet-600 text-white border-transparent shadow-md shadow-indigo-200 scale-105' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:bg-slate-50'"
+                        class="min-w-[40px] h-10 flex items-center justify-center rounded-xl border text-[13px] font-bold transition-all duration-200 active:scale-95">
+                        {{p}}
+                    </button>
+                    <!-- Ellipsis -->
+                    <span *ngIf="p === -1" class="px-1 text-slate-300">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M5 12h.01M12 12h.01M19 12h.01" />
+                        </svg>
+                    </span>
+                </ng-container>
+            </div>
+
+            <!-- Next Button -->
+            <button (click)="onPageChange(meta.page + 1)" [disabled]="meta.page === meta.totalPages"
+                class="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-sm disabled:opacity-30 disabled:hover:shadow-none disabled:hover:border-slate-200 transition-all duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
     </div>
 </div>

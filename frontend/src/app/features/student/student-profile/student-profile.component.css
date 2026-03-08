@@ -1,0 +1,497 @@
+.profile-page {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    padding: 32px 24px 60px;
+}
+
+.profile-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Loading */
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
+}
+
+.loader-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loader-text {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+/* Profile Header */
+.profile-header {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-bottom: 24px;
+}
+
+.avatar-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.avatar-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatar-letter {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.username {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+}
+
+.user-email {
+    font-size: 13px;
+    color: #94a3b8;
+    margin: 2px 0 8px;
+}
+
+.plan-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.plan-free {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.plan-premium {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-upgrade,
+.btn-problems {
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-upgrade {
+    background: #2563eb;
+    color: #fff;
+}
+
+.btn-upgrade:hover {
+    background: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-problems {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.btn-problems:hover {
+    background: #e2e8f0;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+.icon-solved {
+    color: #2563eb;
+}
+
+.icon-attempted {
+    color: #8b5cf6;
+}
+
+.icon-easy {
+    color: #10b981;
+}
+
+.icon-medium {
+    color: #f59e0b;
+}
+
+.icon-hard {
+    color: #ef4444;
+}
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1;
+}
+
+.stat-label {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Section Title */
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title i {
+    color: #2563eb;
+}
+
+/* Grade Section */
+.grade-section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.grade-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.grade-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.grade-label {
+    width: 70px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.grade-bar-track {
+    flex-grow: 1;
+    height: 10px;
+    background: #f1f5f9;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.grade-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+    min-width: 2px;
+}
+
+.grade-count {
+    width: 28px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    text-align: center;
+}
+
+/* Grade Colors */
+.grade-a {
+    color: #10b981;
+}
+
+.grade-b {
+    color: #3b82f6;
+}
+
+.grade-c {
+    color: #8b5cf6;
+}
+
+.grade-d {
+    color: #f59e0b;
+}
+
+.grade-e {
+    color: #ef4444;
+}
+
+.grade-pending {
+    color: #94a3b8;
+}
+
+.grade-bar-fill.grade-a {
+    background: #10b981;
+}
+
+.grade-bar-fill.grade-b {
+    background: #3b82f6;
+}
+
+.grade-bar-fill.grade-c {
+    background: #8b5cf6;
+}
+
+.grade-bar-fill.grade-d {
+    background: #f59e0b;
+}
+
+.grade-bar-fill.grade-e {
+    background: #ef4444;
+}
+
+.grade-bar-fill.grade-pending {
+    background: #94a3b8;
+}
+
+/* Questions Table */
+.questions-section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: 40px;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.btn-start {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 24px;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.questions-table-wrapper {
+    overflow-x: auto;
+}
+
+.questions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.questions-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.questions-table td {
+    padding: 12px;
+    font-size: 13px;
+    color: #334155;
+    border-bottom: 1px solid #f8fafc;
+    vertical-align: middle;
+}
+
+.questions-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.q-title {
+    font-weight: 600;
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.diff-badge,
+.status-badge,
+.grade-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.diff-easy {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.diff-medium {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.diff-hard {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.status-accepted {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.status-other {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.grade-chip {
+    color: #fff;
+}
+
+.grade-chip.grade-a {
+    background: #10b981;
+}
+
+.grade-chip.grade-b {
+    background: #3b82f6;
+}
+
+.grade-chip.grade-c {
+    background: #8b5cf6;
+}
+
+.grade-chip.grade-d {
+    background: #f59e0b;
+}
+
+.grade-chip.grade-e {
+    background: #ef4444;
+}
+
+.grade-chip.grade-pending {
+    background: #94a3b8;
+}
+
+.tests-col {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .btn-upgrade,
+    .btn-problems {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,117 @@
+<app-navbar></app-navbar>
+<div class="plans-page pt-20">
+    <!-- Plans Section -->
+    <div class="plans-container">
+        <div class="plans-inner">
+            <div class="plans-header">
+                <h1 class="plans-title">Choose Your Learning Plan</h1>
+                <p class="plans-subtitle">Start free and upgrade when you're ready to unlock your full potential.</p>
+            </div>
+
+            <div class="plans-grid">
+                <!-- Free Plan -->
+                <div class="plan-card free-card">
+                    <div class="card-top">
+                        <span class="badge badge-starter">STARTER</span>
+                        <h2 class="plan-name">Free Plan</h2>
+                        <div class="price-row">
+                            <span class="price">₹0</span>
+                            <span class="price-period">/ month</span>
+                        </div>
+                        <p class="plan-desc">Perfect for beginners just starting their coding journey.</p>
+                    </div>
+                    <div class="card-features">
+                        <ul>
+                            <li class="feature-item">
+                                <i class="bi bi-check-circle-fill text-green"></i>
+                                <span>Limited problems (Easy/Medium/Hard)</span>
+                            </li>
+                            <li class="feature-item">
+                                <i class="bi bi-check-circle-fill text-green"></i>
+                                <span>Run & Submit code</span>
+                            </li>
+
+                            <li class="feature-item disabled">
+                                <i class="bi bi-x-circle-fill text-muted"></i>
+                                <span>Full solution locked</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-action">
+                        <button (click)="selectPlan('Free')" [disabled]="isProcessing" class="btn-plan btn-free">
+                            <span *ngIf="!isProcessing">Start for Free</span>
+                            <span *ngIf="isProcessing" class="btn-loading">
+                                <i class="bi bi-arrow-repeat spin"></i> Processing...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="plan-card premium-card">
+                    <div class="card-top">
+                        <span class="badge badge-popular">⭐ MOST POPULAR</span>
+                        <h2 class="plan-name">Premium Plan</h2>
+                        <div class="price-row">
+                            <span class="price text-blue">₹499</span>
+                            <span class="price-period">/ month</span>
+                        </div>
+                        <p class="plan-desc">Accelerate your learning with full access to all tools.</p>
+                    </div>
+                    <div class="card-features">
+                        <ul>
+                            <li class="feature-item">
+                                <i class="bi bi-check-circle-fill text-blue-icon"></i>
+                                <span>All problems unlocked (2500+)</span>
+                            </li>
+
+                            <li class="feature-item">
+                                <i class="bi bi-check-circle-fill text-blue-icon"></i>
+                                <span>Full solution unlocked (Video & Text)</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-action">
+                        <button (click)="selectPlan('Premium')" [disabled]="isProcessing" class="btn-plan btn-premium">
+                            <span *ngIf="!isProcessing">Upgrade to Premium <i
+                                    class="bi bi-lightning-charge-fill"></i></span>
+                            <span *ngIf="isProcessing" class="btn-loading">
+                                <i class="bi bi-arrow-repeat spin"></i> Redirecting to Checkout...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Footer Section -->
+    <div class="cta-section">
+        <h2 class="cta-title">Level up your coding skills today 🚀</h2>
+        <p class="cta-desc">Join over 2 million developers who are mastering algorithms and landing their dream jobs.
+        </p>
+        <div class="cta-buttons">
+            <button (click)="selectPlan('Premium')" class="btn-cta-primary">Upgrade Now</button>
+            <button class="btn-cta-secondary">View Success Stories</button>
+        </div>
+        <p class="cta-trust">30-day money-back guarantee • Cancel anytime • Secure payment</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <div class="logo-square"><span>CP</span></div>
+                    <span class="brand-name">CodePractice</span>
+                </div>
+            </div>
+            <p class="footer-copy">© 2026 CodePractice Inc. All rights reserved.</p>
+            <div class="footer-socials">
+                <a href="#"><i class="bi bi-twitter-x"></i></a>
+                <a href="#"><i class="bi bi-github"></i></a>
+                <a href="#"><i class="bi bi-linkedin"></i></a>
+            </div>
+        </div>
+    </footer>
+</div>

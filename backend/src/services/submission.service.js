@@ -1,7 +1,7 @@
 const submissionRepository = require('../repositories/submission.repository');
 const Question = require('../models/question.model');
 const { executeCode } = require('./codeExecutionEngine');
-const aiService = require('./ai.service');
+
 const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
@@ -51,15 +51,7 @@ class SubmissionService {
             }
             log(`Determined Status: ${status}, Passed: ${passedCount}/${totalTests}`);
 
-            // 4. Get AI Feedback (Grade & Explanation)
-            let aiFeedback = { grade: 'Pending', explanation: '', improvementHints: '' };
-            try {
-                aiFeedback = await aiService.getCodeFeedback(code, problem, []);
-                log(`AI Feedback successfully retrieved. Grade: ${aiFeedback.grade}`);
-            } catch (aiErr) {
-                log(`AI Feedback Error (Non-critical): ${aiErr.message}`);
-                // If AI fails, we still proceed with submission
-            }
+
 
             // 5. Save Submission
             const submission = await submissionRepository.create({
@@ -68,8 +60,7 @@ class SubmissionService {
                 code,
                 language,
                 status,
-                grade: aiFeedback.grade,
-                aiExplanation: aiFeedback.explanation,
+
                 passedCount,
                 totalTests,
                 runtime: execution.summary?.totalExecutionTime || 0,
@@ -88,13 +79,14 @@ class SubmissionService {
             if (status === 'Accepted') {
                 statsUpdate.$inc.totalAccepted = 1;
             }
+            log(`Updating question stats for ${questionId}...`);
             await Question.findByIdAndUpdate(questionId, statsUpdate);
+            log(`Submission process complete for user ${studentId}`);
 
             return {
                 _id: submission._id,
                 status: submission.status,
-                grade: submission.grade,
-                explanation: submission.aiExplanation,
+
                 passedCount: submission.passedCount,
                 totalTests: submission.totalTests,
                 runtime: submission.runtime,
@@ -102,6 +94,7 @@ class SubmissionService {
                 submittedAt: submission.submittedAt
             };
         } catch (error) {
+            log(`FATAL ERROR in submitSolution: ${error.message}`);
             logger.error(`Error in submitSolution: ${error.message}`, { stack: error.stack });
             throw error;
         }

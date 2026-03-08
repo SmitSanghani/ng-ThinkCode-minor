@@ -220,13 +220,18 @@
 }
 
 .grade-badge[data-grade="C"] {
+    background-color: #faf5ff;
+    color: #9333ea;
+    border-color: #e9d5ff;
+}
+
+.grade-badge[data-grade="D"] {
     background-color: #fffbeb;
     color: #d97706;
     border-color: #fef3c7;
 }
 
-.grade-badge[data-grade="Needs Fix"],
-.grade-badge[data-grade="F"] {
+.grade-badge[data-grade="E"] {
     background-color: #fef2f2;
     color: #dc2626;
     border-color: #fecaca;

@@ -126,6 +126,30 @@ export class SubmissionsComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  updateGrade(submissionId: string, grade: string) {
+    if (!submissionId || !grade) return;
+
+    this.adminService.updateSubmissionGrade(submissionId, grade).subscribe({
+      next: (res) => {
+        // Update local state for immediate feedback
+        if (this.selectedSubmission && this.selectedSubmission._id === submissionId) {
+          this.selectedSubmission.grade = grade;
+        }
+
+        const index = this.allSubmissions.findIndex(s => s._id === submissionId);
+        if (index > -1) {
+          this.allSubmissions[index].grade = grade;
+        }
+
+        this.applyFilters();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        alert('Failed to update grade: ' + (err.error?.message || 'Server error'));
+      }
+    });
+  }
+
   // ── Delete ────────────────────────────────────────────────────────────────
   deleteSubmission(submission: any) {
     if (!confirm(`Are you sure you want to delete this submission by "${submission.student?.username}"?`)) return;

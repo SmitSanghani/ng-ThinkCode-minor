@@ -54,13 +54,14 @@
                 <div class="table-header">
                     <div class="col-status text-center w-12">Status</div>
                     <div class="col-title">Title</div>
+
                     <div class="col-acceptance text-right">Acceptance</div>
                     <div class="col-difficulty text-center">Difficulty</div>
                     <div class="col-star text-center"></div>
                 </div>
 
                 <div class="table-body" *ngIf="!isLoading">
-                    <div *ngFor="let p of problems; let i = index" (click)="viewProblem(p.id)"
+                    <div *ngFor="let p of problems; let i = index" (click)="viewProblem(p)"
                         class="problem-row group animate-fadeIn">
 
                         <!-- Status Icon -->
@@ -81,6 +82,8 @@
                                 <span *ngIf="i % 4 === 0" class="tag-pill">Hash Table</span>
                             </div>
                         </div>
+
+
 
                         <!-- Acceptance -->
                         <div class="col-acceptance text-right text-sm font-semibold text-slate-400">

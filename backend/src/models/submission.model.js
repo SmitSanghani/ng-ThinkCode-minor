@@ -44,7 +44,7 @@ const SubmissionSchema = new mongoose.Schema({
     },
     grade: {
         type: String,
-        enum: ['A', 'B', 'C', 'F', 'Needs Fix', 'Pending'],
+        enum: ['A', 'B', 'C', 'D', 'E', 'Pending'],
         default: 'Pending'
     },
     aiExplanation: {

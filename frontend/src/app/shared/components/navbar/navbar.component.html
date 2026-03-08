@@ -14,6 +14,7 @@
                 <a routerLink="/website/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
                     class="nav-link-item">Explore</a>
                 <a routerLink="/student/problems" routerLinkActive="active" class="nav-link-item">Problems</a>
+                <a routerLink="/student/plans" routerLinkActive="active" class="nav-link-item">Plans</a>
                 <a routerLink="/contest" class="nav-link-item">Contest</a>
                 <a routerLink="/discuss" class="nav-link-item">Discuss</a>
             </div>
@@ -45,7 +46,7 @@
                                 <span class="user-email text-truncate">{{ user()?.email }}</span>
                             </div>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" routerLink="/profile">
+                            <a class="dropdown-item" routerLink="/student/profile">
                                 <i class="bi bi-person me-2"></i> Profile
                             </a>
                             <a class="dropdown-item" routerLink="/settings">

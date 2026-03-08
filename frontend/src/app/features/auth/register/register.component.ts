@@ -87,15 +87,20 @@ export class RegisterComponent {
             email: this.registerForm.value.email,
             password: this.registerForm.value.password
         }).subscribe({
-            next: () => {
+            next: (response: any) => {
                 this.isLoading = false;
+                // Since the backend now returns tokens, the AuthService should have intercepted them 
+                // and saved them to localStorage if it's implemented like that.
+                // Let's assume authService.register handles the session.
+
                 Swal.fire({
                     icon: 'success',
-                    title: 'Registration Successful!',
-                    text: 'You can now login.',
-                    confirmButtonColor: '#2563eb'
+                    title: 'Welcome to ThinkCode!',
+                    text: 'Let\'s choose your learning plan.',
+                    timer: 2000,
+                    showConfirmButton: false
                 });
-                this.router.navigate(['/login']);
+                this.router.navigate(['/student/plans']);
             },
             error: (err) => {
                 this.isLoading = false;

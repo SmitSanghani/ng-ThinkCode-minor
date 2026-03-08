@@ -10,6 +10,7 @@ export type { User };
 export interface AuthResponse {
     success: boolean;
     accessToken?: string;
+    refreshToken?: string;
     user?: User;
     error?: string;
 }
@@ -24,7 +25,6 @@ export class AuthService {
     isAuthenticated: WritableSignal<boolean> = signal<boolean>(false);
     isLoading: WritableSignal<boolean> = signal<boolean>(false);
 
-    private accessToken: string | null = null;
     private authCheckPromise: Promise<boolean> | null = null;
 
     constructor(private http: HttpClient, private router: Router) {
@@ -33,16 +33,19 @@ export class AuthService {
     }
 
     get token(): string | null {
-        return this.accessToken;
+        return sessionStorage.getItem('accessToken');
     }
 
     // Main hydration method
     checkDetails(): Observable<boolean> {
-        if (this.isAuthenticated() && this.accessToken) {
+        if (this.isAuthenticated() && this.token) {
             return of(true);
         }
 
-        // Try to refresh token
+        const rt = sessionStorage.getItem('refreshToken');
+        if (!rt) return of(false);
+
+        // Try to refresh token using sessionStorage stored refresh token
         return this.refreshToken().pipe(
             switchMap(() => this.getMe()),
             map(user => !!user),
@@ -55,8 +58,8 @@ export class AuthService {
         return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data).pipe(
             tap(response => {
                 this.isLoading.set(false);
-                if (response.success && response.accessToken && response.user) {
-                    this.setSession(response.accessToken, response.user);
+                if (response.success && response.accessToken && response.refreshToken && response.user) {
+                    this.setSession(response.accessToken, response.refreshToken, response.user);
                 }
             }),
             catchError(this.handleError)
@@ -68,8 +71,8 @@ export class AuthService {
         return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data).pipe(
             tap(response => {
                 this.isLoading.set(false);
-                if (response.success && response.accessToken && response.user) {
-                    this.setSession(response.accessToken, response.user);
+                if (response.success && response.accessToken && response.refreshToken && response.user) {
+                    this.setSession(response.accessToken, response.refreshToken, response.user);
                 }
             }),
             catchError(this.handleError)
@@ -84,10 +87,12 @@ export class AuthService {
     }
 
     refreshToken(): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/refresh-token`, {}, { withCredentials: true }).pipe(
+        const refreshToken = sessionStorage.getItem('refreshToken');
+        return this.http.post<AuthResponse>(`${this.apiUrl}/refresh-token`, { refreshToken }).pipe(
             tap(response => {
-                if (response.success && response.accessToken) {
-                    this.accessToken = response.accessToken;
+                if (response.success && response.accessToken && response.refreshToken) {
+                    sessionStorage.setItem('accessToken', response.accessToken);
+                    sessionStorage.setItem('refreshToken', response.refreshToken);
                 }
             })
         );
@@ -109,14 +114,16 @@ export class AuthService {
         );
     }
 
-    private setSession(accessToken: string, user: User): void {
-        this.accessToken = accessToken;
+    private setSession(accessToken: string, refreshToken: string, user: User): void {
+        sessionStorage.setItem('accessToken', accessToken);
+        sessionStorage.setItem('refreshToken', refreshToken);
         this.currentUser.set(user);
         this.isAuthenticated.set(true);
     }
 
     private clearSession(): void {
-        this.accessToken = null;
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
         this.currentUser.set(null);
         this.isAuthenticated.set(false);
     }

@@ -1,7 +1,9 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 import { StudentService } from '../../../core/services/student.service';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { CalendarComponent } from '../../../shared/components/calendar/calendar.component';
@@ -15,6 +17,7 @@ import { CalendarComponent } from '../../../shared/components/calendar/calendar.
 })
 export class ProblemsListComponent implements OnInit {
   private studentService = inject(StudentService);
+  private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
@@ -35,6 +38,8 @@ export class ProblemsListComponent implements OnInit {
 
   // Pagination State
   pagination = { total: 0, page: 1, limit: 12, totalPages: 0 };
+
+
 
   Math = Math;
 
@@ -83,8 +88,12 @@ export class ProblemsListComponent implements OnInit {
     this.filterProblems();
   }
 
+
+
   filterProblems() {
     let result = [...this.allProblems];
+    const user = this.authService.currentUser() as any;
+    const isFree = !user || user.plan === 'Free';
 
     // 1. Step: Favorites filter
     if (this.isFavoritesOnly) {
@@ -108,7 +117,13 @@ export class ProblemsListComponent implements OnInit {
       );
     }
 
-    this.filteredProblems = result;
+    // 4. Step: Lock Logic for Free Plan
+    // If Free, only allow certain problems (e.g., first 15)
+    this.filteredProblems = result.map((p, index) => ({
+      ...p,
+      isLocked: isFree && index >= 15 // Mark problems beyond 15 as locked for free users
+    }));
+
     this.pagination.page = 1;
     this.updatePagination();
     this.cdr.detectChanges();
@@ -151,7 +166,23 @@ export class ProblemsListComponent implements OnInit {
     return this.favoriteIds.has(id);
   }
 
-  viewProblem(id: string) {
-    this.router.navigate(['/student/problems', id]);
+  viewProblem(p: any) {
+    if (p.isLocked) {
+      Swal.fire({
+        title: 'Premium Content',
+        text: 'This problem is only available for Premium users. Upgrade now to unlock 2500+ problems!',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Upgrade Now',
+        cancelButtonText: 'Maybe Later',
+        confirmButtonColor: '#2563eb'
+      }).then((result: any) => {
+        if (result.isConfirmed) {
+          this.router.navigate(['/student/plans']);
+        }
+      });
+      return;
+    }
+    this.router.navigate(['/student/problems', p._id || p.id]);
   }
 }
