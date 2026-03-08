@@ -4,7 +4,7 @@ const env = require('./config/env');
 const User = require('./models/user.model');
 
 let io;
-const activeUsers = new Map(); // userId -> socketId
+const activeUsers = new Map(); // userId -> { socketId, role }
 
 const initSocket = (server) => {
     io = new Server(server, {
@@ -23,14 +23,18 @@ const initSocket = (server) => {
             const decoded = jwt.verify(token, env.JWT_SECRET);
             const userId = decoded.id;
 
-            // Map user to socket
-            activeUsers.set(userId, socket.id);
-            console.log(`User connected: ${userId}`);
+            // Fetch user role from DB
+            const user = await User.findById(userId).select('role');
+            const role = user ? user.role : 'student';
+
+            // Map user to socket + role
+            activeUsers.set(userId, { socketId: socket.id, role });
+            console.log(`User connected: ${userId} (${role})`);
 
             // Update lastSeen in DB
             await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
 
-            // Notify all admins if status truly changes
+            // Notify all clients of status change
             io.emit('statusUpdate', { userId, isOnline: true });
 
             socket.on('disconnect', () => {
@@ -53,10 +57,25 @@ const getIO = () => {
     return io;
 };
 
+// Any user online (admin or student)
 const isUserOnline = (userId) => activeUsers.has(userId.toString());
 
-const getActiveUsersCount = () => activeUsers.size;
+// Only non-admin (student) online count
+const getActiveUsersCount = () => {
+    let count = 0;
+    for (const [, data] of activeUsers) {
+        if (data.role !== 'admin') count++;
+    }
+    return count;
+};
 
-const getOnlineUserIds = () => [...activeUsers.keys()];
+// Only non-admin online user IDs (for filter queries)
+const getOnlineUserIds = () => {
+    const ids = [];
+    for (const [userId, data] of activeUsers) {
+        if (data.role !== 'admin') ids.push(userId);
+    }
+    return ids;
+};
 
 module.exports = { initSocket, getIO, isUserOnline, getActiveUsersCount, getOnlineUserIds };

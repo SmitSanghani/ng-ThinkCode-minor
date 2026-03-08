@@ -35,8 +35,18 @@ app.use(xss());
 app.use(hpp());
 
 // Middlewares
+const allowedOrigins = [
+    'http://localhost:4200',
+    process.env.FRONTEND_URL  // Set this to Vercel URL on Render e.g. https://thinkcode.vercel.app
+].filter(Boolean);
+
 app.use(cors({
-    origin: 'http://localhost:4200',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, Postman)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: Origin ${origin} not allowed`));
+    },
     credentials: true
 }));
 app.use(express.json({ limit: '10kb' }));

@@ -1,0 +1,19 @@
+﻿node.exe : Node.js version v25.2.1 
+detected.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpeci 
+   fied: (Node.js version v25.2.1 det  
+  ected.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCo 
+   mmandError
+ 
+Odd numbered Node.js versions will not 
+enter LTS status and should not be 
+used for production. For more 
+information, please see https://nodejs.
+org/en/about/previous-releases/.
+[33mΓ¥»[39m Building...
