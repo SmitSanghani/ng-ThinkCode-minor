@@ -10,6 +10,11 @@ export class AdminService {
     private http = inject(HttpClient);
     private apiUrl = `${environment.apiUrl}`;
 
+    // Dashboard & Stats endpoints
+    getDashboardStats(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/admin/dashboard-stats`);
+    }
+
     // Question endpoints
     getQuestions(params?: any): Observable<any> {
         return this.http.get(`${this.apiUrl}/questions`, { params });

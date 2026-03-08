@@ -15,9 +15,9 @@
 
             <select class="filter-dropdown" [(ngModel)]="statusFilter" (change)="onStatusChange()">
                 <option value="">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Banned">Banned</option>
+                <option value="Online">🟢 Online</option>
+                <option value="Offline">⚫ Offline</option>
+                <option value="Banned">🚫 Banned</option>
             </select>
         </div>
     </div>
@@ -50,11 +50,20 @@
                     <tr *ngFor="let user of users; trackBy: trackByUserId">
                         <td>
                             <div class="user-info">
-                                <div class="avatar-circle">
+                                <div class="avatar-circle relative">
                                     {{ getInitials(user) }}
+                                    <!-- Online/Active Dot -->
+                                    <div class="status-dot-indicator"
+                                        [ngClass]="user.isOnline ? 'dot-active' : 'dot-inactive'">
+                                    </div>
                                 </div>
-                                <div class="user-details">
-                                    <span class="user-name">{{ user.name || user.username }}</span>
+                                <div class="user-details pl-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="user-name">{{ user.name || user.username }}</span>
+                                        <i *ngIf="user.isOnline"
+                                            class="bi bi-patch-check-fill text-blue-500 text-[10px]"
+                                            title="Online Now"></i>
+                                    </div>
                                     <span class="user-email">{{ user.email }}</span>
                                 </div>
                             </div>
@@ -63,12 +72,10 @@
                             <span class="badge badge-role">{{ user.role | titlecase }}</span>
                         </td>
                         <td>
-                            <span class="badge" [ngClass]="{
-                'badge-active': user.status === 'Active',
-                'badge-inactive': user.status === 'Inactive',
-                'badge-banned': user.status === 'Banned'
-              }">
-                                {{ user.status }}
+                            <span class="badge" [ngClass]="user.isOnline ? 'badge-online' : 'badge-offline'">
+                                <span class="status-pulse-dot"
+                                    [ngClass]="user.isOnline ? 'pulse-green' : 'pulse-grey'"></span>
+                                {{ user.isOnline ? 'Online' : 'Offline' }}
                             </span>
                         </td>
                         <td>

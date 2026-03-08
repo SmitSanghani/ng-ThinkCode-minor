@@ -5,7 +5,8 @@ const {
     getQuestions,
     getQuestionById,
     updateQuestion,
-    deleteQuestion
+    deleteQuestion,
+    getDashboardStats
 } = require('../controllers/admin.controller');
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 router.use(protect);
 router.use(authorize('admin'));
 
+router.get('/dashboard-stats', getDashboardStats);
 router.post('/add', addQuestion);
 router.get('/', getQuestions);
 router.get('/:id', getQuestionById);

@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const Submission = require('../models/submission.model');
 const { sendSuccess, sendError } = require('../utils/responseHandler');
+const { isUserOnline, getOnlineUserIds } = require('../socket');
 
 exports.getUsers = async (req, res, next) => {
     try {
@@ -11,8 +12,18 @@ exports.getUsers = async (req, res, next) => {
 
         const query = { role: { $ne: 'admin' } };
 
-        if (status) {
-            query.status = status;
+        // Handle filter:
+        // "Online"  → users currently in socket Map
+        // "Offline" → users NOT in socket Map
+        // "Banned"  → DB account status = Banned
+        if (status === 'Online') {
+            const onlineIds = getOnlineUserIds();
+            query._id = { $in: onlineIds };
+        } else if (status === 'Offline') {
+            const onlineIds = getOnlineUserIds();
+            query._id = { $nin: onlineIds };
+        } else if (status === 'Banned') {
+            query.status = 'Banned';
         }
 
         if (search) {
@@ -28,7 +39,6 @@ exports.getUsers = async (req, res, next) => {
             .skip(skip)
             .limit(limit);
 
-        // Enhance users with solved questions count
         const usersWithSubmissions = await Promise.all(users.map(async (user) => {
             const solvedCount = await Submission.distinct('question', {
                 student: user._id,
@@ -37,7 +47,8 @@ exports.getUsers = async (req, res, next) => {
 
             return {
                 ...user.toObject(),
-                submissionCount: solvedCount.length
+                submissionCount: solvedCount.length,
+                isOnline: isUserOnline(user._id)
             };
         }));
 

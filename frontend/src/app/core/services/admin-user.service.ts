@@ -11,6 +11,8 @@ export interface AdminUser {
     role: string;
     status: string;
     createdAt: string;
+    lastSeen?: string;
+    isOnline?: boolean;
     submissionCount: number;
 }
 

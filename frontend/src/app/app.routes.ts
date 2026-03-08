@@ -4,7 +4,6 @@ import { RegisterComponent } from './features/auth/register/register.component';
 import { AdminLayoutComponent } from './features/admin/admin-layout.component';
 import { AdminOverviewComponent } from './features/admin/overview/overview.component';
 import { SubmissionsComponent } from './features/admin/submissions/submissions.component';
-import { StatisticsComponent } from './features/admin/statistics/statistics.component';
 import { StudentHomeComponent } from './features/student/home/home.component';
 import { ProblemsListComponent } from './features/student/problems-list/problems-list.component';
 import { ProblemDetailComponent } from './features/student/problem-detail/problem-detail.component';
@@ -31,7 +30,6 @@ export const routes: Routes = [
             { path: 'users', component: AdminUsersComponent },
             { path: 'users/:id', component: UserDetailsComponent },
             { path: 'users/:id/submissions', component: AdminUserSubmissionsComponent },
-            { path: 'statistics', component: StatisticsComponent },
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
         ]
     },

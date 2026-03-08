@@ -55,6 +55,10 @@ const UserSchema = new mongoose.Schema({
         default: 0
     },
     lockUntil: Date,
+    lastSeen: {
+        type: Date,
+        default: Date.now
+    },
     createdAt: {
         type: Date,
         default: Date.now

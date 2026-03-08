@@ -31,6 +31,13 @@ const protect = async (req, res, next) => {
             return res.status(401).json({ success: false, message: 'User not found.' });
         }
 
+        // Update lastSeen (Throttled to once every 1 minute)
+        const now = new Date();
+        if (!req.user.lastSeen || (now - new Date(req.user.lastSeen)) > 60000) {
+            req.user.lastSeen = now;
+            await User.findByIdAndUpdate(req.user._id, { lastSeen: now });
+        }
+
         next();
     } catch (err) {
         logger.error(`Auth Middleware Error: ${err.message}`);

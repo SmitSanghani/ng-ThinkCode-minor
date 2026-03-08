@@ -1,5 +1,8 @@
 const Question = require('../models/question.model');
+const User = require('../models/user.model');
+const Submission = require('../models/submission.model');
 const { sendSuccess, sendError } = require('../utils/responseHandler');
+const { isUserOnline } = require('../socket');
 
 // @desc    Add a new question
 // @route   POST /api/admin/questions/add
@@ -180,6 +183,100 @@ exports.deleteQuestion = async (req, res, next) => {
         if (error.kind === 'ObjectId') {
             return sendError(res, 'Question not found', 404);
         }
+        next(error);
+    }
+};
+
+// @desc    Get dashboard statistics
+// @route   GET /api/admin/dashboard-stats
+// @access  Private (Admin)
+exports.getDashboardStats = async (req, res, next) => {
+    try {
+        const totalStudents = await User.countDocuments({ role: 'student' });
+
+        // Real-time online count — ONLY from active socket connections (like a chat app)
+        const { getActiveUsersCount } = require('../socket');
+        const onlineUsersNow = getActiveUsersCount();
+
+        const totalSubmissions = await Submission.countDocuments();
+        const activeQuestions = await Question.countDocuments();
+
+        // Avg Completion Rate (Accepted submissions / Total Submissions)
+        // Using $group to get total submissions and total accepted
+        const submissionStats = await Submission.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    accepted: { $sum: { $cond: [{ $eq: ["$status", "Accepted"] }, 1, 0] } },
+                    avgTime: { $avg: "$runtime" }
+                }
+            }
+        ]);
+
+        const stats = submissionStats[0] || { total: 0, accepted: 0, avgTime: 0 };
+        const avgCompletion = stats.total > 0 ? (stats.accepted / stats.total) * 100 : 0;
+
+        // Active Users Today (Users who submitted something today)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const activeUsersToday = await Submission.distinct('student', {
+            submittedAt: { $gte: today }
+        });
+
+        // Submission Trend (Last 7 Days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const submissionTrend = await Submission.aggregate([
+            {
+                $match: {
+                    submittedAt: { $gte: sevenDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$submittedAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]);
+
+        // Grade Distribution
+        const gradeDistribution = await Submission.aggregate([
+            {
+                $group: {
+                    _id: "$grade",
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Map gradeDistribution result for easier frontend use
+        const gradeMap = {};
+        gradeDistribution.forEach(g => {
+            gradeMap[g._id || 'Pending'] = g.count;
+        });
+
+        sendSuccess(res, {
+            topCards: {
+                totalStudents,
+                activeStudents: onlineUsersNow,
+                totalSubmissions,
+                activeQuestions,
+                avgCompletion: parseFloat(avgCompletion.toFixed(1))
+            },
+            platformStats: {
+                questionsCompleted: stats.accepted,
+                avgTimePerQuestion: Math.round(stats.avgTime || 0),
+                onlineUsersNow,
+                activeUsersToday: activeUsersToday.length,
+                successRate: parseFloat(avgCompletion.toFixed(1))
+            },
+            submissionTrend,
+            gradeDistribution: gradeMap
+        });
+    } catch (error) {
         next(error);
     }
 };

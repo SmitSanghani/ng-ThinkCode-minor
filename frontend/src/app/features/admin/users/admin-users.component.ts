@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { AdminUserService, AdminUser } from '../../../core/services/admin-user.service';
+import { SocketService } from '../../../core/services/socket.service';
 
 @Component({
     selector: 'app-admin-users',
@@ -15,6 +16,7 @@ import { AdminUserService, AdminUser } from '../../../core/services/admin-user.s
 })
 export class AdminUsersComponent implements OnInit, OnDestroy {
     private adminUserService = inject(AdminUserService);
+    private socketService = inject(SocketService);
     private router = inject(Router);
     private cdr = inject(ChangeDetectorRef);
     private destroy$ = new Subject<void>();
@@ -37,6 +39,16 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.loadUsers();
+
+        // Listen for Realtime Status Updates
+        this.socketService.onlineStatus$.pipe(takeUntil(this.destroy$)).subscribe(update => {
+            if (!update) return;
+            const user = this.users.find(u => u._id === update.userId);
+            if (user) {
+                user.isOnline = update.isOnline;
+                this.cdr.markForCheck();
+            }
+        });
 
         // Debounced Search
         this.searchSubject.pipe(

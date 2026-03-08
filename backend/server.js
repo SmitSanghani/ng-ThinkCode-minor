@@ -15,6 +15,10 @@ const server = app.listen(PORT, () => {
     console.log(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
 });
 
+// Init Socket.io
+const { initSocket } = require('./src/socket');
+initSocket(server);
+
 // Handle server errors
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
