@@ -1,0 +1,141 @@
+<nav class="navbar" [class.navbar-scrolled]="isScrolled">
+    <div class="nav-container">
+        <!-- Brand Section -->
+        <div class="brand-section">
+            <a routerLink="/" class="logo">
+                <div class="logo-square">
+                    <span class="logo-icon">CP</span>
+                </div>
+                <span class="brand-name">CodePractice</span>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <div class="nav-links d-none d-lg-flex">
+                <a routerLink="/website/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+                    class="nav-link-item">Explore</a>
+                <a routerLink="/student/problems" routerLinkActive="active" class="nav-link-item">Problems</a>
+                <a routerLink="/student/problems" routerLinkActive="active" class="nav-link-item">Problems</a>
+                <a routerLink="/student/plans" routerLinkActive="active" class="nav-link-item">Plans</a>
+                <a routerLink="/contest" class="nav-link-item">Contest</a>
+                <a routerLink="/discuss" class="nav-link-item">Discuss</a>
+            </div>
+        </div>
+
+        <!-- Utility Section -->
+        <div class="utility-section">
+            <div class="flex items-center gap-3 md:gap-6">
+                <!-- Search Bar -->
+                <div class="search-wrapper d-none d-md-flex">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search" class="search-input">
+                    <span class="search-shortcut">⌘K</span>
+                </div>
+                <!-- Dashboard Quick Link -->
+                <a *ngIf="user()?.role === 'admin'" routerLink="/admin/dashboard"
+                    class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-[13px] font-semibold border border-slate-200">
+                    <i class="bi bi-grid-fill"></i>
+                    Dashboard
+                </a>
+
+                <!-- Global Chat Icon -->
+                <div class="chat-icon-wrapper" (click)="toggleChat()">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span class="unread-badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
+                </div>
+            </div>
+
+            <!-- User Actions -->
+            <ng-container *ngIf="user(); else authButtons">
+                <div class="user-action-group">
+                    <!-- Avatar with Dropdown -->
+                    <div class="profile-container">
+                        <div class="avatar-wrapper" (click)="toggleDropdown($event)">
+                            <img [src]="user()?.avatar || 'https://assets.leetcode.com/users/default_avatar.jpg'"
+                                class="avatar-img" alt="Avatar">
+                            <div class="online-dot"></div>
+                        </div>
+
+                        <!-- Dropdown Menu -->
+                        <div class="dropdown-menu-premium" [class.show]="showDropdown">
+                            <div class="dropdown-header">
+                                <span class="user-email text-truncate">{{ user()?.email }}</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" routerLink="/student/profile" (click)="showDropdown = false">
+                                <i class="bi bi-person me-2"></i> Profile
+                            </a>
+                            <a class="dropdown-item" routerLink="/settings" (click)="showDropdown = false">
+                                <i class="bi bi-gear me-2"></i> Settings
+                            </a>
+                            <ng-container *ngIf="user()?.role === 'admin'">
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item admin-link" routerLink="/admin/dashboard"
+                                    (click)="showDropdown = false">
+                                    <i class="bi bi-shield-lock me-2"></i> Admin Panel
+                                </a>
+                            </ng-container>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item logout" (click)="logout()">
+                                <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <ng-template #authButtons>
+                <div class="auth-buttons d-none d-md-flex">
+                    <a routerLink="/login" class="login-link">Login</a>
+                    <a routerLink="/register" class="btn-join">Join Now</a>
+                </div>
+            </ng-template>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle d-lg-none" (click)="toggleMobileMenu()" [class.active]="showMobileMenu">
+                <i class="bi" [class.bi-list]="!showMobileMenu" [class.bi-x-lg]="showMobileMenu"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Container -->
+    <div class="mobile-menu" [class.show]="showMobileMenu">
+        <div class="mobile-menu-content">
+            <div class="mobile-nav-links">
+                <a routerLink="/website/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+                    class="mobile-nav-item" (click)="showMobileMenu = false">
+                    <i class="bi bi-house-door me-3"></i>Explore
+                </a>
+                <a routerLink="/student/problems" routerLinkActive="active" class="mobile-nav-item"
+                    (click)="showMobileMenu = false">
+                    <i class="bi bi-code-square me-3"></i>Problems
+                </a>
+                <a routerLink="/student/plans" routerLinkActive="active" class="mobile-nav-item"
+                    (click)="showMobileMenu = false">
+                    <i class="bi bi-credit-card me-3"></i>Plans
+                </a>
+                <a routerLink="/contest" class="mobile-nav-item" (click)="showMobileMenu = false">
+                    <i class="bi bi-trophy me-3"></i>Contest
+                </a>
+                <a routerLink="/discuss" class="mobile-nav-item" (click)="showMobileMenu = false">
+                    <i class="bi bi-chat-left-text me-3"></i>Discuss
+                </a>
+                <ng-container *ngIf="user()?.role === 'admin'">
+                    <div class="mobile-divider"></div>
+                    <a routerLink="/admin/dashboard" class="mobile-nav-item admin-link"
+                        (click)="showMobileMenu = false">
+                        <i class="bi bi-shield-lock me-3"></i>Admin Dashboard
+                    </a>
+                </ng-container>
+            </div>
+
+            <div class="mobile-auth-footer" *ngIf="!user()">
+                <div class="dropdown-divider"></div>
+                <div class="p-4 flex flex-col gap-3">
+                    <a routerLink="/login" class="mobile-auth-btn secondary" (click)="showMobileMenu = false">Login</a>
+                    <a routerLink="/register" class="mobile-auth-btn primary" (click)="showMobileMenu = false">Join
+                        Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
