@@ -22,7 +22,7 @@
 
         <!-- Utility Section -->
         <div class="utility-section">
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3 md:gap-6">
                 <!-- Search Bar -->
                 <div class="search-wrapper d-none d-md-flex">
                     <i class="bi bi-search search-icon"></i>
@@ -60,15 +60,16 @@
                                 <span class="user-email text-truncate">{{ user()?.email }}</span>
                             </div>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" routerLink="/student/profile">
+                            <a class="dropdown-item" routerLink="/student/profile" (click)="showDropdown = false">
                                 <i class="bi bi-person me-2"></i> Profile
                             </a>
-                            <a class="dropdown-item" routerLink="/settings">
+                            <a class="dropdown-item" routerLink="/settings" (click)="showDropdown = false">
                                 <i class="bi bi-gear me-2"></i> Settings
                             </a>
                             <ng-container *ngIf="user()?.role === 'admin'">
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item admin-link" routerLink="/admin/dashboard">
+                                <a class="dropdown-item admin-link" routerLink="/admin/dashboard"
+                                    (click)="showDropdown = false">
                                     <i class="bi bi-shield-lock me-2"></i> Admin Panel
                                 </a>
                             </ng-container>
@@ -82,11 +83,58 @@
             </ng-container>
 
             <ng-template #authButtons>
-                <div class="auth-buttons">
+                <div class="auth-buttons d-none d-md-flex">
                     <a routerLink="/login" class="login-link">Login</a>
                     <a routerLink="/register" class="btn-join">Join Now</a>
                 </div>
             </ng-template>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle d-lg-none" (click)="toggleMobileMenu()" [class.active]="showMobileMenu">
+                <i class="bi" [class.bi-list]="!showMobileMenu" [class.bi-x-lg]="showMobileMenu"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Container -->
+    <div class="mobile-menu" [class.show]="showMobileMenu">
+        <div class="mobile-menu-content">
+            <div class="mobile-nav-links">
+                <a routerLink="/website/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+                    class="mobile-nav-item" (click)="showMobileMenu = false">
+                    <i class="bi bi-house-door me-3"></i>Explore
+                </a>
+                <a routerLink="/student/problems" routerLinkActive="active" class="mobile-nav-item"
+                    (click)="showMobileMenu = false">
+                    <i class="bi bi-code-square me-3"></i>Problems
+                </a>
+                <a routerLink="/student/plans" routerLinkActive="active" class="mobile-nav-item"
+                    (click)="showMobileMenu = false">
+                    <i class="bi bi-credit-card me-3"></i>Plans
+                </a>
+                <a routerLink="/contest" class="mobile-nav-item" (click)="showMobileMenu = false">
+                    <i class="bi bi-trophy me-3"></i>Contest
+                </a>
+                <a routerLink="/discuss" class="mobile-nav-item" (click)="showMobileMenu = false">
+                    <i class="bi bi-chat-left-text me-3"></i>Discuss
+                </a>
+                <ng-container *ngIf="user()?.role === 'admin'">
+                    <div class="mobile-divider"></div>
+                    <a routerLink="/admin/dashboard" class="mobile-nav-item admin-link"
+                        (click)="showMobileMenu = false">
+                        <i class="bi bi-shield-lock me-3"></i>Admin Dashboard
+                    </a>
+                </ng-container>
+            </div>
+
+            <div class="mobile-auth-footer" *ngIf="!user()">
+                <div class="dropdown-divider"></div>
+                <div class="p-4 flex flex-col gap-3">
+                    <a routerLink="/login" class="mobile-auth-btn secondary" (click)="showMobileMenu = false">Login</a>
+                    <a routerLink="/register" class="mobile-auth-btn primary" (click)="showMobileMenu = false">Join
+                        Now</a>
+                </div>
+            </div>
         </div>
     </div>
 </nav>

@@ -20,22 +20,33 @@ export class NavbarComponent {
   user: Signal<User | null> = this.authService.currentUser as Signal<User | null>;
   unreadCount = this.chatService.unreadCount;
   showDropdown = false;
+  showMobileMenu = false;
   isScrolled = false;
+
+  toggleMobileMenu() {
+    this.showMobileMenu = !this.showMobileMenu;
+    if (this.showMobileMenu) {
+      this.showDropdown = false;
+    }
+  }
 
   toggleChat() {
     this.chatService.toggleChat();
+    this.showMobileMenu = false;
   }
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
     if (!this.el.nativeElement.contains(event.target)) {
       this.showDropdown = false;
+      this.showMobileMenu = false;
     }
   }
 
   @HostListener('document:keydown.escape')
   onEscapePress() {
     this.showDropdown = false;
+    this.showMobileMenu = false;
   }
 
   @HostListener('window:scroll')
