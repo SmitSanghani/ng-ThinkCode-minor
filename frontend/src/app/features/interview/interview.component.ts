@@ -248,6 +248,8 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private ensureVideoBinding() {
         console.log('Video: Running binding check');
         if (this._localVideo?.nativeElement && this.localStream) {
+            // CRITICAL: Force mute the local video element so user doesn't hear themselves
+            this._localVideo.nativeElement.muted = true;
             if (this._localVideo.nativeElement.srcObject !== this.localStream) {
                 this._localVideo.nativeElement.srcObject = this.localStream;
                 this._localVideo.nativeElement.play().catch(e => console.error('Local Video Play Error:', e));
@@ -398,10 +400,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private async startLocalMedia() {
         try {
-            console.log('WebRTC: Starting local media');
-            this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            console.log('WebRTC: Starting local media with Echo Cancellation');
+            this.localStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
             if (this._localVideo?.nativeElement) {
                 this._localVideo.nativeElement.srcObject = this.localStream;
+                this._localVideo.nativeElement.muted = true; // Absolute mute for local feedback
             }
             this.addLocalTracksToPeer();
         } catch (err) {
