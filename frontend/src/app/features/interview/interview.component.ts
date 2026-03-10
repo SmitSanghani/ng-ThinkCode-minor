@@ -179,7 +179,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('user-joined', async (data: any) => {
             console.log('WebRTC: User joined, creating offer');
             if (this.peerConnection) {
-                const offer = await this.peerConnection.createOffer();
+                // Renegotiate when someone joins
+                const offer = await this.peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: true
+                });
                 await this.peerConnection.setLocalDescription(offer);
                 this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
             }
@@ -259,20 +263,23 @@ export class InterviewComponent implements OnInit, OnDestroy {
     }
 
     private ensureVideoBinding() {
-        console.log('Video: Running binding check');
         if (this._localVideo?.nativeElement && this.localStream) {
-            // CRITICAL: Force mute the local video element so user doesn't hear themselves
             this._localVideo.nativeElement.muted = true;
             if (this._localVideo.nativeElement.srcObject !== this.localStream) {
                 this._localVideo.nativeElement.srcObject = this.localStream;
-                this._localVideo.nativeElement.play().catch(e => console.error('Local Video Play Error:', e));
+            }
+            if (this._localVideo.nativeElement.paused) {
+                this._localVideo.nativeElement.play().catch(() => {});
             }
         }
+        
         if (this._remoteVideo?.nativeElement && this.remoteStream) {
             if (this._remoteVideo.nativeElement.srcObject !== this.remoteStream) {
-                console.log('Video: Binding Remote Stream');
+                console.log('Video: Force binding Remote Stream');
                 this._remoteVideo.nativeElement.srcObject = this.remoteStream;
-                this._remoteVideo.nativeElement.play().catch(e => console.error('Remote Video Play Error:', e));
+            }
+            if (this._remoteVideo.nativeElement.paused) {
+                this._remoteVideo.nativeElement.play().catch(e => console.error('Remote Play Error:', e));
             }
         }
     }
