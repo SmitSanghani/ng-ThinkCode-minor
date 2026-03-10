@@ -504,6 +504,21 @@
     transform: scale(0.98);
 }
 
+/* Display Utilities for Responsiveness */
+.d-none { display: none !important; }
+.d-lg-flex { display: none; }
+.d-lg-none { display: flex; }
+
+@media (min-width: 1024px) {
+    .d-lg-flex { display: flex !important; }
+    .d-lg-none { display: none !important; }
+}
+
+.d-md-flex { display: none; }
+@media (min-width: 768px) {
+    .d-md-flex { display: flex !important; }
+}
+
 /* Responsive Overrides */
 @media (max-width: 1024px) {
     .nav-container {
@@ -511,19 +526,23 @@
     }
 
     .brand-section {
-        gap: 20px;
+        gap: 15px;
+    }
+    
+    .nav-links {
+        gap: 12px;
     }
 }
 
 @media (max-width: 768px) {
     .nav-container {
-        padding: 0 14px;
+        padding: 0 12px;
+        height: 64px;
     }
 
     .logo-square {
         width: 32px;
         height: 32px;
-        border-radius: 8px;
     }
 
     .brand-name {
@@ -531,75 +550,58 @@
     }
 
     .utility-section {
-        gap: 10px;
+        gap: 6px;
+    }
+    
+    .utility-section .flex {
+        gap: 8px !important;
     }
 
     .chat-icon-wrapper {
         margin-right: 0;
-        width: 34px;
-        height: 34px;
-    }
-
-    .chat-icon-wrapper i {
-        font-size: 1.1rem;
+        width: 36px;
+        height: 36px;
     }
 }
 
 @media (max-width: 480px) {
     .navbar {
-        height: 56px;
+        height: 60px;
     }
 
     .mobile-menu {
-        top: 56px;
-        max-height: calc(100vh - 56px);
-    }
-
-    .mobile-menu.show {
-        max-height: calc(100vh - 56px);
+        top: 60px;
     }
 
     .nav-container {
-        padding: 0 12px;
+        padding: 0 10px;
     }
 
     .logo-square {
-        width: 28px;
-        height: 28px;
-    }
-
-    .logo-icon {
-        font-size: 11px;
+        width: 30px;
+        height: 30px;
     }
 
     .brand-name {
-        font-size: 14px;
-        max-width: 110px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 15px;
+        max-width: 90px;
+        letter-spacing: -0.01em;
     }
 
-    .avatar-img {
-        width: 30px;
-        height: 30px;
+    .avatar-wrapper {
+        width: 32px;
+        height: 32px;
     }
 
     .chat-icon-wrapper {
-        width: 30px;
-        height: 30px;
+        width: 32px;
+        height: 32px;
     }
-
-    .chat-icon-wrapper i {
-        font-size: 1rem;
-    }
-
-    .unread-badge {
-        width: 16px;
-        height: 16px;
-        font-size: 9px;
-        top: -4px;
-        right: -4px;
+    
+    .mobile-menu-toggle {
+        width: 36px;
+        height: 36px;
+        font-size: 22px;
     }
 }
 

@@ -278,65 +278,77 @@
 /* ---- Mobile Responsive ---- */
 @media (max-width: 600px) {
     .global-chat-container {
-        /* Take up most of the screen on mobile */
-        width: calc(100vw - 20px);
-        right: 10px;
-        bottom: 70px;
-        max-height: calc(100vh - 100px);
-        border-radius: 16px;
+        /* Take up most of the screen on mobile and center it */
+        width: calc(100vw - 32px);
+        left: 16px !important;
+        right: 16px !important;
+        bottom: 20px !important;
+        top: auto !important;
+        max-height: 80vh;
+        border-radius: 20px;
+        margin: 0 auto;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Disable drag cursor on mobile since we center it fixed */
+    .chat-header {
+        cursor: default;
+    }
+    .drag-icon {
+        display: none;
     }
 
     .chat-header {
-        padding: 14px 16px;
+        padding: 16px;
     }
 
     .chat-title {
-        font-size: 0.95rem;
+        font-size: 1rem;
     }
 
     .chat-body {
-        min-height: 250px;
-        padding: 12px;
-        gap: 10px;
+        min-height: 300px;
+        padding: 16px;
+        gap: 12px;
     }
 
     .message-bubble {
-        max-width: 90%;
-        padding: 9px 12px;
+        max-width: 92%;
+        padding: 10px 14px;
     }
 
     .msg-text {
-        font-size: 0.88rem;
+        font-size: 0.9rem;
     }
 
     .invite-card {
-        padding: 10px;
+        padding: 12px;
     }
 
     .invite-actions {
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
 
     .btn-join, .btn-reject {
         width: 100%;
-        padding: 10px;
-        font-size: 0.9rem;
+        padding: 12px;
+        font-size: 0.95rem;
         flex: unset;
     }
 
     .chat-footer {
-        padding: 10px 12px;
+        padding: 12px 16px;
     }
 
     .chat-input {
-        font-size: 0.9rem;
-        padding: 10px 12px;
+        font-size: 0.95rem;
+        padding: 12px 14px;
     }
 
     .send-btn {
-        padding: 0 16px;
-        min-height: 40px;
+        padding: 0 18px;
+        min-height: 44px;
     }
 }
 
