@@ -78,6 +78,8 @@ export class InterviewComponent implements OnInit, OnDestroy {
     isSharingScreen: boolean = false;
 
     private socket: any;
+    private isNegotiating = false;
+    private iceCandidatesBuffer: RTCIceCandidateInit[] = [];
 
     // Editor States
     code: string = '// Start coding here...';
@@ -191,9 +193,22 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('webrtc-offer', async (data: any) => {
-            console.log('WebRTC: Received offer');
+            console.log('WebRTC: Received offer, state:', this.peerConnection?.signalingState);
             if (!this.peerConnection) this.setupWebRTC();
+            
+            // Only accept offer if we are stable
+            if (this.peerConnection.signalingState !== 'stable') {
+                console.warn('WebRTC: Received offer while not stable, state:', this.peerConnection.signalingState);
+                return;
+            }
+
             await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            
+            // Flush buffered ICE candidates
+            while (this.iceCandidatesBuffer.length > 0) {
+                const candidate = this.iceCandidatesBuffer.shift();
+                if (candidate) await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
             const answer = await this.peerConnection.createAnswer();
             await this.peerConnection.setLocalDescription(answer);
             this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
@@ -201,9 +216,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('webrtc-answer', async (data: any) => {
-            console.log('WebRTC: Received answer');
-            if (this.peerConnection) {
+            console.log('WebRTC: Received answer, state:', this.peerConnection?.signalingState);
+            if (this.peerConnection && this.peerConnection.signalingState === 'have-local-offer') {
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                
+                // Flush buffered ICE candidates
+                while (this.iceCandidatesBuffer.length > 0) {
+                    const candidate = this.iceCandidatesBuffer.shift();
+                    if (candidate) await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+            } else {
+                console.warn('WebRTC: PeerConnection in wrong state for answer:', this.peerConnection?.signalingState);
             }
             this.cdr.detectChanges();
         });
@@ -211,7 +234,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('webrtc-candidate', async (data: any) => {
             if (this.peerConnection && data.candidate) {
                 try {
-                    await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    if (this.peerConnection.remoteDescription) {
+                        await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } else {
+                        this.iceCandidatesBuffer.push(data.candidate);
+                    }
                 } catch (e) {
                     console.error('WebRTC: Error adding ICE candidate', e);
                 }
@@ -482,13 +509,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
         };
 
         this.peerConnection.onnegotiationneeded = async () => {
+            if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') return;
+            
             try {
+                this.isNegotiating = true;
                 console.log('WebRTC: Negotiation needed, creating offer...');
                 const offer = await this.peerConnection.createOffer();
                 await this.peerConnection.setLocalDescription(offer);
                 this.socket?.emit('webrtc-offer', { roomId: this.roomId, offer });
             } catch (err) {
                 console.error('WebRTC: Negotiation Error', err);
+            } finally {
+                this.isNegotiating = false;
             }
         };
     }
