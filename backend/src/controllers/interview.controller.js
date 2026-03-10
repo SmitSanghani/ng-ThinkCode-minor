@@ -34,6 +34,29 @@ exports.createInterview = async (req, res, next) => {
         const meetingLink = `${frontendUrl}/interview/${interview.roomId}`;
 
         const { emitToUser } = require('../socket');
+        const Chat = require('../models/Chat');
+
+        // UNIFIED CHAT: Save invitation to the chat thread so it persists on refresh
+        let chat = await Chat.findOne({
+            participants: { $all: [req.user.id, candidateId] }
+        });
+
+        if (!chat) {
+            chat = await Chat.create({
+                participants: [req.user.id, candidateId],
+                messages: []
+            });
+        }
+
+        chat.messages.push({
+            senderId: req.user.id,
+            text: 'Interview Invitation',
+            isInvite: true,
+            roomId: interview.roomId,
+            createdAt: new Date()
+        });
+        await chat.save();
+
         emitToUser(candidateId, 'receiveMessage', {
             sender: req.user.name || 'Admin',
             senderId: req.user.id,

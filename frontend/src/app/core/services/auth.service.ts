@@ -25,31 +25,36 @@ export class AuthService {
     isAuthenticated: WritableSignal<boolean> = signal<boolean>(false);
     isLoading: WritableSignal<boolean> = signal<boolean>(false);
 
-    private authCheckPromise: Promise<boolean> | null = null;
-
     constructor(private http: HttpClient, private router: Router) {
-        // We will call checkSession explicitly in Guards rather than here 
-        // because Guards need to wait for it.
+        // Recover session from localStorage on app start
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            this.isAuthenticated.set(true);
+        }
     }
 
     get token(): string | null {
-        return sessionStorage.getItem('accessToken');
+        return localStorage.getItem('accessToken');
     }
 
-    // Main hydration method
     checkDetails(): Observable<boolean> {
-        if (this.isAuthenticated() && this.token) {
+        if (this.isAuthenticated() && this.currentUser() && this.token) {
             return of(true);
         }
 
-        const rt = sessionStorage.getItem('refreshToken');
-        if (!rt) return of(false);
+        const rt = localStorage.getItem('refreshToken');
+        if (!rt) {
+            this.clearSession();
+            return of(false);
+        }
 
-        // Try to refresh token using sessionStorage stored refresh token
         return this.refreshToken().pipe(
             switchMap(() => this.getMe()),
             map(user => !!user),
-            catchError(() => of(false))
+            catchError(() => {
+                this.clearSession();
+                return of(false);
+            })
         );
     }
 
@@ -87,12 +92,14 @@ export class AuthService {
     }
 
     refreshToken(): Observable<AuthResponse> {
-        const refreshToken = sessionStorage.getItem('refreshToken');
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) return throwError(() => new Error('No refresh token'));
+
         return this.http.post<AuthResponse>(`${this.apiUrl}/refresh-token`, { refreshToken }).pipe(
             tap(response => {
                 if (response.success && response.accessToken && response.refreshToken) {
-                    sessionStorage.setItem('accessToken', response.accessToken);
-                    sessionStorage.setItem('refreshToken', response.refreshToken);
+                    localStorage.setItem('accessToken', response.accessToken);
+                    localStorage.setItem('refreshToken', response.refreshToken);
                 }
             })
         );
@@ -115,15 +122,15 @@ export class AuthService {
     }
 
     private setSession(accessToken: string, refreshToken: string, user: User): void {
-        sessionStorage.setItem('accessToken', accessToken);
-        sessionStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
         this.currentUser.set(user);
         this.isAuthenticated.set(true);
     }
 
     private clearSession(): void {
-        sessionStorage.removeItem('accessToken');
-        sessionStorage.removeItem('refreshToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         this.currentUser.set(null);
         this.isAuthenticated.set(false);
     }

@@ -1,0 +1,255 @@
+.payment-container {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.payment-card {
+    max-width: 900px;
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    font-size: 14px;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: 500;
+    z-index: 10;
+}
+
+.back-link:hover {
+    color: #000;
+}
+
+.payment-content {
+    display: grid;
+    grid-template-columns: 450px 1fr;
+    min-height: 550px;
+}
+
+.left-panel {
+    background-color: #fff;
+    padding: 80px 40px;
+    border-right: 1px solid #f1f5f9;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.logo {
+    width: 32px;
+    height: 32px;
+    background: #6366f1;
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.plan-label {
+    color: #64748b;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.plan-price {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 40px;
+}
+
+.plan-price .period {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.product-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.total-row {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.right-panel {
+    padding: 80px 40px;
+}
+
+.form-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: #0f172a;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.input-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.card-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+    z-index: 5;
+}
+
+.card-input.top {
+    border-radius: 8px 8px 0 0;
+}
+
+.bottom-inputs {
+    display: flex;
+}
+
+.card-input.bottom-left {
+    border-radius: 0 0 0 8px;
+    border-top: none;
+}
+
+.card-input.bottom-right {
+    border-radius: 0 0 8px 0;
+    border-top: none;
+    border-left: none;
+}
+
+.full-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.full-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.test-mode-banner {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.pay-button {
+    width: 100%;
+    padding: 14px;
+    background-color: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+}
+
+.pay-button:hover:not(:disabled) {
+    background-color: #4f46e5;
+    transform: translateY(-1px);
+}
+
+.pay-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.footer-text {
+    margin-top: 24px;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .payment-content {
+        grid-template-columns: 1fr;
+    }
+    .left-panel {
+        padding: 40px 20px;
+        order: 2;
+    }
+    .right-panel {
+        padding: 40px 20px;
+        order: 1;
+    }
+    .back-link {
+        left: 20px;
+    }
+}

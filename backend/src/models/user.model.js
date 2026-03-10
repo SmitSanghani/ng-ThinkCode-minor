@@ -33,7 +33,7 @@ const UserSchema = new mongoose.Schema({
     },
     plan: {
         type: String,
-        enum: ['Free', 'Basic', 'Premium'],
+        enum: ['Free', 'Premium'],
         default: 'Free'
     },
     passwordHash: {

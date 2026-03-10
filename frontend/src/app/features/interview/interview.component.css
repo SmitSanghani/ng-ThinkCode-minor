@@ -500,19 +500,21 @@
 
     .side-panel {
         min-width: 100%;
-        height: 500px;
+        height: calc(100vh - 420px);
+        min-height: 380px;
         flex: none;
+        padding-bottom: 20px;
     }
 
     .video-workspace {
-        padding: 15px;
+        padding: 16px;
         flex: none;
         height: auto;
-        min-height: 350px;
+        min-height: 380px;
     }
 
     .videos-grid {
-        padding: 0 5px;
+        padding: 0 8px;
         gap: 16px;
         height: auto;
         max-height: unset;
@@ -520,15 +522,27 @@
 }
 
 @media (max-width: 768px) {
+    .interview-container {
+        overflow-y: auto;
+    }
+
     .interview-layout {
         padding: 8px;
         gap: 8px;
+        height: auto;
+    }
+
+    .video-workspace {
+        padding: 12px 10px;
+        min-height: 280px;
+        border-radius: 14px;
     }
 
     .videos-grid {
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
         padding: 0;
+        max-height: unset;
     }
 
     .video-card {
@@ -536,39 +550,101 @@
         max-width: 100%;
         flex: none;
         aspect-ratio: 16/9;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     }
 
-    /* Hide waiting box on mobile to focus on self until someone joins */
-    /* This solves the 'two users' visual clutter on mobile when alone */
+    /* Hide waiting box on mobile - focus on self video */
     .video-card.remote.waiting {
         display: none !important;
     }
 
     .floating-controls {
-        bottom: 15px;
-        padding: 6px;
+        bottom: 12px;
+        padding: 8px 12px;
         gap: 8px;
+        width: auto;
+        max-width: 95%;
+        justify-content: center;
     }
 
     .btn-ctrl {
-        width: 38px;
-        height: 38px;
+        width: 40px;
+        height: 40px;
         font-size: 1rem;
     }
 
     .btn-ctrl.leave {
-        padding: 0 12px;
+        padding: 0 14px;
+        font-size: 0.7rem;
     }
 
     .side-panel {
-        height: 450px;
-        padding-bottom: 20px;
+        min-width: 100%;
+        height: 420px;
+        min-height: unset;
+    }
+
+    .panel-section.chat {
+        border-radius: 14px;
+    }
+
+    .chat-viewport {
+        padding: 14px;
+        gap: 12px;
     }
 
     .bubble {
-        max-width: 95%;
+        max-width: 96%;
+        padding: 8px 12px;
+    }
+
+    .text {
+        font-size: 0.82rem;
+    }
+
+    .chat-composer {
+        padding: 10px;
+    }
+
+    .input-wrap input {
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-workspace {
+        min-height: 220px;
+        padding: 8px;
+        border-radius: 12px;
+    }
+
+    .video-card {
+        border-radius: 10px;
+        aspect-ratio: 4/3;
+    }
+
+    .floating-controls {
+        padding: 6px 8px;
+        gap: 4px;
+    }
+
+    .btn-ctrl {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+
+    .btn-ctrl.leave span {
+        display: none;
+    }
+
+    .btn-ctrl.leave {
+        padding: 0 10px;
+    }
+
+    .side-panel {
+        height: 380px;
     }
 }
 
@@ -581,7 +657,17 @@
         height: auto;
     }
 
+    .workspace-area {
+        flex-direction: row;
+    }
+
     .side-panel {
-        height: 400px;
+        min-width: 280px;
+        height: calc(100vh - 30px);
+        flex: 1;
+    }
+
+    .video-workspace {
+        min-height: unset;
     }
 }

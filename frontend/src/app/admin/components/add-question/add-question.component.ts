@@ -46,7 +46,8 @@ export class AddQuestionComponent implements OnInit {
             constraints: [''],
             testCases: this.fb.array([], Validators.required),
             functionSignature: ['', Validators.required],
-            referenceSolution: ['', Validators.required]
+            referenceSolution: ['', Validators.required],
+            isPremium: [false]
         });
     }
 

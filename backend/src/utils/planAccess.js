@@ -1,25 +1,13 @@
 /**
  * Logic for plan-based locking
- * @param {string} studentPlan - 'Free', 'Basic', 'Premium'
- * @param {string} difficulty - 'Easy', 'Medium', 'Hard'
- * @param {number} problemIndex - 0-based index of the problem when sorted by createdAt
+ * @param {string} studentPlan - 'Free', 'Premium'
+ * @param {boolean} isPremiumOnly - Whether the question is premium only
  * @returns {boolean} - true if unlocked, false if locked
  */
-const planAccessControl = (studentPlan, difficulty, problemIndex) => {
+const planAccessControl = (studentPlan, isPremiumOnly) => {
     if (studentPlan === 'Premium') return true;
-
-    if (studentPlan === 'Free') {
-        if (difficulty === 'Easy') return problemIndex < 10;
-        return false; // Medium and Hard are locked
-    }
-
-    if (studentPlan === 'Basic') {
-        if (difficulty === 'Easy') return true;
-        if (difficulty === 'Medium') return problemIndex < 20;
-        return false; // Hard is locked
-    }
-
-    return false;
+    if (!isPremiumOnly) return true; // Available for Free users
+    return false; // Premium question and Free user
 };
 
 module.exports = { planAccessControl };

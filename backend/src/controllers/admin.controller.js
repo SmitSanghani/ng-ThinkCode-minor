@@ -18,7 +18,8 @@ exports.addQuestion = async (req, res, next) => {
             constraints,
             testCases,
             functionSignature,
-            referenceSolution
+            referenceSolution,
+            isPremium
         } = req.body;
 
         // Check for duplicate title
@@ -36,7 +37,8 @@ exports.addQuestion = async (req, res, next) => {
             constraints,
             testCases,
             functionSignature,
-            referenceSolution
+            referenceSolution,
+            isPremium
         });
 
         sendSuccess(res, { questionId: question._id }, 'Question added successfully', 201);

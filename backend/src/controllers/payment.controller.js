@@ -70,6 +70,25 @@ class PaymentController {
     }
 
     /**
+     * POST /api/payment/select-premium
+     * Selects the Premium plan directly (FOR TESTING)
+     */
+    async selectPremiumPlan(req, res, next) {
+        try {
+            const userId = req.user._id;
+            const user = await paymentService.selectPremiumPlan(userId);
+
+            res.status(200).json({
+                success: true,
+                user,
+                message: 'Premium plan activated! (Test Mode)'
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
      * GET /api/payment/config
      * Returns the Stripe publishable key to frontend
      */

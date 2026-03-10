@@ -1,0 +1,81 @@
+<div class="payment-container">
+    <div class="payment-card">
+        <div class="back-link" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Back to CodePractice
+        </div>
+
+        <div class="payment-content">
+            <div class="left-panel">
+                <div class="brand">
+                    <div class="logo">CP</div>
+                    <span>CodePractice</span>
+                </div>
+                
+                <div class="plan-info">
+                    <p class="plan-label">Subscribe to Premium</p>
+                    <h1 class="plan-price">₹499.00 <span class="period">per month</span></h1>
+                </div>
+
+                <div class="product-item">
+                    <div class="item-name">ThinkCode Premium Plan</div>
+                    <div class="item-price">₹499.00</div>
+                </div>
+                
+                <div class="total-row">
+                    <span>Total due today</span>
+                    <span>₹499.00</span>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <h2 class="form-title">Payment method</h2>
+                
+                <div class="form-group">
+                    <label>Phone number</label>
+                    <div class="input-wrapper">
+                        <input type="text" [(ngModel)]="phoneNumber" placeholder="Any number (e.g. 1234567890)" class="full-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Card information</label>
+                    <div class="input-wrapper">
+                        <input type="text" [(ngModel)]="cardNumber" placeholder="Any number works here..." class="card-input top">
+                        <div class="bottom-inputs">
+                            <input type="text" [(ngModel)]="expiry" placeholder="MM / YY" class="card-input bottom-left">
+                            <input type="text" [(ngModel)]="cvv" placeholder="CVC" class="card-input bottom-right">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Cardholder name</label>
+                    <input type="text" [(ngModel)]="cardName" placeholder="Any name" class="full-input">
+                </div>
+
+                <div class="form-group">
+                    <label>Country or region</label>
+                    <select class="full-input">
+                        <option>India</option>
+                        <option>United States</option>
+                    </select>
+                </div>
+
+                <div class="test-mode-banner">
+                    <i class="bi bi-info-circle"></i> Demo mode: No validation. Just click Pay.
+                </div>
+
+                <button class="pay-button" (click)="processPayment()" [disabled]="isProcessing">
+                    <span *ngIf="!isProcessing">Pay ₹499.00</span>
+                    <span *ngIf="isProcessing" class="loader">
+                        <i class="bi bi-arrow-repeat spin"></i> Processing...
+                    </span>
+                </button>
+
+                <p class="footer-text">
+                    By confirming your subscription, you allow CodePractice to charge your card for future payments.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

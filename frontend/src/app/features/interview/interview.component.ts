@@ -231,6 +231,19 @@ export class InterviewComponent implements OnInit, OnDestroy {
             }
         });
 
+        this.socket.on('roomChatHistory', (data: { roomId: string, messages: any[] }) => {
+            console.log('Chat: Received room history', data);
+            const history: ChatMessage[] = data.messages.map(m => ({
+                id: Math.random().toString(36).substring(2, 9),
+                sender: m.senderId === this.authService.currentUser()?.id ? 'You' : m.sender,
+                text: m.text,
+                timestamp: new Date(m.timestamp)
+            }));
+            this.chatMessages = history;
+            this.scrollToBottom();
+            this.cdr.detectChanges();
+        });
+
         this.socket.on('chat-delete', ({ messageId }: { messageId: string }) => {
             this.chatMessages = this.chatMessages.filter(m => m.id !== messageId);
             this.cdr.detectChanges();

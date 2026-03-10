@@ -27,7 +27,7 @@ export class SocketService {
     public connect() {
         if (this.socket?.connected) return;
 
-        const token = sessionStorage.getItem('accessToken');
+        const token = localStorage.getItem('accessToken');
         if (!token) return;
 
         const socketUrl = environment.apiUrl.replace('/api', '');

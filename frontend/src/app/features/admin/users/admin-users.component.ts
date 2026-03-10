@@ -33,7 +33,7 @@ export class AdminUsersComponent implements OnInit, OnDestroy {
     totalUsers = 0;
     currentPage = 1;
     totalPages = 1;
-    pageSize = 10;
+    pageSize = 5;
 
     // Filters
     searchTerm = '';

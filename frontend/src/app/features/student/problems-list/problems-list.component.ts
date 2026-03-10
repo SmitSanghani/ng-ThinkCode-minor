@@ -117,11 +117,10 @@ export class ProblemsListComponent implements OnInit {
       );
     }
 
-    // 4. Step: Lock Logic for Free Plan
-    // If Free, only allow certain problems (e.g., first 15)
-    this.filteredProblems = result.map((p, index) => ({
+    // 4. Step: Map to ensure stability
+    this.filteredProblems = result.map(p => ({
       ...p,
-      isLocked: isFree && index >= 15 // Mark problems beyond 15 as locked for free users
+      isLocked: p.isLocked // Use the value returned by the backend
     }));
 
     this.pagination.page = 1;
@@ -170,15 +169,18 @@ export class ProblemsListComponent implements OnInit {
     if (p.isLocked) {
       Swal.fire({
         title: 'Premium Content',
-        text: 'This problem is only available for Premium users. Upgrade now to unlock 2500+ problems!',
+        text: 'This problem is available only in the Premium Plan. Upgrade to Premium to unlock this question.',
         icon: 'info',
         showCancelButton: true,
         confirmButtonText: 'Upgrade Now',
         cancelButtonText: 'Maybe Later',
-        confirmButtonColor: '#2563eb'
+        confirmButtonColor: '#4F46E5',
+        cancelButtonColor: '#94A3B8'
       }).then((result: any) => {
         if (result.isConfirmed) {
-          this.router.navigate(['/student/plans']);
+          this.router.navigate(['/student/plans'], { 
+            queryParams: { returnUrl: `/student/problems/${p._id || p.id}` } 
+          });
         }
       });
       return;

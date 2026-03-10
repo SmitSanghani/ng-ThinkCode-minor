@@ -18,6 +18,7 @@ export interface Question {
     totalSubmissions?: number;
     totalAccepted?: number;
     successRate?: number;
+    isPremium?: boolean;
     createdAt?: Date;
 }
 

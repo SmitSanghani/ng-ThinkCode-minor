@@ -4,6 +4,7 @@ import { SocketService } from './core/services/socket.service';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { GlobalChatComponent } from './shared/components/global-chat/global-chat.component';
+import { ChatStateService } from './core/services/chat-state.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,7 @@ import { GlobalChatComponent } from './shared/components/global-chat/global-chat
 export class App {
   private socketService = inject(SocketService);
   private router = inject(Router);
+  private chatService = inject(ChatStateService);
   protected readonly title = signal('frontend');
 
   ngOnInit() {
@@ -33,12 +35,21 @@ export class App {
         // Just show a simple toast to check chat
         Swal.fire({
           title: 'Interview Invitation',
-          text: `Check your messages to join the interview with ${msg.sender}`,
+          text: `Click to join the interview with ${msg.sender}`,
           icon: 'info',
           toast: true,
-          position: 'top-end',
+          position: 'bottom-end',
           showConfirmButton: false,
-          timer: 4000
+          timer: 5000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.addEventListener('click', () => {
+              if (msg.senderId) {
+                this.chatService.toggleChat({ id: msg.senderId, name: msg.sender });
+              }
+            });
+            toast.style.cursor = 'pointer';
+          }
         });
       } else {
         // Normal text message
@@ -47,9 +58,18 @@ export class App {
           text: msg.text,
           icon: 'info',
           toast: true,
-          position: 'top-end',
+          position: 'bottom-end',
           showConfirmButton: false,
-          timer: 5000
+          timer: 5000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.addEventListener('click', () => {
+              if (msg.senderId) {
+                this.chatService.toggleChat({ id: msg.senderId, name: msg.sender });
+              }
+            });
+            toast.style.cursor = 'pointer';
+          }
         });
       }
     });

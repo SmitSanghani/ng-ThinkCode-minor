@@ -27,7 +27,8 @@ export class AddQuestionComponent {
       description: ['', Validators.required],
       testCases: this.fb.array([this.createTestCaseGroup()]),
       referenceSolution: [''],
-      estimatedTime: [15]
+      estimatedTime: [15],
+      isPremium: [false]
     });
   }
 

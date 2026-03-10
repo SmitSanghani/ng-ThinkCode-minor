@@ -38,12 +38,20 @@
                         </ul>
                     </div>
                     <div class="card-action">
-                        <button (click)="selectPlan('Free')" [disabled]="isProcessing" class="btn-plan btn-free">
-                            <span *ngIf="!isProcessing">Start for Free</span>
-                            <span *ngIf="isProcessing" class="btn-loading">
-                                <i class="bi bi-arrow-repeat spin"></i> Processing...
-                            </span>
-                        </button>
+                        <ng-container *ngIf="user()?.plan === 'Free'; else notFree">
+                            <div class="current-plan-badge">
+                                <i class="bi bi-check-circle-fill"></i>
+                                Your Current Plan
+                            </div>
+                        </ng-container>
+                        <ng-template #notFree>
+                            <button (click)="selectPlan('Free')" [disabled]="isProcessing" class="btn-plan btn-free">
+                                <span *ngIf="!isProcessing">{{ user()?.plan === 'Premium' ? 'Switch to Free' : 'Start for Free' }}</span>
+                                <span *ngIf="isProcessing" class="btn-loading">
+                                    <i class="bi bi-arrow-repeat spin"></i> Processing...
+                                </span>
+                            </button>
+                        </ng-template>
                     </div>
                 </div>
 
@@ -72,13 +80,15 @@
                         </ul>
                     </div>
                     <div class="card-action">
-                        <button (click)="selectPlan('Premium')" [disabled]="isProcessing" class="btn-plan btn-premium">
-                            <span *ngIf="!isProcessing">Upgrade to Premium <i
-                                    class="bi bi-lightning-charge-fill"></i></span>
-                            <span *ngIf="isProcessing" class="btn-loading">
-                                <i class="bi bi-arrow-repeat spin"></i> Redirecting to Checkout...
-                            </span>
+                        <button *ngIf="user()?.plan !== 'Premium'" (click)="selectPlan('Premium')" [disabled]="isProcessing" class="btn-plan btn-premium">
+                            <span *ngIf="!isProcessing">Upgrade to Premium <i class="bi bi-lightning-charge-fill"></i></span>
+                            <span *ngIf="isProcessing">Redirecting...</span>
                         </button>
+
+                        <div *ngIf="user()?.plan === 'Premium'" class="active-plan-badge">
+                            <i class="bi bi-check-circle-fill"></i>
+                            You are currently on the Premium Plan
+                        </div>
                     </div>
                 </div>
             </div>

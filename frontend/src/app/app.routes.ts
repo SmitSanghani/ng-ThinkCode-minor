@@ -10,12 +10,12 @@ import { ProblemDetailComponent } from './features/student/problem-detail/proble
 import { AdminUsersComponent } from './features/admin/users/admin-users.component';
 import { UserDetailsComponent } from './features/admin/users/user-details/user-details.component';
 import { AdminUserSubmissionsComponent } from './features/admin/users/admin-user-submissions/admin-user-submissions.component';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
     { path: '', redirectTo: 'website/home', pathMatch: 'full' },
-    { path: 'login', component: LoginComponent },
-    { path: 'register', component: RegisterComponent },
+    { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+    { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
     {
         path: 'admin',
         component: AdminLayoutComponent,
@@ -47,6 +47,7 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
             { path: 'plans', loadComponent: () => import('./features/student/plans/plans.component').then(m => m.PlansComponent) },
+            { path: 'payment/mock', loadComponent: () => import('./features/student/mock-payment/mock-payment.component').then(m => m.MockPaymentComponent) },
             { path: 'profile', loadComponent: () => import('./features/student/student-profile/student-profile.component').then(m => m.StudentProfileComponent) },
             { path: 'problems', component: ProblemsListComponent },
             { path: 'favorites', component: ProblemsListComponent },

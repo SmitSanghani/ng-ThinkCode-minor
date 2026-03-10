@@ -20,11 +20,21 @@ export class PlansComponent implements OnInit {
     private route = inject(ActivatedRoute);
     private http = inject(HttpClient);
 
+    user = this.authService.currentUser;
     isProcessing = false;
 
     ngOnInit() {
+        // Prevent redirect to login if already logged in (back button issue fix)
+        // This is handled by authGuard if it was a protected route, 
+        // but since plans might be public, we just ensure user stays here.
+
         // Check for payment callback params
         this.route.queryParams.subscribe(params => {
+            // Save returnUrl from query params if it exists
+            if (params['returnUrl']) {
+                localStorage.setItem('paymentReturnUrl', params['returnUrl']);
+            }
+
             if (params['payment'] === 'success' && params['session_id']) {
                 this.verifyPayment(params['session_id']);
             } else if (params['payment'] === 'cancelled') {
@@ -38,11 +48,25 @@ export class PlansComponent implements OnInit {
         });
     }
 
-    selectPlan(plan: 'Free' | 'Premium') {
+    async selectPlan(plan: 'Free' | 'Premium') {
         if (this.isProcessing) return;
-        this.isProcessing = true;
 
         if (plan === 'Free') {
+            if (this.user()?.plan === 'Premium') {
+                const result = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'After that your account will switch to Free plan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, switch to Free'
+                });
+
+                if (!result.isConfirmed) return;
+            }
+
+            this.isProcessing = true;
             // No payment, just activate Free plan
             this.http.post<any>(`${environment.apiUrl}/payment/select-free`, {}).subscribe({
                 next: (res) => {
@@ -56,7 +80,7 @@ export class PlansComponent implements OnInit {
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        this.router.navigate(['/student/problems']);
+                        this.router.navigate(['/student/problems'], { replaceUrl: true });
                     });
                     this.isProcessing = false;
                 },
@@ -66,11 +90,11 @@ export class PlansComponent implements OnInit {
                 }
             });
         } else {
-            // Premium — redirect to Stripe Checkout
+            this.isProcessing = true;
+            // Premium — REAL STRIPE: Redirect to Stripe hosted checkout page
             this.http.post<any>(`${environment.apiUrl}/payment/create-checkout-session`, {}).subscribe({
                 next: (res) => {
                     if (res.success && res.url) {
-                        // Redirect to Stripe hosted checkout page
                         window.location.href = res.url;
                     }
                     this.isProcessing = false;
@@ -81,6 +105,37 @@ export class PlansComponent implements OnInit {
                 }
             });
         }
+    }
+
+    /**
+     * Directly upgrades to Premium bypassing Stripe (FOR TESTING ONLY)
+     */
+    testUpgrade() {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+        this.http.post<any>(`${environment.apiUrl}/payment/select-premium`, {}).subscribe({
+            next: (res) => {
+                if (res.success && res.user) {
+                    this.authService.currentUser.set(res.user);
+                }
+                Swal.fire({
+                    title: 'Test Premium Activated! 💎',
+                    text: 'Bypassed Stripe successfully for testing.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    const returnUrl = localStorage.getItem('paymentReturnUrl') || '/website/home';
+                    localStorage.removeItem('paymentReturnUrl');
+                    this.router.navigateByUrl(returnUrl, { replaceUrl: true });
+                });
+                this.isProcessing = false;
+            },
+            error: (err) => {
+                this.isProcessing = false;
+                Swal.fire('Error', err.error?.message || 'Could not upgrade', 'error');
+            }
+        });
     }
 
     private verifyPayment(sessionId: string) {
@@ -98,7 +153,9 @@ export class PlansComponent implements OnInit {
                     confirmButtonText: 'Start Coding',
                     confirmButtonColor: '#2563eb'
                 }).then(() => {
-                    this.router.navigate(['/student/problems']);
+                    const returnUrl = localStorage.getItem('paymentReturnUrl') || '/website/home';
+                    localStorage.removeItem('paymentReturnUrl');
+                    this.router.navigateByUrl(returnUrl, { replaceUrl: true });
                 });
                 this.isProcessing = false;
             },

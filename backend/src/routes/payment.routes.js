@@ -15,4 +15,7 @@ router.post('/verify', protect, paymentController.verifyPayment);
 // Select free plan (auth required)
 router.post('/select-free', protect, paymentController.selectFreePlan);
 
+// Select premium plan directly (FOR TESTING)
+router.post('/select-premium', protect, paymentController.selectPremiumPlan);
+
 module.exports = router;

@@ -67,7 +67,8 @@ class StudentController {
                     difficulty: q.difficulty,
                     category: q.category,
                     status: problemStatus,
-                    isLocked: false,
+                    isLocked: !planAccessControl(req.user.plan || 'Free', q.isPremium),
+                    isPremium: q.isPremium,
                     acceptanceRate: q.totalSubmissions > 0
                         ? (q.totalAccepted / q.totalSubmissions * 100).toFixed(1) + '%'
                         : '0.0%',
@@ -101,22 +102,15 @@ class StudentController {
             }
 
             const studentPlan = req.user.plan || 'Free';
-            const index = await Question.countDocuments({
-                difficulty: q.difficulty,
-                createdAt: { $lt: q.createdAt }
-            });
-
-            // Temporarily bypassed for testing
-            // if (!planAccessControl(studentPlan, q.difficulty, index)) {
-            //     return responseHandler(res, 403, false, null, 'Upgrade plan to access this problem');
-            // }
+            if (!planAccessControl(studentPlan, q.isPremium)) {
+                return responseHandler(res, 403, false, null, 'Upgrade plan to access this problem');
+            }
 
             const filteredSamples = q.testCases.filter(tc => tc.isSample);
             const sampleTestCases = filteredSamples.length > 0 ? filteredSamples : q.testCases.slice(0, 2);
 
             const problemData = {
                 id: q._id,
-                index: index + 1, // Add 1 because index gives count of strictly older problems
                 title: q.title,
                 difficulty: q.difficulty,
                 category: q.category,
@@ -146,12 +140,7 @@ class StudentController {
             }
 
             const studentPlan = req.user.plan || 'Free';
-            const index = await Question.countDocuments({
-                difficulty: q.difficulty,
-                createdAt: { $lt: q.createdAt }
-            });
-
-            const hasAccess = planAccessControl(studentPlan, q.difficulty, index);
+            const hasAccess = planAccessControl(studentPlan, q.isPremium);
 
             res.status(200).json({
                 success: true,

@@ -43,6 +43,7 @@
                         <th>ROLE</th>
                         <th>STATUS</th>
                         <th>JOINED DATE</th>
+                        <th>PLAN</th>
                         <th>SOLVED</th>
                         <th>ACTIONS</th>
                     </tr>
@@ -81,6 +82,11 @@
                         </td>
                         <td>
                             <span class="date-text">{{ user.createdAt | date:'dd-MMM-yyyy' }}</span>
+                        </td>
+                        <td>
+                            <span class="badge" [ngClass]="user.plan === 'Premium' ? 'badge-premium' : 'badge-free'">
+                                {{ user.plan || 'Free' }}
+                            </span>
                         </td>
                         <td>
                             <span class="count-badge">{{ user.submissionCount || 0 }}</span>

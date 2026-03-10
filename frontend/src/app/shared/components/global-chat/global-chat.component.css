@@ -23,6 +23,19 @@
     justify-content: space-between;
     align-items: center;
     color: #c9d1d9;
+    cursor: grab;
+    user-select: none;
+}
+
+.chat-header:active {
+    cursor: grabbing;
+}
+
+.drag-icon {
+    color: #484f58;
+    font-size: 1rem;
+    margin-right: 2px;
+    flex-shrink: 0;
 }
 
 .chat-title {
@@ -44,6 +57,7 @@
     cursor: pointer;
     font-size: 1.2rem;
     transition: color 0.2s;
+    flex-shrink: 0;
 }
 
 .close-btn:hover {
@@ -58,6 +72,40 @@
     flex-direction: column;
     gap: 12px;
     min-height: 300px;
+    position: relative;
+}
+
+.typing-indicator {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #21262d;
+    border-radius: 8px;
+    width: fit-content;
+    margin-top: 5px;
+}
+
+.typing-indicator .dot {
+    width: 6px;
+    height: 6px;
+    background: #8b949e;
+    border-radius: 50%;
+    animation: typing-dot 1.4s infinite ease-in-out;
+}
+
+.typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-dot {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-4px); }
+}
+
+.typing-text {
+    font-size: 0.8rem;
+    color: #8b949e;
+    margin-left: 8px;
 }
 
 .empty-state {
@@ -225,4 +273,77 @@
 .send-btn[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* ---- Mobile Responsive ---- */
+@media (max-width: 600px) {
+    .global-chat-container {
+        /* Take up most of the screen on mobile */
+        width: calc(100vw - 20px);
+        right: 10px;
+        bottom: 70px;
+        max-height: calc(100vh - 100px);
+        border-radius: 16px;
+    }
+
+    .chat-header {
+        padding: 14px 16px;
+    }
+
+    .chat-title {
+        font-size: 0.95rem;
+    }
+
+    .chat-body {
+        min-height: 250px;
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .message-bubble {
+        max-width: 90%;
+        padding: 9px 12px;
+    }
+
+    .msg-text {
+        font-size: 0.88rem;
+    }
+
+    .invite-card {
+        padding: 10px;
+    }
+
+    .invite-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-join, .btn-reject {
+        width: 100%;
+        padding: 10px;
+        font-size: 0.9rem;
+        flex: unset;
+    }
+
+    .chat-footer {
+        padding: 10px 12px;
+    }
+
+    .chat-input {
+        font-size: 0.9rem;
+        padding: 10px 12px;
+    }
+
+    .send-btn {
+        padding: 0 16px;
+        min-height: 40px;
+    }
+}
+
+@media (max-width: 380px) {
+    .global-chat-container {
+        width: calc(100vw - 10px);
+        right: 5px;
+        bottom: 65px;
+    }
 }

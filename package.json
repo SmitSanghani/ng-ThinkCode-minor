@@ -1,0 +1,13 @@
+{
+  "name": "ng-thinkcode-minor",
+  "version": "1.0.0",
+  "description": "Root project to manage frontend and backend",
+  "scripts": {
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm start --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

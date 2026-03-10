@@ -3,12 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ChatStateService } from '../../core/services/chat-state.service';
-import { GlobalChatComponent } from '../../shared/components/global-chat/global-chat.component';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, GlobalChatComponent],
+  imports: [CommonModule, RouterModule],
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.css']
 })

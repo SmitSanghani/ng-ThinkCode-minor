@@ -22,6 +22,15 @@ const interviewSchema = new mongoose.Schema({
         enum: ['scheduled', 'ongoing', 'completed'],
         default: 'scheduled'
     },
+    messages: [
+        {
+            senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+            text: { type: String, required: true },
+            timestamp: { type: Date, default: Date.now },
+            isInvite: { type: Boolean, default: false },
+            roomId: { type: String, default: null }
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now

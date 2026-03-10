@@ -30,6 +30,23 @@ export class LoginComponent {
         });
     }
 
+    ngOnInit() {
+        this.authService.checkDetails().subscribe(isAuth => {
+            if (isAuth) {
+                this.redirectBasedOnRole();
+            }
+        });
+    }
+
+    private redirectBasedOnRole() {
+        const role = this.authService.currentUser()?.role;
+        if (role === 'admin') {
+            this.router.navigate(['/admin/dashboard']);
+        } else {
+            this.router.navigate(['/website/home']);
+        }
+    }
+
     get f() { return this.loginForm.controls; }
 
     togglePassword() {
@@ -64,9 +81,9 @@ export class LoginComponent {
 
                 // RBAC Redirect
                 if (role === 'admin') {
-                    this.router.navigate(['/admin/dashboard']);
+                    this.router.navigate(['/admin/dashboard'], { replaceUrl: true });
                 } else {
-                    this.router.navigate(['/website/home']);
+                    this.router.navigate(['/website/home'], { replaceUrl: true });
                 }
             },
             error: (err) => {

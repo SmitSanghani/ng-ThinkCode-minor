@@ -517,12 +517,13 @@
 
 @media (max-width: 768px) {
     .nav-container {
-        padding: 0 16px;
+        padding: 0 14px;
     }
 
     .logo-square {
         width: 32px;
         height: 32px;
+        border-radius: 8px;
     }
 
     .brand-name {
@@ -530,10 +531,80 @@
     }
 
     .utility-section {
-        gap: 12px;
+        gap: 10px;
     }
 
     .chat-icon-wrapper {
         margin-right: 0;
+        width: 34px;
+        height: 34px;
+    }
+
+    .chat-icon-wrapper i {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        height: 56px;
+    }
+
+    .mobile-menu {
+        top: 56px;
+        max-height: calc(100vh - 56px);
+    }
+
+    .mobile-menu.show {
+        max-height: calc(100vh - 56px);
+    }
+
+    .nav-container {
+        padding: 0 12px;
+    }
+
+    .logo-square {
+        width: 28px;
+        height: 28px;
+    }
+
+    .logo-icon {
+        font-size: 11px;
+    }
+
+    .brand-name {
+        font-size: 14px;
+        max-width: 110px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .avatar-img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .chat-icon-wrapper {
+        width: 30px;
+        height: 30px;
+    }
+
+    .chat-icon-wrapper i {
+        font-size: 1rem;
+    }
+
+    .unread-badge {
+        width: 16px;
+        height: 16px;
+        font-size: 9px;
+        top: -4px;
+        right: -4px;
+    }
+}
+
+@media (max-width: 360px) {
+    .brand-name {
+        display: none;
     }
 }

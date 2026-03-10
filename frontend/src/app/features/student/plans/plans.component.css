@@ -233,6 +233,29 @@
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
 }
 
+.active-plan-badge, .current-plan-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.active-plan-badge {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1.5px solid #bfdbfe;
+}
+
+.current-plan-badge {
+    background: #f8fafc;
+    color: #64748b;
+    border: 1.5px solid #e2e8f0;
+}
+
 /* ═══════════════════════════════════════════
    CTA SECTION
    ═══════════════════════════════════════════ */

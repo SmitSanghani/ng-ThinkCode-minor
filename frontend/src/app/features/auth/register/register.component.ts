@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
@@ -12,7 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
     templateUrl: './register.component.html',
     styleUrls: ['./register.component.css']
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
     registerForm: FormGroup;
     isLoading = false;
     errorMessage: string | null = null;
@@ -36,6 +36,14 @@ export class RegisterComponent {
             confirmPassword: ['', Validators.required],
             terms: [false, Validators.requiredTrue]
         }, { validators: this.passwordMatchValidator });
+    }
+
+    ngOnInit() {
+        this.authService.checkDetails().subscribe(isAuth => {
+            if (isAuth) {
+                this.router.navigate(['/website/home'], { replaceUrl: true });
+            }
+        });
 
         // Monitor password changes for strength
         this.registerForm.get('password')?.valueChanges.subscribe(value => {
@@ -89,10 +97,7 @@ export class RegisterComponent {
         }).subscribe({
             next: (response: any) => {
                 this.isLoading = false;
-                // Since the backend now returns tokens, the AuthService should have intercepted them 
-                // and saved them to localStorage if it's implemented like that.
-                // Let's assume authService.register handles the session.
-
+                
                 Swal.fire({
                     icon: 'success',
                     title: 'Welcome to ThinkCode!',
@@ -100,7 +105,7 @@ export class RegisterComponent {
                     timer: 2000,
                     showConfirmButton: false
                 });
-                this.router.navigate(['/student/plans']);
+                this.router.navigate(['/student/plans'], { replaceUrl: true });
             },
             error: (err) => {
                 this.isLoading = false;

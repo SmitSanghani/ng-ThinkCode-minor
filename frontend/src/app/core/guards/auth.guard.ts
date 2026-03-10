@@ -1,4 +1,3 @@
-
 import { CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
@@ -46,4 +45,24 @@ export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
             })
         );
     };
+};
+
+export const guestGuard: CanActivateFn = (route, state) => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
+
+    return authService.checkDetails().pipe(
+        take(1),
+        map(isAuthenticated => {
+            if (!isAuthenticated) {
+                return true;
+            }
+            // If already logged in, redirect to home or dashboard based on role
+            const user = authService.currentUser();
+            if (user?.role === 'admin') {
+                return router.createUrlTree(['/admin/dashboard']);
+            }
+            return router.createUrlTree(['/student/problems']);
+        })
+    );
 };

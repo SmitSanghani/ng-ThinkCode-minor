@@ -34,7 +34,8 @@ export class EditQuestionComponent implements OnInit {
             constraints: [''],
             testCases: this.fb.array([], Validators.required),
             functionSignature: ['', Validators.required],
-            referenceSolution: ['']
+            referenceSolution: [''],
+            isPremium: [false]
         });
     }
 
@@ -79,7 +80,8 @@ export class EditQuestionComponent implements OnInit {
                 description: data.description,
                 constraints: data.constraints,
                 functionSignature: data.functionSignature,
-                referenceSolution: data.referenceSolution
+                referenceSolution: data.referenceSolution,
+                isPremium: data.isPremium || false
             });
 
             // Clear existing arrays

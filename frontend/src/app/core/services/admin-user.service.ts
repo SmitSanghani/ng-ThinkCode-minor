@@ -13,6 +13,7 @@ export interface AdminUser {
     createdAt: string;
     lastSeen?: string;
     isOnline?: boolean;
+    plan: string; // Ensure this is present
     submissionCount: number;
 }
 

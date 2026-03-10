@@ -1,6 +1,11 @@
-<div class="global-chat-container" *ngIf="isOpen() && activeRecipient()">
-    <div class="chat-header">
+<div class="global-chat-container" *ngIf="isOpen() && activeRecipient()"
+    [style.left]="posX !== null ? posX + 'px' : null"
+    [style.right]="posX !== null ? 'auto' : '20px'"
+    [style.top]="posY !== null ? posY + 'px' : null"
+    [style.bottom]="posY !== null ? 'auto' : '80px'">
+    <div class="chat-header drag-handle" (mousedown)="startDrag($event)">
         <div class="chat-title" [title]="'ID: ' + activeRecipient()?.id">
+            <i class="bi bi-grip-vertical drag-icon"></i>
             <i class="bi bi-chat-dots-fill"></i> Chat with {{ activeRecipient()?.name }}
         </div>
         <button class="close-btn" (click)="toggleChat()">
@@ -39,12 +44,18 @@
                 </div>
             </div>
         </div>
+        <div class="typing-indicator" *ngIf="isRecipientTyping()">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <span class="typing-text">{{ activeRecipient()?.name }} is typing...</span>
+        </div>
     </div>
 
     <div class="chat-footer">
         <div class="input-row">
-            <input type="text" [(ngModel)]="inputText" (keyup.enter)="sendMessage()"
-                [placeholder]="'Message ' + activeRecipient()?.name + '...'" class="chat-input">
+            <input type="text" [(ngModel)]="inputText" (input)="onInputChange()" (keyup.enter)="sendMessage()"
+                [placeholder]="'Message ' + activeRecipient()?.name + '...'" class="chat-input" name="inputText">
             <button class="send-btn" (click)="sendMessage()" [disabled]="!inputText.trim()">
                 <i class="bi bi-send"></i>
             </button>

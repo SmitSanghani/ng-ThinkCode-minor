@@ -2,9 +2,12 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const env = require('./config/env');
 const User = require('./models/user.model');
+const Chat = require('./models/Chat');
+const Interview = require('./models/Interview');
 
 let io;
-const activeUsers = new Map(); // userId -> { socketId, role }
+// Map: userId -> { sockets: Set<socketId>, role, name }
+const activeUsers = new Map();
 
 const initSocket = (server) => {
     io = new Server(server, {
@@ -21,28 +24,64 @@ const initSocket = (server) => {
 
         try {
             const decoded = jwt.verify(token, env.JWT_SECRET);
-            const userId = decoded.id;
+            const userId = decoded.id.toString();
 
             // Fetch user info from DB
             const user = await User.findById(userId).select('role username name');
             const role = user ? user.role : 'student';
             const name = user ? (user.name || user.username) : 'User';
 
-            // Map user to socket + role + name
-            activeUsers.set(userId, { socketId: socket.id, role, name });
-            console.log(`User connected: ${userId} (${role})`);
+            // Add to active users
+            if (!activeUsers.has(userId)) {
+                activeUsers.set(userId, { 
+                    sockets: new Set([socket.id]), 
+                    role, 
+                    name 
+                });
+                console.log(`User connected: ${userId} (${role}) - New Session`);
+                io.emit('statusUpdate', { userId, isOnline: true });
+            } else {
+                activeUsers.get(userId).sockets.add(socket.id);
+            }
 
             // Update lastSeen in DB
             await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
 
-            // Notify all clients of status change
-            io.emit('statusUpdate', { userId, isOnline: true });
-
             // ======== INTERVIEW & WEBRTC SIGNALING ========
-            socket.on('join-interview', ({ roomId }) => {
+            socket.on('join-interview', async ({ roomId }) => {
                 socket.join(roomId);
                 socket.to(roomId).emit('user-joined', { userId, role });
                 console.log(`User ${userId} joined room ${roomId}`);
+                
+                // UNIFIED CHAT: Load messages from the Chat document instead of Interview
+                try {
+                    const interview = await Interview.findOne({ roomId });
+                    if (interview) {
+                        const otherUserId = userId === interview.interviewerId.toString() 
+                            ? interview.candidateId.toString() 
+                            : interview.interviewerId.toString();
+
+                        const chat = await Chat.findOne({
+                            participants: { $all: [userId, otherUserId] }
+                        });
+
+                        if (chat && chat.messages) {
+                            socket.emit('roomChatHistory', {
+                                roomId,
+                                messages: chat.messages.map(m => ({
+                                    senderId: m.senderId,
+                                    text: m.text,
+                                    isInvite: m.isInvite,
+                                    roomId: m.roomId,
+                                    timestamp: m.createdAt,
+                                    sender: m.senderId.toString() === userId ? name : 'Other'
+                                }))
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading room history from Unified Chat:', e.message);
+                }
             });
 
             socket.on('webrtc-offer', ({ roomId, offer }) => {
@@ -79,42 +118,143 @@ const initSocket = (server) => {
                 socket.to(roomId).emit('code-change', { code, sender: userId });
             });
 
-            // ======== INTERVIEW CHAT ========
-            socket.on('chat-message', ({ roomId, message }) => {
+            // ======== INTERVIEW CHAT (SAVE TO UNIFIED CHAT) ========
+            socket.on('chat-message', async ({ roomId, message }) => {
                 console.log(`Chat: Message in room ${roomId} from ${userId}`);
-                io.in(roomId).emit('chat-message', message);
-            });
-            socket.on('chat-delete', ({ roomId, messageId }) => {
-                socket.to(roomId).emit('chat-delete', { messageId });
-            });
-            socket.on('chat-react', ({ roomId, messageId, reaction }) => {
-                socket.to(roomId).emit('chat-react', { messageId, reaction });
-            });
-            // ======== DIRECT 1-ON-1 CHAT ========
-            socket.on('sendMessage', ({ receiverId, text, isInvite, roomId }) => {
-                const messagePayload = {
-                    sender: name,
-                    senderId: userId,
-                    text: text,
-                    isInvite: isInvite || false,
-                    roomId: roomId || null,
-                    timestamp: new Date()
-                };
+                try {
+                    // Find participants
+                    const interview = await Interview.findOne({ roomId });
+                    if (interview) {
+                        const receiverId = userId === interview.interviewerId.toString() 
+                            ? interview.candidateId.toString() 
+                            : interview.interviewerId.toString();
 
-                if (receiverId) {
-                    emitToUser(receiverId, 'receiveMessage', messagePayload);
-                } else {
-                    console.log('Broadcast attempted but ignored for privacy');
+                        // Save to Unified Chat
+                        let chat = await Chat.findOne({
+                            participants: { $all: [userId, receiverId] }
+                        });
+
+                        if (!chat) {
+                            chat = await Chat.create({
+                                participants: [userId, receiverId],
+                                messages: []
+                            });
+                        }
+
+                        chat.messages.push({
+                            senderId: userId,
+                            text: message.text,
+                            isRoomMessage: true,
+                            timestamp: new Date()
+                        });
+                        
+                        if (chat.messages.length > 200) chat.messages.shift();
+                        await chat.save();
+
+                        // Sync to global chat if they are online but not in room
+                        emitToUser(receiverId, 'receiveMessage', {
+                            sender: name,
+                            senderId: userId,
+                            text: message.text,
+                            timestamp: new Date()
+                        });
+                    }
+                    
+                    io.in(roomId).emit('chat-message', message);
+                } catch (e) {
+                    console.error('Error saving room message to Unified Chat:', e.message);
                 }
             });
-            // ==============================================
 
-            socket.on('disconnect', () => {
-                activeUsers.delete(userId);
-                console.log(`User disconnected: ${userId}`);
-                io.emit('statusUpdate', { userId, isOnline: false });
+            // ======== DIRECT 1-ON-1 CHAT ========
+            socket.on('sendMessage', async ({ receiverId, text, isInvite, roomId }) => {
+                try {
+                    const messagePayload = {
+                        sender: name,
+                        senderId: userId,
+                        text: text,
+                        isInvite: isInvite || false,
+                        roomId: roomId || null,
+                        timestamp: new Date()
+                    };
+
+                    let chat = await Chat.findOne({
+                        participants: { $all: [userId, receiverId] }
+                    });
+
+                    if (!chat) {
+                        chat = await Chat.create({
+                            participants: [userId, receiverId],
+                            messages: []
+                        });
+                    }
+
+                    chat.messages.push({
+                        senderId: userId,
+                        text: text,
+                        isInvite: isInvite || false,
+                        roomId: roomId || null,
+                        createdAt: new Date()
+                    });
+                    
+                    if (chat.messages.length > 200) chat.messages.shift();
+                    await chat.save();
+
+                    if (receiverId) {
+                        emitToUser(receiverId, 'receiveMessage', messagePayload);
+                    }
+                } catch (err) {
+                    console.error('Error saving direct message:', err.message);
+                }
             });
 
+            socket.on('typing', ({ receiverId }) => {
+                if (receiverId) {
+                    emitToUser(receiverId, 'typing', { userId, name });
+                }
+            });
+
+            socket.on('stopTyping', ({ receiverId }) => {
+                if (receiverId) {
+                    emitToUser(receiverId, 'stopTyping', { userId });
+                }
+            });
+
+            socket.on('loadChatHistory', async ({ otherUserId }) => {
+                try {
+                    const chat = await Chat.findOne({
+                        participants: { $all: [userId, otherUserId] }
+                    });
+
+                    const messages = chat ? chat.messages : [];
+
+                    socket.emit('chatHistory', {
+                        userId: otherUserId,
+                        messages: messages.map(m => ({
+                            senderId: m.senderId,
+                            text: m.text,
+                            isInvite: m.isInvite,
+                            roomId: m.roomId,
+                            timestamp: m.createdAt || m.timestamp,
+                            sender: m.senderId.toString() === userId ? name : 'Other'
+                        }))
+                    });
+                } catch (err) {
+                    console.error('Error loading chat history:', err.message);
+                }
+            });
+
+            socket.on('disconnect', () => {
+                const userData = activeUsers.get(userId);
+                if (userData) {
+                    userData.sockets.delete(socket.id);
+                    if (userData.sockets.size === 0) {
+                        activeUsers.delete(userId);
+                        console.log(`User disconnected: ${userId} - All sessions closed`);
+                        io.emit('statusUpdate', { userId, isOnline: false });
+                    }
+                }
+            });
 
         } catch (error) {
             console.error('Socket Auth Error:', error.message);
@@ -130,10 +270,8 @@ const getIO = () => {
     return io;
 };
 
-// Any user online (admin or student)
 const isUserOnline = (userId) => activeUsers.has(userId.toString());
 
-// Only non-admin (student) online count
 const getActiveUsersCount = () => {
     let count = 0;
     for (const [, data] of activeUsers) {
@@ -142,7 +280,6 @@ const getActiveUsersCount = () => {
     return count;
 };
 
-// Only non-admin online user IDs (for filter queries)
 const getOnlineUserIds = () => {
     const ids = [];
     for (const [userId, data] of activeUsers) {
@@ -153,9 +290,11 @@ const getOnlineUserIds = () => {
 
 const emitToUser = (userId, event, payload) => {
     const userData = activeUsers.get(userId.toString());
-    if (userData && userData.socketId) {
+    if (userData && userData.sockets.size > 0) {
         if (io) {
-            io.to(userData.socketId).emit(event, payload);
+            userData.sockets.forEach(socketId => {
+                io.to(socketId).emit(event, payload);
+            });
             return true;
         }
     }
