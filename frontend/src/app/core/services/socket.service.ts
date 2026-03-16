@@ -14,16 +14,7 @@ export class SocketService {
     private onlineStatusSubject = new BehaviorSubject<{ userId: string, isOnline: boolean } | null>(null);
     public onlineStatus$ = this.onlineStatusSubject.asObservable();
 
-    constructor() {
-        effect(() => {
-            const user = this.authService.currentUser();
-            if (user) {
-                this.connect();
-            } else {
-                this.disconnect();
-            }
-        });
-    }
+    constructor() {}
 
     public connect() {
         if (this.socket?.connected) return;

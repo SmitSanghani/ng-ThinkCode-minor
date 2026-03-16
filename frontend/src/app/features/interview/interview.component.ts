@@ -80,6 +80,8 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private socket: any;
     private isNegotiating = false;
     private iceCandidatesBuffer: RTCIceCandidateInit[] = [];
+    isInterviewer: boolean = false;
+    private videoBindInterval: any;
 
     // Editor States
     code: string = '// Start coding here...';
@@ -97,14 +99,25 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private iceServers = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' }
+            // Free TURN from open-relay (replace with Twilio/Xirsys in production):
+            {
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
         ]
     };
 
     async ngOnInit() {
+        // RESET STATES
+        this.isAudioActive = true;
+        this.isVideoActive = true;
+
         this.roomId = this.route.snapshot.paramMap.get('roomId') || '';
         if (!this.roomId) {
             this.error.set('Invalid room ID');
@@ -120,23 +133,22 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.cdr.detectChanges();
 
             console.log('Interview: Initializing socket...');
-            await this.initSocket();
+            await this.initSocket();              // 1. connect socket
+            this.setupSocketListeners();          // 2. attach all listeners
 
-            // CRITICAL: Join room IMMEDIATELY so chat works while media loads
-            this.socket?.emit('join-interview', { roomId: this.roomId });
+            // Get interview role BEFORE emitting join
+            this.isInterviewer = this.interviewDetails?.interviewerId?._id === this.authService.currentUser()?.id;
+            console.log('Interview: Is Interviewer?', this.isInterviewer);
+
+            // 3. JOIN ONCE
+            this.socket.emit('join-interview', { roomId: this.roomId });
 
             // Safety check for video binding every 2 seconds
-            setInterval(() => this.ensureVideoBinding(), 2000);
+            this.videoBindInterval = setInterval(() => this.ensureVideoBinding(), 2000);
 
             console.log('Interview: Accessing media...');
-            this.startLocalMedia().then(() => {
-                this.setupWebRTC();
-                // Notify again in case peer joined while we were getting media
-                this.socket?.emit('join-interview', { roomId: this.roomId });
-            }).catch(err => {
-                console.warn('Interview: Media failed, joining room anyway', err);
-                this.setupWebRTC();
-            });
+            await this.startLocalMedia();         // 4. get camera/mic
+            this.setupWebRTC();                   // 5. create RTCPeerConnection LAST
 
         } catch (err: any) {
             console.error('Interview: Failed to load:', err);
@@ -149,15 +161,20 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private initSocket(): Promise<void> {
         return new Promise((resolve, reject) => {
+            if (this.socketService.getSocket()?.connected) {
+                this.socket = this.socketService.getSocket();
+                resolve();
+                return;
+            }
+
             this.socketService.connect();
 
             let attempts = 0;
             const socketPoll = setInterval(() => {
                 attempts++;
                 this.socket = this.socketService.getSocket();
-                if (this.socket) {
+                if (this.socket?.connected) {
                     clearInterval(socketPoll);
-                    this.setupSocketListeners();
                     resolve();
                 } else if (attempts > 50) { // 5 seconds
                     clearInterval(socketPoll);
@@ -183,6 +200,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('user-joined', async (data: any) => {
             console.log('WebRTC: User joined, initializing negotiation...', data);
+            if (!this.isInterviewer) {
+                console.log('WebRTC: Candidate side, waiting for interviewer to send offer');
+                return; // ← Only interviewer sends offer
+            }
             if (this.peerConnection) {
                 try {
                     // Slight delay to ensure peer is ready to receive offer
@@ -201,7 +222,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                         await this.peerConnection.setLocalDescription(offer);
                         this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
                         this.isNegotiating = false;
-                    }, 1000);
+                    }, 500);
                 } catch (err) {
                     console.error('WebRTC: Offer error on user-joined', err);
                     this.isNegotiating = false;
@@ -316,12 +337,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
                     this._localVideo.nativeElement.srcObject = streamToBind;
                 }
                 if (this._localVideo.nativeElement.paused) {
-                    this._localVideo.nativeElement.play().catch(() => {});
+                    this._localVideo.nativeElement.play().catch(() => { });
                 }
             }
         }
-        
+
         if (this._remoteVideo?.nativeElement && this.remoteStream) {
+            this._remoteVideo.nativeElement.muted = false; // ensure remote NOT muted
             if (this._remoteVideo.nativeElement.srcObject !== this.remoteStream) {
                 console.log('Video: Force binding Remote Stream');
                 this._remoteVideo.nativeElement.srcObject = this.remoteStream;
@@ -333,6 +355,8 @@ export class InterviewComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
+        if (this.videoBindInterval) clearInterval(this.videoBindInterval);
+        
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => track.stop());
         }
@@ -469,31 +493,35 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private async startLocalMedia() {
         try {
             console.log('WebRTC: Attempting to access media devices...');
-            
-            // Step 1: Try with full recommended constraints (Echo Cancellation, etc.)
+
             const constraints = {
-                video: true,
+                video: { width: { ideal: 1280 }, height: { ideal: 720 } },
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true
+                    autoGainControl: true,
+                    sampleRate: 48000,
+                    channelCount: 1,
+                    latency: 0
                 }
             };
 
             try {
                 this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
             } catch (e) {
-                console.warn('WebRTC: Full constraints failed, retrying with basic audio/video', e);
-                // Step 2: Fallback to basic audio/video if specific constraints are unsupported
-                this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                console.warn('WebRTC: Full constraints failed, retrying basic', e);
+                this.localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: { echoCancellation: true, noiseSuppression: true }
+                });
             }
-            
+
             if (this._localVideo?.nativeElement) {
                 this._localVideo.nativeElement.srcObject = this.localStream;
                 this._localVideo.nativeElement.muted = true;
                 this._localVideo.nativeElement.play().catch(e => console.warn('Local video play failed:', e));
             }
-            
+
             this.addLocalTracksToPeer();
             console.log('WebRTC: Local media stream successfully initialized');
 
@@ -528,11 +556,16 @@ export class InterviewComponent implements OnInit, OnDestroy {
         if (!this.peerConnection || !this.localStream) return;
         const senders = this.peerConnection.getSenders();
         this.localStream.getTracks().forEach((track) => {
-            if (!senders.some(s => s.track?.id === track.id)) {
+            const alreadyAdded = senders.some(s => s.track?.id === track.id);
+            if (!alreadyAdded) {
                 this.peerConnection.addTrack(track, this.localStream);
-                console.log(`WebRTC: Added ${track.kind} track`);
+                console.log(`WebRTC: Added ${track.kind} track — enabled: ${track.enabled}`);
             }
         });
+
+        // Verify active tracks
+        const kinds = this.peerConnection.getSenders().map(s => s.track?.kind);
+        console.log('WebRTC: Active sender tracks:', kinds);
     }
 
     private setupWebRTC() {
@@ -621,7 +654,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     toggleAudio() {
         this.isAudioActive = !this.isAudioActive;
-        this.localStream?.getAudioTracks().forEach(t => t.enabled = this.isAudioActive);
+        this.localStream?.getAudioTracks().forEach(track => {
+            track.enabled = this.isAudioActive;
+            console.log(`Audio track enabled: ${track.enabled}`);
+        });
         this.socket?.emit('mic-toggle', { roomId: this.roomId, isAudioActive: this.isAudioActive });
     }
 
