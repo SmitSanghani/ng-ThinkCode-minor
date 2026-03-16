@@ -136,19 +136,24 @@ export class InterviewComponent implements OnInit, OnDestroy {
             await this.initSocket();              // 1. connect socket
             this.setupSocketListeners();          // 2. attach all listeners
 
-            // Get interview role BEFORE emitting join
-            this.isInterviewer = this.interviewDetails?.interviewerId?._id === this.authService.currentUser()?.id;
+            // Get interview role
+            const currentUserId = this.authService.currentUser()?.id;
+            const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
+            this.isInterviewer = interviewerId?.toString() === currentUserId?.toString();
             console.log('Interview: Is Interviewer?', this.isInterviewer);
 
-            // 3. JOIN ONCE
-            this.socket.emit('join-interview', { roomId: this.roomId });
+            console.log('Interview: Accessing media...');
+            await this.startLocalMedia();         // 3. get camera/mic
+            
+            console.log('Interview: Setting up WebRTC...');
+            this.setupWebRTC();                   // 4. create RTCPeerConnection
 
             // Safety check for video binding every 2 seconds
             this.videoBindInterval = setInterval(() => this.ensureVideoBinding(), 2000);
 
-            console.log('Interview: Accessing media...');
-            await this.startLocalMedia();         // 4. get camera/mic
-            this.setupWebRTC();                   // 5. create RTCPeerConnection LAST
+            // 5. JOIN LAST - only when ready to negotiate
+            console.log('Interview: Joining room...');
+            this.socket.emit('join-interview', { roomId: this.roomId });
 
         } catch (err: any) {
             console.error('Interview: Failed to load:', err);
