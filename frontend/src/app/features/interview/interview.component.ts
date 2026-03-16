@@ -97,11 +97,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private iceServers = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            {
-                urls: 'turn:relay.metered.ca:80',
-                username: 'username',
-                credential: 'password'
-            }
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
         ]
     };
 
@@ -309,13 +308,16 @@ export class InterviewComponent implements OnInit, OnDestroy {
     }
 
     private ensureVideoBinding() {
-        if (this._localVideo?.nativeElement && this.localStream) {
-            this._localVideo.nativeElement.muted = true;
-            if (this._localVideo.nativeElement.srcObject !== this.localStream) {
-                this._localVideo.nativeElement.srcObject = this.localStream;
-            }
-            if (this._localVideo.nativeElement.paused) {
-                this._localVideo.nativeElement.play().catch(() => {});
+        if (this._localVideo?.nativeElement) {
+            const streamToBind = this.isSharingScreen ? this.screenStream : this.localStream;
+            if (streamToBind) {
+                this._localVideo.nativeElement.muted = true;
+                if (this._localVideo.nativeElement.srcObject !== streamToBind) {
+                    this._localVideo.nativeElement.srcObject = streamToBind;
+                }
+                if (this._localVideo.nativeElement.paused) {
+                    this._localVideo.nativeElement.play().catch(() => {});
+                }
             }
         }
         
@@ -536,74 +538,85 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private setupWebRTC() {
         if (this.peerConnection) return;
         
+        console.log('WebRTC: Initializing RTCPeerConnection with STUN/TURN');
         this.peerConnection = new RTCPeerConnection(this.iceServers);
-        console.log('WebRTC: Initializing RTCPeerConnection');
 
-        // Debugging logs for WebRTC states
-        this.peerConnection.onconnectionstatechange = () => {
-            console.log("WebRTC: Connection State:", this.peerConnection.connectionState);
-            if (this.peerConnection.connectionState === 'failed') {
-                console.warn('WebRTC: Connection failed, attempting to restart ICE...');
-                this.peerConnection.restartIce();
-            }
-        };
-
-        this.peerConnection.oniceconnectionstatechange = () => {
-            console.log("WebRTC: ICE State:", this.peerConnection.iceConnectionState);
-        };
-
-        this.addLocalTracksToPeer();
-
+        // Track listener for remote media
         this.peerConnection.ontrack = (event) => {
             console.log('WebRTC: Remote track received', event.track.kind);
             
-            // Production-ready remote stream attachment
-            if (event.streams && event.streams[0]) {
-                this.remoteStream = event.streams[0];
-            } else {
-                if (!this.remoteStream) {
-                    this.remoteStream = new MediaStream();
-                }
+            // Re-initialize remote stream if not present
+            if (!this.remoteStream) {
+                this.remoteStream = new MediaStream();
+            }
+
+            // Robustly add the track to the stream
+            if (!this.remoteStream.getTracks().find(t => t.id === event.track.id)) {
                 this.remoteStream.addTrack(event.track);
             }
             
             this.hasRemoteVideo = true;
+            this.cdr.detectChanges();
 
+            // Direct binding to element if available
             if (this._remoteVideo?.nativeElement) {
-                if (this._remoteVideo.nativeElement.srcObject !== this.remoteStream) {
-                    this._remoteVideo.nativeElement.srcObject = this.remoteStream;
-                    console.log('WebRTC: Attached remote stream to video element');
-                }
-                this._remoteVideo.nativeElement.play().catch(e => console.error('WebRTC: Remote video play failed', e));
+                this._remoteVideo.nativeElement.srcObject = this.remoteStream;
+                this._remoteVideo.nativeElement.play().catch(e => {
+                    console.warn('WebRTC: Remote video play auto-retry...', e);
+                    // Browser might require user interaction, although it should be allowed in this context
+                });
             }
 
-            this.cdr.detectChanges();
-            // Re-bind to ensure black screen issues are resolved
-            setTimeout(() => this.ensureVideoBinding(), 500);
+            // Extra safety to resolve black screens
+            setTimeout(() => this.ensureVideoBinding(), 1000);
         };
 
+        // ICE Candidate handling
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log('WebRTC: Sending ICE candidate');
                 this.socket?.emit('webrtc-candidate', { roomId: this.roomId, candidate: event.candidate });
             }
         };
 
-        this.peerConnection.onnegotiationneeded = async () => {
-            if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') return;
+        // Connection state monitoring
+        this.peerConnection.onconnectionstatechange = () => {
+            const state = this.peerConnection.connectionState;
+            console.log("WebRTC: Connection State Changed:", state);
             
+            if (state === 'failed') {
+                console.warn('WebRTC: Connection failed, restarting ICE...');
+                this.peerConnection.restartIce();
+            } else if (state === 'connected') {
+                console.log('WebRTC: Peers are fully connected!');
+            }
+        };
+
+        this.peerConnection.oniceconnectionstatechange = () => {
+            console.log("WebRTC: ICE Connection State:", this.peerConnection.iceConnectionState);
+        };
+
+        // Automated Negotiation
+        this.peerConnection.onnegotiationneeded = async () => {
             try {
+                if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') {
+                    console.log('WebRTC: Signaling busy, skipping onnegotiationneeded');
+                    return;
+                }
+                
                 this.isNegotiating = true;
-                console.log('WebRTC: Negotiation needed, creating offer...');
+                console.log('WebRTC: Creating negotiation offer...');
                 const offer = await this.peerConnection.createOffer();
                 await this.peerConnection.setLocalDescription(offer);
                 this.socket?.emit('webrtc-offer', { roomId: this.roomId, offer });
             } catch (err) {
-                console.error('WebRTC: Negotiation Error', err);
+                console.error('WebRTC: Negotiation Error:', err);
             } finally {
                 this.isNegotiating = false;
             }
         };
+
+        // Pre-emptively add tracks if already available
+        this.addLocalTracksToPeer();
     }
 
     toggleAudio() {
