@@ -19,6 +19,7 @@ export class App {
   protected readonly title = signal('frontend');
 
   ngOnInit() {
+    this.socketService.connect();
     this.socketService.on('receiveMessage').subscribe((msg: any) => {
       // Play notification sound
       try {

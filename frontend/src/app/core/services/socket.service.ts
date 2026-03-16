@@ -11,6 +11,11 @@ export class SocketService {
     private authService = inject(AuthService);
     private zone = inject(NgZone);
     private socket: Socket | null = null;
+    
+    // BUG 9: Global message subject to catch messages even when not in interview room
+    private messageSubject = new BehaviorSubject<any>(null);
+    public messages$ = this.messageSubject.asObservable();
+
     private onlineStatusSubject = new BehaviorSubject<{ userId: string, isOnline: boolean } | null>(null);
     public onlineStatus$ = this.onlineStatusSubject.asObservable();
 
@@ -41,6 +46,14 @@ export class SocketService {
             });
         });
 
+        // BUG 9: Global listener for 1-on-1 messages
+        this.socket.on('receiveMessage', (data) => {
+            this.zone.run(() => {
+                console.log('Socket: Global message received', data);
+                this.messageSubject.next(data);
+            });
+        });
+
         this.socket.on('disconnect', () => {
             this.zone.run(() => {
                 console.log('Disconnected from Realtime Server');
@@ -61,21 +74,26 @@ export class SocketService {
 
     on(event: string): Observable<any> {
         return new Observable(observer => {
-            if (!this.socket) {
-                // If not connected yet, periodically check or just wait
-                const interval = setInterval(() => {
-                    if (this.socket) {
-                        this.socket.on(event, (data) => observer.next(data));
-                        clearInterval(interval);
+            // BUG 8: Robust listener registration
+            const register = (s: Socket) => {
+                s.on(event, (data) => {
+                    this.zone.run(() => observer.next(data));
+                });
+            };
+
+            if (this.socket?.connected) {
+                register(this.socket);
+            } else {
+                // Wait for socket to be ready without multiple intervals
+                const check = setInterval(() => {
+                    if (this.socket?.connected) {
+                        register(this.socket);
+                        clearInterval(check);
                     }
                 }, 100);
-                return () => clearInterval(interval);
+                return () => clearInterval(check);
             }
-            this.socket.on(event, (data) => {
-                this.zone.run(() => {
-                    observer.next(data);
-                });
-            });
+
             return () => this.socket?.off(event);
         });
     }
