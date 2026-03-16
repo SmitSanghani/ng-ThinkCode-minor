@@ -22,3 +22,35 @@
 [2026-03-04T15:55:19.983Z] Determined Status: Accepted, Passed: 2/2
 [2026-03-04T15:59:58.464Z] AI Feedback Error (Non-critical): This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.
 [2026-03-04T16:00:01.117Z] AI Feedback Error (Non-critical): fetch failed
+[2026-03-10T20:12:21.981Z] Starting submission for user 69a578e5ec4f5660b23b3ac5, question 69b07aab295e4847fabacb58
+[2026-03-10T20:12:22.159Z] Fetched problem: Shortest Path in Weighted Graph. TestCases count: 1
+[2026-03-10T20:12:22.396Z] Execution result: Success=true, SyntaxError=false
+[2026-03-10T20:12:22.396Z] Execution results count: 1
+[2026-03-10T20:12:22.397Z] Determined Status: Accepted, Passed: 1/1
+[2026-03-10T20:12:22.405Z] FATAL ERROR in submitSolution: Submission validation failed: testResults.0.output: Cast to string failed for value "[ 0, 3, 1 ]" (type Array) at path "output", testResults.0.expectedOutput: Cast to string failed for value "[ 0, 3, 1 ]" (type Array) at path "expectedOutput"
+[2026-03-10T20:12:27.588Z] Starting submission for user 69a578e5ec4f5660b23b3ac5, question 69b07aab295e4847fabacb58
+[2026-03-10T20:12:27.690Z] Fetched problem: Shortest Path in Weighted Graph. TestCases count: 1
+[2026-03-10T20:12:27.833Z] Execution result: Success=true, SyntaxError=false
+[2026-03-10T20:12:27.834Z] Execution results count: 1
+[2026-03-10T20:12:27.834Z] Determined Status: Accepted, Passed: 1/1
+[2026-03-10T20:12:27.844Z] FATAL ERROR in submitSolution: Submission validation failed: testResults.0.output: Cast to string failed for value "[ 0, 3, 1 ]" (type Array) at path "output", testResults.0.expectedOutput: Cast to string failed for value "[ 0, 3, 1 ]" (type Array) at path "expectedOutput"
+[2026-03-10T20:12:35.268Z] Starting submission for user 69a578e5ec4f5660b23b3ac5, question 69b07aab295e4847fabacb58
+[2026-03-10T20:12:35.370Z] Fetched problem: Shortest Path in Weighted Graph. TestCases count: 1
+[2026-03-10T20:12:35.493Z] Execution result: Success=true, SyntaxError=false
+[2026-03-10T20:12:35.494Z] Execution results count: 1
+[2026-03-10T20:12:35.494Z] Determined Status: Accepted, Passed: 1/1
+[2026-03-10T20:12:35.500Z] FATAL ERROR in submitSolution: Submission validation failed: testResults.0.output: Cast to string failed for value "[ 0, 3, 1 ]" (type Array) at path "output", testResults.0.expectedOutput: Cast to string failed for value "[ 0, 3, 1 ]" (type Array) at path "expectedOutput"
+[2026-03-10T20:13:54.726Z] Starting submission for user 69a578e5ec4f5660b23b3ac5, question 69b07aab295e4847fabacb58
+[2026-03-10T20:13:54.831Z] Fetched problem: Shortest Path in Weighted Graph. TestCases count: 1
+[2026-03-10T20:13:55.031Z] Execution result: Success=true, SyntaxError=false
+[2026-03-10T20:13:55.032Z] Execution results count: 1
+[2026-03-10T20:13:55.041Z] Determined Status: Accepted, Passed: 1/1
+[2026-03-10T20:13:55.344Z] Updating question stats for 69b07aab295e4847fabacb58...
+[2026-03-10T20:13:55.448Z] Submission process complete for user 69a578e5ec4f5660b23b3ac5
+[2026-03-10T20:16:01.907Z] Starting submission for user 69a578e5ec4f5660b23b3ac5, question 69b07aaa295e4847fabacb52
+[2026-03-10T20:16:02.008Z] Fetched problem: Longest Increasing Subsequence. TestCases count: 1
+[2026-03-10T20:16:02.147Z] Execution result: Success=true, SyntaxError=false
+[2026-03-10T20:16:02.148Z] Execution results count: 1
+[2026-03-10T20:16:02.149Z] Determined Status: Accepted, Passed: 1/1
+[2026-03-10T20:16:02.303Z] Updating question stats for 69b07aaa295e4847fabacb52...
+[2026-03-10T20:16:02.333Z] Submission process complete for user 69a578e5ec4f5660b23b3ac5

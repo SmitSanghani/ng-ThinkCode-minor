@@ -2,6 +2,7 @@ const app = require('./src/app');
 const connectDB = require('./src/config/db');
 const env = require('./src/config/env');
 const seedAdmin = require('./src/config/seeder');
+const initChatCleanup = require('./src/utils/chatCleanup');
 
 // Connect to Database
 connectDB().then(async () => {
@@ -18,6 +19,9 @@ const server = app.listen(PORT, () => {
 // Init Socket.io
 const { initSocket } = require('./src/socket');
 initSocket(server);
+
+// Init Cleanup Cron Jobs
+initChatCleanup();
 
 // Handle server errors
 server.on('error', (err) => {

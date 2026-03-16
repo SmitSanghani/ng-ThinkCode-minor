@@ -103,6 +103,16 @@ export class QuestionService {
         );
     }
 
+    bulkUploadQuestions(file: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post(`${this.apiUrl}/bulk-upload`, formData).pipe(
+            tap(() => {
+                this.loadQuestions(1, this._meta.value.limit);
+            })
+        );
+    }
+
     updateQuestion(id: string, data: Question): Observable<any> {
         const headers = this.getAuthHeaders();
         return this.http.put(`${this.apiUrl}/${id}`, data, { headers }).pipe(

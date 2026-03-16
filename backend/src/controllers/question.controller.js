@@ -55,6 +55,25 @@ class QuestionController {
             next(error);
         }
     }
+
+    async bulkUpload(req, res, next) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ success: false, message: 'Please upload an excel file' });
+            }
+            const result = await questionService.bulkUploadQuestions(req.file.buffer);
+            sendSuccess(res, result, 'Questions uploaded successfully');
+        } catch (error) {
+            if (error.missingFields) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Validation failed: Mandatory fields are missing in some rows',
+                    errors: error.missingFields
+                });
+            }
+            next(error);
+        }
+    }
 }
 
 module.exports = new QuestionController();

@@ -23,6 +23,7 @@ export class ChatStateService {
     isOpen = signal<boolean>(false);
     activeRecipient = signal<{ id: string, name: string } | null>(null);
     typingUsers = signal<Map<string, string>>(new Map()); // userId -> name
+    unreadCountsMap = signal<{ [userId: string]: number }>({});
 
     unreadCount = computed(() => {
         const msgs = this.messages();
@@ -74,6 +75,14 @@ export class ChatStateService {
             };
 
             this.messages.update(msgs => [...msgs, newMessage]);
+
+            // Track unread count per user if not currently chatting with them
+            if (!isCurrentChat && msg.senderId) {
+                this.unreadCountsMap.update(map => ({
+                    ...map,
+                    [msg.senderId]: (map[msg.senderId] || 0) + 1
+                }));
+            }
 
             // Auto-open chat if an invite comes in or if it's from current active recipient
             if (newMessage.isInvite || (this.activeRecipient()?.id === msg.senderId)) {
@@ -167,6 +176,17 @@ export class ChatStateService {
             }
             return m;
         }));
+
+        // Reset per-user unread count
+        this.unreadCountsMap.update(map => {
+            const newMap = { ...map };
+            delete newMap[senderId];
+            return newMap;
+        });
+    }
+
+    getUnreadCountForUser(userId: string): number {
+        return this.unreadCountsMap()[userId] || 0;
     }
 
     loadHistory(otherUserId: string) {

@@ -3,8 +3,82 @@ const User = require('../models/user.model');
 const Submission = require('../models/submission.model');
 const { sendSuccess, sendError } = require('../utils/responseHandler');
 const { isUserOnline } = require('../socket');
+const XLSX = require('xlsx');
 
-// @desc    Add a new question
+
+// @desc    Bulk upload questions from Excel
+// @route   POST /api/admin/questions/bulk-upload
+// @access  Private (Admin)
+exports.bulkUploadQuestions = async (req, res, next) => {
+    try {
+        if (!req.file) {
+            return sendError(res, 'Please upload an excel file', 400);
+        }
+
+        const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+
+        const mandatoryFields = ['title', 'difficulty', 'category', 'description', 'functionSignature'];
+        const errors = [];
+
+        data.forEach((row, index) => {
+            const missing = mandatoryFields.filter(field => !row[field]);
+            if (missing.length > 0) {
+                errors.push({
+                    row: index + 2, // Excel rows are 1-indexed, first row is header
+                    missingFields: missing
+                });
+            }
+        });
+
+        if (errors.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed: Mandatory fields are missing in some rows',
+                errors: errors
+            });
+        }
+
+        // Process and save
+        const questionsToAdd = data.map(row => {
+            // Parse isPremium to boolean
+            if (row.isPremium !== undefined) {
+                if (typeof row.isPremium === 'string') {
+                    row.isPremium = row.isPremium.trim().toLowerCase() === 'true';
+                } else {
+                    row.isPremium = Boolean(row.isPremium);
+                }
+            } else {
+                row.isPremium = false;
+            }
+
+            // Handle JSON strings for examples and testCases if they are strings in Excel
+            if (typeof row.examples === 'string') {
+                try { row.examples = JSON.parse(row.examples); } catch (e) { row.examples = []; }
+            }
+            if (typeof row.testCases === 'string') {
+                try { row.testCases = JSON.parse(row.testCases); } catch (e) { row.testCases = []; }
+            }
+            return row;
+        });
+
+        // Use insertMany or loop (loop is safer for unique checks per item)
+        const results = [];
+        for (const qData of questionsToAdd) {
+            const existing = await Question.findOne({ title: qData.title });
+            if (!existing) {
+                const newQ = await Question.create(qData);
+                results.push(newQ);
+            }
+        }
+
+        sendSuccess(res, { count: results.length }, `${results.length} questions uploaded successfully`);
+    } catch (error) {
+        next(error);
+    }
+};
 // @route   POST /api/admin/questions/add
 // @access  Private (Admin)
 exports.addQuestion = async (req, res, next) => {

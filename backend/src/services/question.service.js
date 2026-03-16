@@ -1,4 +1,5 @@
 const questionRepository = require('../repositories/question.repository');
+const XLSX = require('xlsx');
 
 class QuestionService {
     async createQuestion(data) {
@@ -49,6 +50,47 @@ class QuestionService {
             total,
             breakdown: { easy, medium, hard }
         };
+    }
+
+    async bulkUploadQuestions(buffer) {
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+
+        const mandatoryFields = ['title', 'difficulty', 'category', 'description', 'functionSignature'];
+        const errors = [];
+
+        data.forEach((row, index) => {
+            const missing = mandatoryFields.filter(field => !row[field]);
+            if (missing.length > 0) {
+                errors.push({
+                    row: index + 2, // Excel rows are 1-indexed, first row is header
+                    missingFields: missing
+                });
+            }
+        });
+
+        if (errors.length > 0) {
+            const error = new Error('Validation failed');
+            error.missingFields = errors;
+            throw error;
+        }
+
+        // Process and save
+        const questionsToSave = data.map(row => {
+            // Handle JSON strings for examples and testCases if they are strings in Excel
+            if (typeof row.examples === 'string') {
+                try { row.examples = JSON.parse(row.examples); } catch (e) { row.examples = []; }
+            }
+            if (typeof row.testCases === 'string') {
+                try { row.testCases = JSON.parse(row.testCases); } catch (e) { row.testCases = []; }
+            }
+            return row;
+        });
+
+        const results = await Promise.all(questionsToSave.map(q => questionRepository.create(q)));
+        return { count: results.length };
     }
 }
 

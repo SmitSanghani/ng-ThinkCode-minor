@@ -65,13 +65,20 @@ class SubmissionService {
                 totalTests,
                 runtime: execution.summary?.totalExecutionTime || 0,
                 memory: execution.summary?.maxMemoryUsed || (Math.random() * 5 + 15),
-                testResults: results.map(r => ({
-                    passed: r.passed,
-                    input: JSON.stringify(r.input),
-                    output: r.actualOutput,
-                    expectedOutput: r.expectedOutput,
-                    error: r.error
-                }))
+                testResults: results.map(r => {
+                    let outStr = r.actualOutput;
+                    let expStr = r.expectedOutput;
+                    if (typeof outStr === 'object') outStr = JSON.stringify(outStr);
+                    if (typeof expStr === 'object') expStr = JSON.stringify(expStr);
+
+                    return {
+                        passed: r.passed,
+                        input: JSON.stringify(r.input),
+                        output: outStr,
+                        expectedOutput: expStr,
+                        error: r.error
+                    };
+                })
             });
 
             // 6. Update Question Stats (Async)

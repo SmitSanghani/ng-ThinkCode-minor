@@ -1,4 +1,4 @@
-import { Injectable, inject, effect } from '@angular/core';
+import { Injectable, inject, effect, NgZone } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -9,6 +9,7 @@ import { AuthService } from './auth.service';
 })
 export class SocketService {
     private authService = inject(AuthService);
+    private zone = inject(NgZone);
     private socket: Socket | null = null;
     private onlineStatusSubject = new BehaviorSubject<{ userId: string, isOnline: boolean } | null>(null);
     public onlineStatus$ = this.onlineStatusSubject.asObservable();
@@ -38,15 +39,21 @@ export class SocketService {
         });
 
         this.socket.on('connect', () => {
-            console.log('Connected to Realtime Server');
+            this.zone.run(() => {
+                console.log('Connected to Realtime Server');
+            });
         });
 
         this.socket.on('statusUpdate', (data) => {
-            this.onlineStatusSubject.next(data);
+            this.zone.run(() => {
+                this.onlineStatusSubject.next(data);
+            });
         });
 
         this.socket.on('disconnect', () => {
-            console.log('Disconnected from Realtime Server');
+            this.zone.run(() => {
+                console.log('Disconnected from Realtime Server');
+            });
         });
 
         this.socket.on('connect_error', (err) => {
@@ -73,7 +80,11 @@ export class SocketService {
                 }, 100);
                 return () => clearInterval(interval);
             }
-            this.socket.on(event, (data) => observer.next(data));
+            this.socket.on(event, (data) => {
+                this.zone.run(() => {
+                    observer.next(data);
+                });
+            });
             return () => this.socket?.off(event);
         });
     }

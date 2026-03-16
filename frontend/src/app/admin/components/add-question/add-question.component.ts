@@ -19,6 +19,7 @@ export class AddQuestionComponent implements OnInit {
 
     questionForm: FormGroup;
     isSubmitting = false;
+    activeTab: 'manual' | 'excel' = 'manual';
 
     // Custom Dropdown State
     difficultyOpen = false;
@@ -92,6 +93,46 @@ export class AddQuestionComponent implements OnInit {
 
     minTestCasesValidator(control: AbstractControl) {
         return null;
+    }
+
+    onFileSelected(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const file = input.files ? input.files[0] : null;
+        if (!file) return;
+
+        this.isSubmitting = true;
+        this.questionService.bulkUploadQuestions(file).subscribe({
+            next: (res: any) => {
+                this.isSubmitting = false;
+                Swal.fire({
+                    title: 'Success!',
+                    text: `${res.data.count} questions uploaded successfully`,
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    this.router.navigate(['/admin/questions']);
+                });
+            },
+            error: (err: any) => {
+                this.isSubmitting = false;
+                if (err.error?.errors) {
+                    let errorMessage = 'Mandatory fields are missing in some rows:<br><br>';
+                    err.error.errors.forEach((e: any) => {
+                        errorMessage += `<b>Row ${e.row}:</b> Missing ${e.missingFields.join(', ')}<br>`;
+                    });
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Failed',
+                        html: `<div style="text-align: left; font-size: 14px;">${errorMessage}</div>`,
+                        footer: 'Please fix your Excel file and try again.'
+                    });
+                } else {
+                    Swal.fire('Error', err.error?.message || 'Failed to upload questions', 'error');
+                }
+                input.value = ''; // Reset
+            }
+        });
     }
 
     onSubmit() {

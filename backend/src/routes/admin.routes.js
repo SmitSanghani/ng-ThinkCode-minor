@@ -1,12 +1,15 @@
 const express = require('express');
 const { protect, authorize } = require('../middleware/auth.middleware');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 const {
     addQuestion,
     getQuestions,
     getQuestionById,
     updateQuestion,
     deleteQuestion,
-    getDashboardStats
+    getDashboardStats,
+    bulkUploadQuestions
 } = require('../controllers/admin.controller');
 
 const router = express.Router();
@@ -17,6 +20,7 @@ router.use(authorize('admin'));
 
 router.get('/dashboard-stats', getDashboardStats);
 router.post('/add', addQuestion);
+router.post('/bulk-upload', upload.single('file'), bulkUploadQuestions);
 router.get('/', getQuestions);
 router.get('/:id', getQuestionById);
 router.put('/:id', updateQuestion);

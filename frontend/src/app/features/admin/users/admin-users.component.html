@@ -95,7 +95,9 @@
                             <div class="action-buttons">
                                 <button class="btn-icon btn-chat" (click)="openDirectChat(user)" title="Chat">
                                     <i class="bi bi-chat-dots"></i>
-                                    <span *ngIf="chatService.unreadCount() > 0" class="unread-badge"></span>
+                                    <span *ngIf="chatService.getUnreadCountForUser(user._id) > 0" class="unread-count-badge">
+                                        {{ chatService.getUnreadCountForUser(user._id) }}
+                                    </span>
                                 </button>
                                 <button class="btn-interview" (click)="startInterview(user)"
                                     [disabled]="isCreatingInterview === user._id">

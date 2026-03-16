@@ -96,8 +96,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private iceServers = {
         iceServers: [
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun.l.google.com:19302' },
+            {
+                urls: 'turn:relay.metered.ca:80',
+                username: 'username',
+                credential: 'password'
+            }
         ]
     };
 
@@ -179,15 +183,30 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('user-joined', async (data: any) => {
-            console.log('WebRTC: User joined, creating offer');
+            console.log('WebRTC: User joined, initializing negotiation...', data);
             if (this.peerConnection) {
-                // Renegotiate when someone joins
-                const offer = await this.peerConnection.createOffer({
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: true
-                });
-                await this.peerConnection.setLocalDescription(offer);
-                this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
+                try {
+                    // Slight delay to ensure peer is ready to receive offer
+                    setTimeout(async () => {
+                        if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') {
+                            console.log('WebRTC: Negotiation already in progress, skipping user-joined offer');
+                            return;
+                        }
+
+                        this.isNegotiating = true;
+                        console.log('WebRTC: Creating offer for new user');
+                        const offer = await this.peerConnection.createOffer({
+                            offerToReceiveAudio: true,
+                            offerToReceiveVideo: true
+                        });
+                        await this.peerConnection.setLocalDescription(offer);
+                        this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
+                        this.isNegotiating = false;
+                    }, 1000);
+                } catch (err) {
+                    console.error('WebRTC: Offer error on user-joined', err);
+                    this.isNegotiating = false;
+                }
             }
             this.cdr.detectChanges();
         });
@@ -447,22 +466,59 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private async startLocalMedia() {
         try {
-            console.log('WebRTC: Starting local media with Echo Cancellation');
-            this.localStream = await navigator.mediaDevices.getUserMedia({
+            console.log('WebRTC: Attempting to access media devices...');
+            
+            // Step 1: Try with full recommended constraints (Echo Cancellation, etc.)
+            const constraints = {
                 video: true,
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true
                 }
-            });
+            };
+
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (e) {
+                console.warn('WebRTC: Full constraints failed, retrying with basic audio/video', e);
+                // Step 2: Fallback to basic audio/video if specific constraints are unsupported
+                this.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            }
+            
             if (this._localVideo?.nativeElement) {
                 this._localVideo.nativeElement.srcObject = this.localStream;
-                this._localVideo.nativeElement.muted = true; // Absolute mute for local feedback
+                this._localVideo.nativeElement.muted = true;
+                this._localVideo.nativeElement.play().catch(e => console.warn('Local video play failed:', e));
             }
+            
             this.addLocalTracksToPeer();
-        } catch (err) {
+            console.log('WebRTC: Local media stream successfully initialized');
+
+        } catch (err: any) {
             console.error('WebRTC: Error accessing media devices.', err);
+            
+            let errorMessage = 'Could not access camera or microphone.';
+            
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                errorMessage = 'Camera/Microphone permission denied. Please allow access in browser settings.';
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                errorMessage = 'No camera or microphone found. Please connect your hardware.';
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                errorMessage = 'Camera or microphone is already in use by another application.';
+            }
+
+            Swal.fire({
+                title: 'Media Error',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'Retry',
+                showCancelButton: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.startLocalMedia();
+                }
+            });
         }
     }
 
@@ -479,31 +535,56 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private setupWebRTC() {
         if (this.peerConnection) return;
+        
         this.peerConnection = new RTCPeerConnection(this.iceServers);
         console.log('WebRTC: Initializing RTCPeerConnection');
+
+        // Debugging logs for WebRTC states
+        this.peerConnection.onconnectionstatechange = () => {
+            console.log("WebRTC: Connection State:", this.peerConnection.connectionState);
+            if (this.peerConnection.connectionState === 'failed') {
+                console.warn('WebRTC: Connection failed, attempting to restart ICE...');
+                this.peerConnection.restartIce();
+            }
+        };
+
+        this.peerConnection.oniceconnectionstatechange = () => {
+            console.log("WebRTC: ICE State:", this.peerConnection.iceConnectionState);
+        };
 
         this.addLocalTracksToPeer();
 
         this.peerConnection.ontrack = (event) => {
             console.log('WebRTC: Remote track received', event.track.kind);
-            if (!this.remoteStream) {
-                this.remoteStream = new MediaStream();
-                this.hasRemoteVideo = true;
+            
+            // Production-ready remote stream attachment
+            if (event.streams && event.streams[0]) {
+                this.remoteStream = event.streams[0];
+            } else {
+                if (!this.remoteStream) {
+                    this.remoteStream = new MediaStream();
+                }
+                this.remoteStream.addTrack(event.track);
             }
-
-            this.remoteStream.addTrack(event.track);
+            
+            this.hasRemoteVideo = true;
 
             if (this._remoteVideo?.nativeElement) {
-                this._remoteVideo.nativeElement.srcObject = this.remoteStream;
-                this._remoteVideo.nativeElement.play().catch(e => console.error('WebRTC: Play failed', e));
+                if (this._remoteVideo.nativeElement.srcObject !== this.remoteStream) {
+                    this._remoteVideo.nativeElement.srcObject = this.remoteStream;
+                    console.log('WebRTC: Attached remote stream to video element');
+                }
+                this._remoteVideo.nativeElement.play().catch(e => console.error('WebRTC: Remote video play failed', e));
             }
 
             this.cdr.detectChanges();
-            setTimeout(() => this.ensureVideoBinding(), 1000);
+            // Re-bind to ensure black screen issues are resolved
+            setTimeout(() => this.ensureVideoBinding(), 500);
         };
 
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log('WebRTC: Sending ICE candidate');
                 this.socket?.emit('webrtc-candidate', { roomId: this.roomId, candidate: event.candidate });
             }
         };
