@@ -36,9 +36,9 @@ export class PlansComponent implements OnInit {
                 this.currentReturnUrl = params['returnUrl'];
             }
 
-            if (params['payment'] === 'success' && params['session_id']) {
+            if ((params['payment'] === 'success' || params['success'] === 'true') && params['session_id']) {
                 this.verifyPayment(params['session_id']);
-            } else if (params['payment'] === 'cancelled') {
+            } else if (params['payment'] === 'cancelled' || params['payment-cancelled'] !== undefined || params['cancelled'] === 'true') {
                 Swal.fire({
                     title: 'Payment Cancelled',
                     text: 'You can try again or start with the Free plan.',
