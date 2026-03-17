@@ -21,12 +21,7 @@ export class App {
   ngOnInit() {
     this.socketService.connect();
     this.socketService.on('receiveMessage').subscribe((msg: any) => {
-      // Play notification sound
-      try {
-        const audio = new Audio('assets/sounds/notification.mp3');
-        // fallback sound if assets not present
-        audio.play().catch(e => console.log('Audio play failed', e));
-      } catch (e) { }
+      // Notification sound is handled in ChatStateService
 
       // Find URL via regex
       const urlMatch = msg.text.match(/(https?:\/\/[^\s]+)/);

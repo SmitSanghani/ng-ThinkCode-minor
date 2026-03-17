@@ -115,6 +115,10 @@ const initSocket = (server) => {
                 socket.to(roomId).emit('peer-screen-share', { isSharing, sender: userId });
             });
 
+            socket.on('request-negotiation', ({ roomId }) => {
+                socket.to(roomId).emit('request-negotiation', { sender: userId });
+            });
+
             socket.on('leave-interview', ({ roomId }) => {
                 socket.leave(roomId);
                 socket.to(roomId).emit('user-left', { userId });
@@ -233,6 +237,7 @@ async function saveToUnifiedChat(senderId, receiverId, text, isRoom, isInvite = 
 const getIO = () => io;
 const isUserOnline = (uId) => activeUsers.has(uId.toString()) && activeUsers.get(uId.toString()).sockets.size > 0;
 const getOnlineUserIds = () => Array.from(activeUsers.keys());
+const getActiveUsersCount = () => activeUsers.size;
 
 const emitToUser = (userId, event, payload) => {
     const uId = userId.toString();
@@ -245,5 +250,5 @@ const emitToUser = (userId, event, payload) => {
     return false;
 };
 
-module.exports = { initSocket, getIO, isUserOnline, getOnlineUserIds, emitToUser };
+module.exports = { initSocket, getIO, isUserOnline, getOnlineUserIds, emitToUser, getActiveUsersCount };
 

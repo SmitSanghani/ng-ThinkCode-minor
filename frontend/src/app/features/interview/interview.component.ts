@@ -204,36 +204,28 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('user-joined', async (data: any) => {
-            console.log('WebRTC: User joined, initializing negotiation...', data);
-            if (!this.isInterviewer) {
-                console.log('WebRTC: Candidate side, waiting for interviewer to send offer');
-                return; // ← Only interviewer sends offer
+            console.log('WebRTC: User joined, signaling starting...', data);
+            
+            // If I am Guest and Host (Interviewer) joins, I must request them to start negotiation
+            const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
+            if (!this.isInterviewer && data.userId === interviewerId?.toString()) {
+                console.log('WebRTC: Host joined! Requesting negotiation...');
+                this.socket.emit('request-negotiation', { roomId: this.roomId });
+                return;
             }
-            if (this.peerConnection) {
-                try {
-                    // Slight delay to ensure peer is ready to receive offer
-                    setTimeout(async () => {
-                        if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') {
-                            console.log('WebRTC: Negotiation already in progress, skipping user-joined offer');
-                            return;
-                        }
 
-                        this.isNegotiating = true;
-                        console.log('WebRTC: Creating offer for new user');
-                        const offer = await this.peerConnection.createOffer({
-                            offerToReceiveAudio: true,
-                            offerToReceiveVideo: true
-                        });
-                        await this.peerConnection.setLocalDescription(offer);
-                        this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
-                        this.isNegotiating = false;
-                    }, 500);
-                } catch (err) {
-                    console.error('WebRTC: Offer error on user-joined', err);
-                    this.isNegotiating = false;
-                }
+            // If I am Host and someone (Guest) joins, I initiate negotiation
+            if (this.isInterviewer) {
+                this.initiateNegotiation();
             }
             this.cdr.detectChanges();
+        });
+
+        this.socket.on('request-negotiation', () => {
+            console.log('WebRTC: Negotiation requested by peer');
+            if (this.isInterviewer) {
+                this.initiateNegotiation();
+            }
         });
 
         this.socket.on('webrtc-offer', async (data: any) => {
@@ -633,28 +625,34 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log("WebRTC: ICE Connection State:", this.peerConnection.iceConnectionState);
         };
 
-        // Automated Negotiation
-        this.peerConnection.onnegotiationneeded = async () => {
+        // Pre-emptively add tracks if already available
+        this.addLocalTracksToPeer();
+    }
+
+    private initiateNegotiation() {
+        if (!this.peerConnection) return;
+        
+        setTimeout(async () => {
             try {
                 if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') {
-                    console.log('WebRTC: Signaling busy, skipping onnegotiationneeded');
+                    console.log('WebRTC: Signaling busy, skipping negotiation initiation');
                     return;
                 }
-                
+
                 this.isNegotiating = true;
-                console.log('WebRTC: Creating negotiation offer...');
-                const offer = await this.peerConnection.createOffer();
+                console.log('WebRTC: Creating proactive offer...');
+                const offer = await this.peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: true
+                });
                 await this.peerConnection.setLocalDescription(offer);
-                this.socket?.emit('webrtc-offer', { roomId: this.roomId, offer });
+                this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
             } catch (err) {
-                console.error('WebRTC: Negotiation Error:', err);
+                console.error('WebRTC: Proactive offer error', err);
             } finally {
                 this.isNegotiating = false;
             }
-        };
-
-        // Pre-emptively add tracks if already available
-        this.addLocalTracksToPeer();
+        }, 1000); // 1s buffer for socket stability
     }
 
     toggleAudio() {
