@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 export interface ChatMessage {
     id: string;
     sender: string;
+    senderId?: string; // Add this for robust comparison
     text: string;
     timestamp: Date;
     isDeleted?: boolean;
@@ -79,6 +80,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
     isVideoActive: boolean = true;
     isAudioActive: boolean = true;
     isSharingScreen: boolean = false;
+    isRemoteSharing: boolean = false; // Track if peer is sharing
 
     private socket: any;
     private isNegotiating = false;
@@ -327,6 +329,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             const history: ChatMessage[] = data.messages.map(m => ({
                 id: Math.random().toString(36).substring(2, 9),
                 sender: m.senderId === this.authService.currentUser()?.id ? 'You' : m.sender,
+                senderId: m.senderId,
                 text: m.text,
                 timestamp: new Date(m.timestamp)
             }));
@@ -358,6 +361,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('peer-camera-toggled', ({ isVideoActive }: { isVideoActive: boolean }) => {
             this.isRemoteConnected = true;
             this.remoteHasVideo.set(isVideoActive);
+            this.cdr.detectChanges();
+        });
+
+        this.socket.on('peer-screen-share', ({ isSharing }: { isSharing: boolean }) => {
+            console.log('WebRTC: Peer screen share toggled:', isSharing);
+            this.isRemoteSharing = isSharing;
+            if (isSharing) this.isRemoteMaximized = true; // Auto-maximize when peer shares screen
             this.cdr.detectChanges();
         });
     }
@@ -448,6 +458,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         const msg: ChatMessage = {
             id: Math.random().toString(36).substring(2, 9),
             sender: this.authService.currentUser()?.username || 'User',
+            senderId: this.authService.currentUser()?.id, // Use ID for better reliability
             text: this.newMessage.trim(),
             timestamp: new Date(),
             replyTo: this.replyingToMessage
@@ -705,6 +716,19 @@ export class InterviewComponent implements OnInit, OnDestroy {
     }
 
     async toggleScreenShare() {
+        if (!navigator.mediaDevices || !('getDisplayMedia' in navigator.mediaDevices)) {
+            Swal.fire({
+                title: 'Not Supported',
+                text: 'Screen sharing is typically only supported on Desktop browsers (Chrome/Edge/Safari/Firefox). Mobile browsers do not allow starting a screen share.',
+                icon: 'warning',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000
+            });
+            return;
+        }
+
         if (this.isSharingScreen) {
             this.screenStream?.getTracks().forEach(t => t.stop());
             this.screenStream = null;
@@ -716,14 +740,20 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: false });
         } else {
             try {
-                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { cursor: "always" } as any,
+                    audio: false 
+                });
                 this.isSharingScreen = true;
                 const screenTrack = this.screenStream.getVideoTracks()[0];
                 const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
                 if (sender) sender.replaceTrack(screenTrack);
                 if (this._localVideo?.nativeElement) this._localVideo.nativeElement.srcObject = this.screenStream;
                 this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: true });
-                screenTrack.onended = () => this.toggleScreenShare();
+                
+                screenTrack.onended = () => {
+                    if (this.isSharingScreen) this.toggleScreenShare();
+                };
             } catch (err) {
                 console.error('WebRTC: Screen share failed', err);
             }

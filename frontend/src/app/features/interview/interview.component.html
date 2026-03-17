@@ -38,7 +38,9 @@
                     </div>
 
                     <!-- Remote Video -->
-                    <div class="video-card remote" *ngIf="isRemoteConnected" [class.maximized]="isRemoteMaximized">
+                    <div class="video-card remote" *ngIf="isRemoteConnected" 
+                         [class.maximized]="isRemoteMaximized"
+                         [class.is-sharing]="isRemoteSharing">
                         <video #remoteVideo autoplay playsinline [hidden]="!remoteHasVideo()"></video>
                         
                         <!-- Placeholder if no remote video track -->
@@ -96,34 +98,68 @@
                 </div>
             </div>
 
-            <!-- Right: Collaborative Sidebar (Chat Only) -->
+            <!-- Right: Collaborative Sidebar (WhatsApp Style Chat) -->
             <div class="side-panel">
-                <!-- Integrated Chat Tab -->
-                <div class="panel-section chat">
-                    <div class="section-badge"><i class="bi bi-chat-fill"></i> Discussion</div>
-                    <div class="chat-viewport" #chatContainer>
-                        <div *ngFor="let msg of chatMessages" class="chat-msg"
-                            [class.me]="msg.sender === authService.currentUser()?.username">
-                            <div class="bubble">
-                                <div class="meta">
-                                    <span class="author">{{ msg.sender }}</span>
-                                    <span class="time">{{ msg.timestamp | date:'HH:mm' }}</span>
-                                </div>
-                                <div class="text">{{ msg.text }}</div>
+                <div class="panel-section chat whatsapp-theme">
+                    <div class="chat-header">
+                        <div class="chat-info">
+                            <div class="avatar">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="details">
+                                <span class="title">Discussion Room</span>
+                                <span class="subtitle">{{ isRemoteConnected ? 'Online' : 'Waiting...' }}</span>
                             </div>
                         </div>
-                        <div class="empty-state" *ngIf="chatMessages.length === 0">No messages yet...</div>
+                        <div class="header-actions">
+                            <i class="bi bi-search"></i>
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </div>
                     </div>
+
+                    <div class="chat-viewport" #chatContainer>
+                        <div class="chat-background"></div>
+                        <div *ngFor="let msg of chatMessages" class="chat-msg"
+                            [class.me]="msg.senderId === authService.currentUser()?.id">
+                            <div class="bubble">
+                                <div class="author" *ngIf="msg.sender !== authService.currentUser()?.username">{{ msg.sender }}</div>
+                                <div class="text">{{ msg.text }}</div>
+                                <div class="meta">
+                                    <span class="time">{{ msg.timestamp | date:'HH:mm' }}</span>
+                                    <i class="bi bi-check2-all" *ngIf="msg.sender === authService.currentUser()?.username"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="empty-state" *ngIf="chatMessages.length === 0">
+                            <div class="lock-msg">
+                                <i class="bi bi-lock-fill"></i>
+                                Messages are end-to-end encrypted. No one outside of this chat, not even ThinkCode, can read them.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="chat-composer">
                         <div class="reply-preview" *ngIf="replyingToMessage">
-                            <span>Replying to <b>{{replyingToMessage.sender}}</b></span>
+                            <div class="reply-border"></div>
+                            <div class="reply-content">
+                                <span class="reply-user">{{replyingToMessage.sender}}</span>
+                                <span class="reply-text">{{replyingToMessage.text}}</span>
+                            </div>
                             <i class="bi bi-x" (click)="cancelReply()"></i>
                         </div>
-                        <div class="input-wrap">
-                            <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()"
-                                placeholder="Type to discuss...">
-                            <button (click)="sendMessage()" [disabled]="!newMessage.trim()"><i
-                                    class="bi bi-send"></i></button>
+                        <div class="input-area">
+                            <div class="actions-left">
+                                <i class="bi bi-emoji-smile"></i>
+                                <i class="bi bi-plus-lg"></i>
+                            </div>
+                            <div class="input-wrap">
+                                <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()"
+                                    placeholder="Type a message">
+                            </div>
+                            <div class="actions-right">
+                                <button *ngIf="!newMessage.trim()" class="btn-voice"><i class="bi bi-mic-fill"></i></button>
+                                <button *ngIf="newMessage.trim()" (click)="sendMessage()" class="btn-send"><i class="bi bi-send-fill"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>

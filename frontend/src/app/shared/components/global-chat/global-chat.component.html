@@ -1,4 +1,4 @@
-<div class="global-chat-container" *ngIf="isOpen() && activeRecipient()"
+<div class="global-chat-container" *ngIf="isOpen() && activeRecipient() && !isInterviewRoom()"
     [style.left]="posX !== null ? posX + 'px' : null"
     [style.right]="posX !== null ? 'auto' : '20px'"
     [style.top]="posY !== null ? posY + 'px' : null"

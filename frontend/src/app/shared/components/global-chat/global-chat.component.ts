@@ -22,6 +22,10 @@ export class GlobalChatComponent {
     isOpen = this.chatService.isOpen;
     activeRecipient = this.chatService.activeRecipient;
 
+    isInterviewRoom = computed(() => {
+        return this.router.url.includes('/interview/');
+    });
+
     // Draggable state (for Angular binding - only updated after drop)
     posX: number | null = null;
     posY: number | null = null;
