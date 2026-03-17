@@ -56,9 +56,18 @@ const initSocket = (server) => {
                     const interview = await Interview.findOne({ roomId });
                     const interviewerId = interview ? interview.interviewerId.toString() : null;
 
-                    // Emit user-joined with interviewerId for polite-peer logic
+                    // 1. Notify others that I joined
                     socket.to(roomId).emit('user-joined', { userId, role, interviewerId });
                     console.log(`User ${userId} (${role}) joined room ${roomId}`);
+
+                    // 2. Notify ME about who is already here
+                    if (roomParticipants.has(roomId)) {
+                        roomParticipants.get(roomId).forEach(pid => {
+                            if (pid !== userId) {
+                                socket.emit('user-joined', { userId: pid, role: 'existing', alreadyHere: true });
+                            }
+                        });
+                    }
 
                     // Load Chat History
                     if (interview) {
@@ -113,6 +122,10 @@ const initSocket = (server) => {
 
             socket.on('screen-share-status', ({ roomId, isSharing }) => {
                 socket.to(roomId).emit('peer-screen-share', { isSharing, sender: userId });
+            });
+
+            socket.on('media-status', ({ roomId, isVideoActive, isAudioActive }) => {
+                socket.to(roomId).emit('peer-media-status', { isVideoActive, isAudioActive, sender: userId });
             });
 
             socket.on('request-negotiation', ({ roomId }) => {

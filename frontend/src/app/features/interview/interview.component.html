@@ -17,7 +17,16 @@
                 <div class="videos-grid" [class.has-maximized]="isRemoteMaximized">
                     <!-- Local Video -->
                     <div class="video-card local" [class.pip-mode]="isRemoteMaximized">
-                        <video #localVideo autoplay muted playsinline></video>
+                        <video #localVideo autoplay muted playsinline [hidden]="!localHasVideo()"></video>
+                        
+                        <!-- Placeholder if no local video track -->
+                        <div class="no-video-placeholder" *ngIf="!localHasVideo() || !isVideoActive">
+                            <div class="user-avatar">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <span class="status-msg">{{ !localHasVideo() ? 'No Camera Detected' : 'Camera Off' }}</span>
+                        </div>
+
                         <div class="video-overlay">
                             <div class="user-info">
                                 <span class="status-dot" [class.active]="isAudioActive"></span>
@@ -29,8 +38,17 @@
                     </div>
 
                     <!-- Remote Video -->
-                    <div class="video-card remote" *ngIf="hasRemoteVideo" [class.maximized]="isRemoteMaximized">
-                        <video #remoteVideo autoplay playsinline></video>
+                    <div class="video-card remote" *ngIf="isRemoteConnected" [class.maximized]="isRemoteMaximized">
+                        <video #remoteVideo autoplay playsinline [hidden]="!remoteHasVideo()"></video>
+                        
+                        <!-- Placeholder if no remote video track -->
+                        <div class="no-video-placeholder" *ngIf="!remoteHasVideo()">
+                            <div class="user-avatar">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <span class="status-msg">Peer Camera Off</span>
+                        </div>
+
                         <div class="video-overlay">
                             <div class="user-info">
                                 <span class="status-dot active"></span>
@@ -41,15 +59,15 @@
                                 <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? 'Guest' : 'Host' }}</span>
                             </div>
-                            <span class="live-badge"><i class="bi bi-record-circle-fill"></i> LIVE</span>
-                            <button class="btn-maximize" (click)="toggleMaximize()" [title]="isRemoteMaximized ? 'Restore Size' : 'Maximize Video'">
+                            <span class="live-badge" *ngIf="remoteHasVideo()"><i class="bi bi-record-circle-fill"></i> LIVE</span>
+                            <button class="btn-maximize" (click)="toggleMaximize()" [title]="isRemoteMaximized ? 'Restore Size' : 'Maximize Video'" *ngIf="remoteHasVideo()">
                                 <i class="bi" [ngClass]="isRemoteMaximized ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Remote Waiting State -->
-                    <div class="video-card remote waiting" *ngIf="!hasRemoteVideo">
+                    <!-- Remote Waiting State (Only if not connected at all) -->
+                    <div class="video-card remote waiting" *ngIf="!isRemoteConnected">
                         <div class="pulse-icon">
                             <i class="bi bi-person-plus-fill"></i>
                         </div>
