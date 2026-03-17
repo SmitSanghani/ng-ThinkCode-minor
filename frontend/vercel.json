@@ -1,8 +1,5 @@
 {
     "outputDirectory": "dist/frontend/browser",
-    "buildCommand": "npm run build",
-    "cleanUrls": true,
-    "trailingSlash": false,
     "rewrites": [
         {
             "source": "/(.*)",

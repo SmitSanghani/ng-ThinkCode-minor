@@ -45,7 +45,8 @@ class AuthService {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                plan: user.plan
+                plan: user.plan,
+                paymentReturnUrl: user.paymentReturnUrl
             },
             accessToken,
             refreshToken: refreshTokenHash
@@ -87,7 +88,8 @@ class AuthService {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                plan: user.plan || 'Free'
+                plan: user.plan || 'Free',
+                paymentReturnUrl: user.paymentReturnUrl
             },
             accessToken,
             refreshToken: refreshTokenHash
@@ -131,7 +133,8 @@ class AuthService {
             username: user.username,
             email: user.email,
             role: user.role,
-            plan: user.plan || 'Free'
+            plan: user.plan || 'Free',
+            paymentReturnUrl: user.paymentReturnUrl
         };
     }
 }
