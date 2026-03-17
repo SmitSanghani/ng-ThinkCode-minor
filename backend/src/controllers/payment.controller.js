@@ -13,7 +13,8 @@ class PaymentController {
             const userEmail = req.user.email;
 
             const { returnUrl } = req.body;
-            const frontendUrl = req.get('origin'); // Dynamically get the frontend URL from the request
+            // Dynamically detect the frontend URL to avoid hardcoded domain errors
+            const frontendUrl = req.get('origin') || (req.get('referer') ? new URL(req.get('referer')).origin : null); 
             const session = await paymentService.createCheckoutSession(userId, userEmail, returnUrl, frontendUrl);
 
             res.status(200).json({
