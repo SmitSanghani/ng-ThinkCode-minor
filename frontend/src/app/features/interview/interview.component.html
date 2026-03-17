@@ -14,9 +14,9 @@
         <div class="workspace-area">
             <!-- Left: Video Panel (Face) -->
             <div class="video-workspace">
-                <div class="videos-grid">
+                <div class="videos-grid" [class.has-maximized]="isRemoteMaximized">
                     <!-- Local Video -->
-                    <div class="video-card local">
+                    <div class="video-card local" [class.pip-mode]="isRemoteMaximized">
                         <video #localVideo autoplay muted playsinline></video>
                         <div class="video-overlay">
                             <div class="user-info">
@@ -29,7 +29,7 @@
                     </div>
 
                     <!-- Remote Video -->
-                    <div class="video-card remote" *ngIf="hasRemoteVideo">
+                    <div class="video-card remote" *ngIf="hasRemoteVideo" [class.maximized]="isRemoteMaximized">
                         <video #remoteVideo autoplay playsinline></video>
                         <div class="video-overlay">
                             <div class="user-info">
@@ -42,6 +42,9 @@
                                     authService.currentUser()?.id) ? 'Guest' : 'Host' }}</span>
                             </div>
                             <span class="live-badge"><i class="bi bi-record-circle-fill"></i> LIVE</span>
+                            <button class="btn-maximize" (click)="toggleMaximize()" [title]="isRemoteMaximized ? 'Restore Size' : 'Maximize Video'">
+                                <i class="bi" [ngClass]="isRemoteMaximized ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
+                            </button>
                         </div>
                     </div>
 

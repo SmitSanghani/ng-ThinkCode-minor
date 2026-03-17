@@ -82,6 +82,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private iceCandidatesBuffer: RTCIceCandidateInit[] = [];
     isInterviewer: boolean = false;
     private videoBindInterval: any;
+    isRemoteMaximized: boolean = false;
 
     // Editor States
     code: string = '// Start coding here...';
@@ -491,61 +492,54 @@ export class InterviewComponent implements OnInit, OnDestroy {
         try {
             console.log('WebRTC: Attempting to access media devices...');
 
-            const constraints = {
-                video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+            const constraints: any = {
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 48000,
-                    channelCount: 1,
-                    latency: 0
-                }
+                    autoGainControl: true
+                },
+                video: { width: { ideal: 1280 }, height: { ideal: 720 } }
             };
 
             try {
+                // 1. Try Video + Audio
                 this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-            } catch (e) {
-                console.warn('WebRTC: Full constraints failed, retrying basic', e);
-                this.localStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: { echoCancellation: true, noiseSuppression: true }
-                });
+                console.log('WebRTC: Video + Audio access granted');
+            } catch (videoError: any) {
+                console.warn('WebRTC: Full media access failed, trying audio-only...', videoError.name);
+                
+                // 2. If video failed (missing hardware/denied), try Audio Only
+                if (videoError.name === 'NotFoundError' || videoError.name === 'DevicesNotFoundError' || videoError.name === 'NotAllowedError') {
+                    try {
+                        this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        this.isVideoActive = false; // Disable video state
+                        console.log('WebRTC: Audio-only access granted (No Camera)');
+                    } catch (audioError) {
+                        throw new Error('Could not access microphone. Please check your hardware and permissions.');
+                    }
+                } else {
+                    throw videoError;
+                }
             }
 
             if (this._localVideo?.nativeElement) {
                 this._localVideo.nativeElement.srcObject = this.localStream;
                 this._localVideo.nativeElement.muted = true;
-                this._localVideo.nativeElement.play().catch(e => console.warn('Local video play failed:', e));
+                if (this.isVideoActive) {
+                    this._localVideo.nativeElement.play().catch(e => console.warn('Local video play failed:', e));
+                }
             }
 
             this.addLocalTracksToPeer();
-            console.log('WebRTC: Local media stream successfully initialized');
+            console.log('WebRTC: Local media stream initialized');
 
         } catch (err: any) {
-            console.error('WebRTC: Error accessing media devices.', err);
+            console.error('WebRTC: Media error.', err);
             
-            let errorMessage = 'Could not access camera or microphone.';
-            
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                errorMessage = 'Camera/Microphone permission denied. Please allow access in browser settings.';
-            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                errorMessage = 'No camera or microphone found. Please connect your hardware.';
-            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                errorMessage = 'Camera or microphone is already in use by another application.';
+            // Only show blocking error if even Audio fails
+            if (err.message.includes('microphone')) {
+                Swal.fire('Hardware Error', err.message, 'error');
             }
-
-            Swal.fire({
-                title: 'Media Error',
-                text: errorMessage,
-                icon: 'error',
-                confirmButtonText: 'Retry',
-                showCancelButton: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    this.startLocalMedia();
-                }
-            });
         }
     }
 
@@ -694,5 +688,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 console.error('WebRTC: Screen share failed', err);
             }
         }
+    }
+
+    toggleMaximize() {
+        this.isRemoteMaximized = !this.isRemoteMaximized;
+        this.cdr.detectChanges();
     }
 }
