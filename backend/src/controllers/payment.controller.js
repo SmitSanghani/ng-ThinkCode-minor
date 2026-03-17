@@ -13,7 +13,8 @@ class PaymentController {
             const userEmail = req.user.email;
 
             const { returnUrl } = req.body;
-            const session = await paymentService.createCheckoutSession(userId, userEmail, returnUrl);
+            const frontendUrl = req.get('origin'); // Dynamically get the frontend URL from the request
+            const session = await paymentService.createCheckoutSession(userId, userEmail, returnUrl, frontendUrl);
 
             res.status(200).json({
                 success: true,

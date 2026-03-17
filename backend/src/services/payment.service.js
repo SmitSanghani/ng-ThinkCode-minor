@@ -8,7 +8,8 @@ class PaymentService {
     /**
      * Create a Stripe Checkout Session for Premium plan upgrade
      */
-    async createCheckoutSession(userId, userEmail, returnUrl) {
+    async createCheckoutSession(userId, userEmail, returnUrl, frontendUrl) {
+        const baseUrl = frontendUrl || env.FRONTEND_URL || 'http://localhost:4200';
         // Fetch plan details to get correct price and metadata
         const plan = await PremiumPlan.findOne({ name: 'ThinkCode Premium Plan' });
         const planId = plan ? plan._id : null;
@@ -41,8 +42,8 @@ class PaymentService {
                     quantity: 1,
                 },
             ],
-            success_url: `${env.FRONTEND_URL}/student/plans?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${env.FRONTEND_URL}/student/plans?payment=cancelled`,
+            success_url: `${baseUrl}/student/plans?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/student/plans?payment=cancelled`,
         });
 
         return session;
