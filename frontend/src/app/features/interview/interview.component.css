@@ -38,9 +38,8 @@
 .interview-layout {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    padding: 12px;
-    gap: 12px;
+    height: 100vh;
+    background: #0d1117;
 }
 
 /* Video Panel */
@@ -93,15 +92,25 @@
 
 /* If solitary, make center and larger */
 .videos-grid:has(.video-card.remote.waiting) .video-card.local {
-    width: 70%;
+    width: 65%;
     max-width: 900px;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .videos-grid:has(.video-card.remote.waiting) .video-card.remote.waiting {
-    width: 25%;
-    max-width: 300px;
-    aspect-ratio: 4/3;
-    opacity: 0.8;
+    width: 30%; /* Slightly larger */
+    max-width: 350px;
+    aspect-ratio: 16/9; /* Consistent aspect ratio */
+    opacity: 0.6;
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    background: rgba(1, 4, 9, 0.5);
+    filter: none; /* Remove grayscale for better visibility */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 /* Maximized State Styles */
@@ -168,15 +177,24 @@
 .user-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(13, 17, 23, 0.6);
-    padding: 6px 14px;
-    border-radius: 30px;
+    gap: 12px;
+    background: rgba(13, 17, 23, 0.85);
+    padding: 8px 16px;
+    border-radius: 40px;
     width: fit-content;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
 }
+
+.user-info i {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.text-success { color: #3fb950 !important; }
+.text-danger { color: #f85149 !important; }
 
 
 .status-dot {
@@ -192,15 +210,22 @@
 }
 
 .name {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .role-tag {
-    font-size: 0.7rem;
-    opacity: 0.6;
+    font-size: 0.65rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .live-badge {
@@ -415,29 +440,37 @@
 }
 
 /* Workspace Area */
+.sidebar-spacer {
+    width: 20px;
+}
+
 .workspace-area {
     flex: 1;
     display: flex;
-    gap: 16px;
+    gap: 24px;
     overflow: hidden;
-    padding: 10px 0;
+    padding: 16px 24px 24px 24px;
 }
 
 /* Side Panel (Chat) */
 .side-panel {
-    flex: 1.2;
+    flex: 0 0 420px;
     display: flex;
     flex-direction: column;
-    min-width: 380px;
     height: 100%;
 }
 
 /* WhatsApp Redesign Styles */
+/* WhatsApp Redesign Styles */
 .panel-section.chat.whatsapp-theme {
-    background: #0b141a; /* WhatsApp Darkest */
-    border: none;
-    border-radius: 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    background: #0b141a;
+    border: 1px solid #2a3942;
+    border-radius: 16px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
 .chat-header {
@@ -471,6 +504,7 @@
 .chat-info .details {
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
 .chat-info .title {
@@ -492,15 +526,17 @@
 }
 
 .chat-viewport {
+    flex: 1;
     position: relative;
     background-color: #0b141a;
-    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* WA Background */
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
     background-repeat: repeat;
+    background-size: 400px;
     background-blend-mode: overlay;
-    padding: 20px 7%;
+    padding: 24px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     overflow-y: auto;
 }
 
@@ -513,13 +549,13 @@
 
 .chat-msg .bubble {
     position: relative;
-    max-width: 85%;
-    padding: 6px 10px 8px 10px;
-    font-size: 0.9rem;
-    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+    max-width: 80%;
+    padding: 8px 12px 10px 12px;
+    font-size: 0.92rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     border: none;
-    border-radius: 8px;
-    transform: none !important;
+    border-radius: 12px;
+    line-height: 1.4;
 }
 
 /* Incoming */
@@ -530,7 +566,7 @@
 .chat-msg:not(.me) .bubble {
     background: #202c33;
     color: #e9edef;
-    border-top-left-radius: 0;
+    border-top-left-radius: 4px;
 }
 
 /* Outgoing */
@@ -541,7 +577,7 @@
 .chat-msg.me .bubble {
     background: #005c4b;
     color: #e9edef;
-    border-top-right-radius: 0;
+    border-top-right-radius: 4px;
 }
 
 .chat-msg .author {
@@ -601,9 +637,14 @@
 .chat-composer .input-wrap {
     flex: 1;
     background: #2a3942;
-    border-radius: 8px;
+    border-radius: 12px;
     border: none;
-    padding: 9px 12px;
+    padding: 10px 16px;
+    transition: background 0.2s ease;
+}
+
+.chat-composer .input-wrap:focus-within {
+    background: #374954;
 }
 
 .chat-composer .input-wrap input {

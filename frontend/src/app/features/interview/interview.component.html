@@ -29,7 +29,8 @@
 
                         <div class="video-overlay">
                             <div class="user-info">
-                                <span class="status-dot" [class.active]="isAudioActive"></span>
+                                <i class="bi" [ngClass]="isAudioActive ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
+                                <i class="bi" [ngClass]="(isVideoActive && localHasVideo()) ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
                                 <span class="name">You</span>
                                 <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? 'Host' : 'Guest' }}</span>
@@ -53,7 +54,8 @@
 
                         <div class="video-overlay">
                             <div class="user-info">
-                                <span class="status-dot active"></span>
+                                <i class="bi" [ngClass]="isRemoteAudioActive() ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
+                                <i class="bi" [ngClass]="remoteHasVideo() ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
                                 <span class="name">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? (interviewDetails?.candidateId?.username ||
                                     'Candidate') : (interviewDetails?.interviewerId?.username || 'Interviewer')

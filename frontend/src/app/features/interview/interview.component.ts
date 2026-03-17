@@ -34,6 +34,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
     remoteStream: MediaStream | null = null;
     isRemoteConnected: boolean = false;
     remoteHasVideo = signal<boolean>(false);
+    isRemoteAudioActive = signal<boolean>(true);
     localHasVideo = signal<boolean>(false);
 
     private _localVideo!: ElementRef<HTMLVideoElement>;
@@ -355,12 +356,21 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log('WebRTC: Peer media status update', data);
             this.isRemoteConnected = true;
             this.remoteHasVideo.set(data.isVideoActive);
+            this.isRemoteAudioActive.set(data.isAudioActive);
             this.cdr.detectChanges();
         });
 
         this.socket.on('peer-camera-toggled', ({ isVideoActive }: { isVideoActive: boolean }) => {
+            console.log('WebRTC: Peer camera toggled:', isVideoActive);
             this.isRemoteConnected = true;
             this.remoteHasVideo.set(isVideoActive);
+            this.cdr.detectChanges();
+        });
+
+        this.socket.on('peer-mic-toggled', ({ isAudioActive }: { isAudioActive: boolean }) => {
+            console.log('WebRTC: Peer mic toggled:', isAudioActive);
+            this.isRemoteConnected = true;
+            this.isRemoteAudioActive.set(isAudioActive);
             this.cdr.detectChanges();
         });
 
