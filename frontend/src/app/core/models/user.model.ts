@@ -5,4 +5,5 @@ export interface User {
     role: 'student' | 'admin' | 'User';
     plan: 'Free' | 'Basic' | 'Premium';
     avatar?: string;
+    paymentReturnUrl?: string;
 }

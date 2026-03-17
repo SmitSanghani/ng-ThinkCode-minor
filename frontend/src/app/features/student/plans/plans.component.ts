@@ -22,6 +22,7 @@ export class PlansComponent implements OnInit {
 
     user = this.authService.currentUser;
     isProcessing = false;
+    currentReturnUrl: string | null = null;
 
     ngOnInit() {
         // Prevent redirect to login if already logged in (back button issue fix)
@@ -32,7 +33,7 @@ export class PlansComponent implements OnInit {
         this.route.queryParams.subscribe(params => {
             // Save returnUrl from query params if it exists
             if (params['returnUrl']) {
-                localStorage.setItem('paymentReturnUrl', params['returnUrl']);
+                this.currentReturnUrl = params['returnUrl'];
             }
 
             if (params['payment'] === 'success' && params['session_id']) {
@@ -68,7 +69,7 @@ export class PlansComponent implements OnInit {
 
             this.isProcessing = true;
             // No payment, just activate Free plan
-            this.http.post<any>(`${environment.apiUrl}/payment/select-free`, {}).subscribe({
+            this.http.post<any>(`${environment.apiUrl}/payment/select-free`, { returnUrl: this.currentReturnUrl }).subscribe({
                 next: (res) => {
                     if (res.success && res.user) {
                         this.authService.currentUser.set(res.user);
@@ -80,7 +81,8 @@ export class PlansComponent implements OnInit {
                         timer: 2000,
                         showConfirmButton: false
                     }).then(() => {
-                        this.router.navigate(['/student/problems'], { replaceUrl: true });
+                        const target = res.user?.paymentReturnUrl || '/student/problems';
+                        this.router.navigateByUrl(target, { replaceUrl: true });
                     });
                     this.isProcessing = false;
                 },
@@ -92,7 +94,7 @@ export class PlansComponent implements OnInit {
         } else {
             this.isProcessing = true;
             // Premium — REAL STRIPE: Redirect to Stripe hosted checkout page
-            this.http.post<any>(`${environment.apiUrl}/payment/create-checkout-session`, {}).subscribe({
+            this.http.post<any>(`${environment.apiUrl}/payment/create-checkout-session`, { returnUrl: this.currentReturnUrl }).subscribe({
                 next: (res) => {
                     if (res.success && res.url) {
                         window.location.href = res.url;
@@ -113,7 +115,7 @@ export class PlansComponent implements OnInit {
     testUpgrade() {
         if (this.isProcessing) return;
         this.isProcessing = true;
-        this.http.post<any>(`${environment.apiUrl}/payment/select-premium`, {}).subscribe({
+        this.http.post<any>(`${environment.apiUrl}/payment/select-premium`, { returnUrl: this.currentReturnUrl }).subscribe({
             next: (res) => {
                 if (res.success && res.user) {
                     this.authService.currentUser.set(res.user);
@@ -125,9 +127,8 @@ export class PlansComponent implements OnInit {
                     timer: 2000,
                     showConfirmButton: false
                 }).then(() => {
-                    const returnUrl = localStorage.getItem('paymentReturnUrl') || '/website/home';
-                    localStorage.removeItem('paymentReturnUrl');
-                    this.router.navigateByUrl(returnUrl, { replaceUrl: true });
+                    const target = res.user?.paymentReturnUrl || '/student/problems';
+                    this.router.navigateByUrl(target, { replaceUrl: true });
                 });
                 this.isProcessing = false;
             },
@@ -139,6 +140,7 @@ export class PlansComponent implements OnInit {
     }
 
     private verifyPayment(sessionId: string) {
+        console.log('Payment: Verifying session...', sessionId);
         this.isProcessing = true;
 
         this.http.post<any>(`${environment.apiUrl}/payment/verify`, { sessionId }).subscribe({
@@ -153,13 +155,13 @@ export class PlansComponent implements OnInit {
                     confirmButtonText: 'Start Coding',
                     confirmButtonColor: '#2563eb'
                 }).then(() => {
-                    const returnUrl = localStorage.getItem('paymentReturnUrl') || '/website/home';
-                    localStorage.removeItem('paymentReturnUrl');
-                    this.router.navigateByUrl(returnUrl, { replaceUrl: true });
+                    const target = res.user?.paymentReturnUrl || '/student/problems';
+                    this.router.navigateByUrl(target, { replaceUrl: true });
                 });
                 this.isProcessing = false;
             },
             error: (err) => {
+                console.error('Payment: Verification failed', err);
                 this.isProcessing = false;
                 Swal.fire('Verification Failed', err.error?.message || 'Could not verify payment', 'error');
             }

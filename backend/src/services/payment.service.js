@@ -8,11 +8,16 @@ class PaymentService {
     /**
      * Create a Stripe Checkout Session for Premium plan upgrade
      */
-    async createCheckoutSession(userId, userEmail) {
+    async createCheckoutSession(userId, userEmail, returnUrl) {
         // Fetch plan details to get correct price and metadata
         const plan = await PremiumPlan.findOne({ name: 'ThinkCode Premium Plan' });
         const planId = plan ? plan._id : null;
         const amount = plan ? plan.price * 100 : 49900; // default 499 in paise
+
+        // Save returnUrl to DB
+        if (returnUrl) {
+            await User.findByIdAndUpdate(userId, { paymentReturnUrl: returnUrl });
+        }
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -92,17 +97,21 @@ class PaymentService {
             username: user.username,
             email: user.email,
             role: user.role,
-            plan: user.plan
+            plan: user.plan,
+            paymentReturnUrl: user.paymentReturnUrl
         };
     }
 
     /**
      * Set user to Free plan (no payment)
      */
-    async selectFreePlan(userId) {
+    async selectFreePlan(userId, returnUrl) {
+        const updateData = { plan: 'Free' };
+        if (returnUrl) updateData.paymentReturnUrl = returnUrl;
+
         const user = await User.findByIdAndUpdate(
             userId,
-            { plan: 'Free' },
+            updateData,
             { new: true }
         );
 
@@ -115,17 +124,21 @@ class PaymentService {
             username: user.username,
             email: user.email,
             role: user.role,
-            plan: user.plan
+            plan: user.plan,
+            paymentReturnUrl: user.paymentReturnUrl
         };
     }
 
     /**
      * Set user to Premium plan directly (FOR TESTING)
      */
-    async selectPremiumPlan(userId) {
+    async selectPremiumPlan(userId, returnUrl) {
+        const updateData = { plan: 'Premium' };
+        if (returnUrl) updateData.paymentReturnUrl = returnUrl;
+
         const user = await User.findByIdAndUpdate(
             userId,
-            { plan: 'Premium' },
+            updateData,
             { new: true }
         );
 
@@ -138,7 +151,8 @@ class PaymentService {
             username: user.username,
             email: user.email,
             role: user.role,
-            plan: user.plan
+            plan: user.plan,
+            paymentReturnUrl: user.paymentReturnUrl
         };
     }
 }

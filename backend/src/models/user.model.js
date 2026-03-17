@@ -59,6 +59,10 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    paymentReturnUrl: {
+        type: String,
+        default: '/student/problems'
+    },
     createdAt: {
         type: Date,
         default: Date.now

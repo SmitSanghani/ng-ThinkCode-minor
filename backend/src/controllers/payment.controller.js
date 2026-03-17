@@ -12,7 +12,8 @@ class PaymentController {
             const userId = req.user._id;
             const userEmail = req.user.email;
 
-            const session = await paymentService.createCheckoutSession(userId, userEmail);
+            const { returnUrl } = req.body;
+            const session = await paymentService.createCheckoutSession(userId, userEmail, returnUrl);
 
             res.status(200).json({
                 success: true,
@@ -57,7 +58,8 @@ class PaymentController {
     async selectFreePlan(req, res, next) {
         try {
             const userId = req.user._id;
-            const user = await paymentService.selectFreePlan(userId);
+            const { returnUrl } = req.body;
+            const user = await paymentService.selectFreePlan(userId, returnUrl);
 
             res.status(200).json({
                 success: true,
@@ -76,7 +78,8 @@ class PaymentController {
     async selectPremiumPlan(req, res, next) {
         try {
             const userId = req.user._id;
-            const user = await paymentService.selectPremiumPlan(userId);
+            const { returnUrl } = req.body;
+            const user = await paymentService.selectPremiumPlan(userId, returnUrl);
 
             res.status(200).json({
                 success: true,
