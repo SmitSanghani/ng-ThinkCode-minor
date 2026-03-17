@@ -367,7 +367,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('peer-screen-share', ({ isSharing }: { isSharing: boolean }) => {
             console.log('WebRTC: Peer screen share toggled:', isSharing);
             this.isRemoteSharing = isSharing;
-            if (isSharing) this.isRemoteMaximized = true; // Auto-maximize when peer shares screen
+            if (isSharing) {
+                this.isRemoteMaximized = true;
+                this.remoteHasVideo.set(true); // Ensure visibility when sharing starts
+            }
             this.cdr.detectChanges();
         });
     }
@@ -719,7 +722,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         if (!navigator.mediaDevices || !('getDisplayMedia' in navigator.mediaDevices)) {
             Swal.fire({
                 title: 'Not Supported',
-                text: 'Screen sharing is typically only supported on Desktop browsers (Chrome/Edge/Safari/Firefox). Mobile browsers do not allow starting a screen share.',
+                text: 'Screen sharing is typically only supported on Desktop browsers (Chrome/Edge/Safari/Firefox).',
                 icon: 'warning',
                 toast: true,
                 position: 'top-end',
@@ -730,12 +733,30 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
 
         if (this.isSharingScreen) {
-            this.screenStream?.getTracks().forEach(t => t.stop());
-            this.screenStream = null;
+            // Stop sharing
             this.isSharingScreen = false;
-            const videoTrack = this.localStream.getVideoTracks()[0];
-            const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-            if (sender && videoTrack) sender.replaceTrack(videoTrack);
+            if (this.screenStream) {
+                this.screenStream.getTracks().forEach(t => t.stop());
+                
+                const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                const videoTrack = this.localStream?.getVideoTracks()[0];
+
+                if (sender) {
+                    if (videoTrack) {
+                        await sender.replaceTrack(videoTrack);
+                    } else {
+                        // If we didn't have a camera originally, we added this track just for sharing
+                        try {
+                            this.peerConnection.removeTrack(sender);
+                            this.socket?.emit('request-negotiation', { roomId: this.roomId });
+                        } catch (e) {
+                            console.warn('WebRTC: Error removing screen track', e);
+                        }
+                    }
+                }
+                this.screenStream = null;
+            }
+            
             if (this._localVideo?.nativeElement) this._localVideo.nativeElement.srcObject = this.localStream;
             this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: false });
         } else {
@@ -746,9 +767,24 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 });
                 this.isSharingScreen = true;
                 const screenTrack = this.screenStream.getVideoTracks()[0];
-                const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-                if (sender) sender.replaceTrack(screenTrack);
-                if (this._localVideo?.nativeElement) this._localVideo.nativeElement.srcObject = this.screenStream;
+                
+                // Try to find existing video sender
+                let sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                
+                if (sender) {
+                    await sender.replaceTrack(screenTrack);
+                    console.log('WebRTC: Replaced existing track with screen share');
+                } else {
+                    console.log('WebRTC: No existing video sender, adding screen track');
+                    this.peerConnection.addTrack(screenTrack, this.screenStream);
+                    // MUST renegotiate because we added a new track kind
+                    this.socket?.emit('request-negotiation', { roomId: this.roomId });
+                }
+                
+                if (this._localVideo?.nativeElement) {
+                    this._localVideo.nativeElement.srcObject = this.screenStream;
+                    this._localVideo.nativeElement.play().catch(() => {});
+                }
                 this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: true });
                 
                 screenTrack.onended = () => {
@@ -756,8 +792,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 };
             } catch (err) {
                 console.error('WebRTC: Screen share failed', err);
+                this.isSharingScreen = false;
             }
         }
+        this.cdr.detectChanges();
     }
 
     toggleMaximize() {
