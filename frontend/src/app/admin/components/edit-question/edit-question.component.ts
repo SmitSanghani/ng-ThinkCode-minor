@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, HostListener, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -17,12 +17,29 @@ export class EditQuestionComponent implements OnInit {
     questionService = inject(QuestionService);
     router = inject(Router);
     route = inject(ActivatedRoute);
-    cdr = inject(ChangeDetectorRef); // Inject ChangeDetectorRef
+    cdr = inject(ChangeDetectorRef);
+    el = inject(ElementRef);
 
     questionForm: FormGroup;
     isSubmitting = false;
     isLoading = true;
     questionId: string | null = null;
+
+    // Custom Dropdown State
+    difficultyOpen = false;
+    difficulties = ['Easy', 'Medium', 'Hard'];
+
+    @HostListener('document:click', ['$event'])
+    onClick(event: MouseEvent) {
+        if (!this.el.nativeElement.contains(event.target)) {
+            this.difficultyOpen = false;
+        }
+    }
+
+    selectDifficulty(value: string) {
+        this.questionForm.patchValue({ difficulty: value });
+        this.difficultyOpen = false;
+    }
 
     constructor() {
         this.questionForm = this.fb.group({
@@ -34,7 +51,7 @@ export class EditQuestionComponent implements OnInit {
             constraints: [''],
             testCases: this.fb.array([], Validators.required),
             functionSignature: ['', Validators.required],
-            referenceSolution: [''],
+            referenceSolution: ['', Validators.required],
             isPremium: [false]
         });
     }

@@ -453,3 +453,58 @@
         transform: scale(1.0);
     }
 }
+
+/* Problem Description Markdown Styling */
+.problem-content h1, 
+.problem-content h2, 
+.problem-content h3 {
+    color: #ffffff;
+    font-weight: 700;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+}
+.problem-content h1 { font-size: 24px; }
+.problem-content h2 { font-size: 20px; }
+.problem-content h3 { font-size: 18px; }
+
+.problem-content p {
+    margin-bottom: 16px;
+}
+
+.problem-content ul, 
+.problem-content ol {
+    margin-bottom: 16px;
+    padding-left: 20px;
+}
+
+.problem-content li {
+    margin-bottom: 8px;
+    list-style-type: disc;
+}
+
+.problem-content ol li {
+    list-style-type: decimal;
+}
+
+.problem-content code {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    color: #8ab4f8;
+}
+
+.problem-content strong {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.problem-content blockquote {
+    border-left: 4px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    border-radius: 0 4px 4px 0;
+}

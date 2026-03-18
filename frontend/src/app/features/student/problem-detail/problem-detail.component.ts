@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { StudentService, ProblemDetail } from '../../../core/services/student.service';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-problem-detail',
@@ -196,7 +197,21 @@ export class ProblemDetailComponent implements OnInit {
         }
 
         this.problem = res;
-        this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(res.description || '');
+        
+        // Render Markdown to HTML
+        const rawMarkdown = res.description || '';
+        const renderedHtml = marked.parse(rawMarkdown);
+        
+        if (renderedHtml instanceof Promise) {
+          renderedHtml.then(html => {
+            this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(html as string);
+            this.cdr.detectChanges();
+          });
+        } else {
+          this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(renderedHtml as string);
+        }
+        
+        console.log('Rendering markdown:', rawMarkdown.substring(0, 50) + '...');
 
         // Safely parse constraints into an array
         this.constraintsList = [];
