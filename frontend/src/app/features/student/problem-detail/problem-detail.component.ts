@@ -200,15 +200,19 @@ export class ProblemDetailComponent implements OnInit {
         
         // Render Markdown to HTML
         const rawMarkdown = res.description || '';
-        const renderedHtml = marked.parse(rawMarkdown);
-        
-        if (renderedHtml instanceof Promise) {
-          renderedHtml.then(html => {
-            this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(html as string);
-            this.cdr.detectChanges();
-          });
-        } else {
-          this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(renderedHtml as string);
+        try {
+          const result = marked.parse(rawMarkdown);
+          if (typeof (result as any)?.then === 'function') {
+            (result as Promise<string>).then(html => {
+              this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(html);
+              this.cdr.detectChanges();
+            });
+          } else {
+            this.safeDescription = this.sanitizer.bypassSecurityTrustHtml(result as string);
+          }
+        } catch (err) {
+          console.error('Markdown parsing error:', err);
+          this.safeDescription = rawMarkdown;
         }
         
         console.log('Rendering markdown:', rawMarkdown.substring(0, 50) + '...');
