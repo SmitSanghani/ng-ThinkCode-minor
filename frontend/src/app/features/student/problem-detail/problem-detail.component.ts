@@ -328,8 +328,12 @@ export class ProblemDetailComponent implements OnInit {
       }).then((result) => {
         if (result.isConfirmed) {
           this.studentCode = this.problem!.functionSignature || '';
+          this.executionResult = null;
+          this.submissionResult = null;
+          this.canSubmit = false;
+          this.activeEditorTab = 'testcase';
           this.cdr.detectChanges();
-          this.showToast('success', 'Code reset successfully');
+          this.showToast('success', 'Code and results reset successfully');
         }
       });
     }

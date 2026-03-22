@@ -42,9 +42,9 @@ class QuestionService {
 
     async getStats() {
         const total = await questionRepository.count();
-        const easy = await questionRepository.count({ difficulty: 'easy' });
-        const medium = await questionRepository.count({ difficulty: 'medium' });
-        const hard = await questionRepository.count({ difficulty: 'hard' });
+        const easy = await questionRepository.count({ difficulty: 'Easy' });
+        const medium = await questionRepository.count({ difficulty: 'Medium' });
+        const hard = await questionRepository.count({ difficulty: 'Hard' });
 
         return {
             total,
@@ -56,7 +56,7 @@ class QuestionService {
         const workbook = XLSX.read(buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
+        const data = XLSX.utils.sheet_to_json(worksheet, { defval: null });
 
         const mandatoryFields = ['title', 'difficulty', 'category', 'description', 'functionSignature'];
         const errors = [];
@@ -86,6 +86,20 @@ class QuestionService {
             if (typeof row.testCases === 'string') {
                 try { row.testCases = JSON.parse(row.testCases); } catch (e) { row.testCases = []; }
             }
+
+            // Explicitly handle isPremium conversion as Excel might read it as a string
+            if (row.isPremium !== undefined && row.isPremium !== null) {
+                if (typeof row.isPremium === 'string') {
+                    row.isPremium = row.isPremium.toLowerCase() === 'true';
+                } else if (typeof row.isPremium === 'boolean') {
+                    // already boolean
+                } else {
+                    row.isPremium = Boolean(row.isPremium);
+                }
+            } else {
+                row.isPremium = false;
+            }
+
             return row;
         });
 
