@@ -5,12 +5,13 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { environment } from '../../../../environments/environment';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
+import { FooterComponent } from '../../../shared/components/footer/footer.component';
 import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-plans',
     standalone: true,
-    imports: [CommonModule, NavbarComponent],
+    imports: [CommonModule, NavbarComponent, FooterComponent],
     templateUrl: './plans.component.html',
     styleUrls: ['./plans.component.css']
 })

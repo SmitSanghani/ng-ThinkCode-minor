@@ -6,6 +6,7 @@ import { AdminOverviewComponent } from './features/admin/overview/overview.compo
 import { SubmissionsComponent } from './features/admin/submissions/submissions.component';
 import { StudentHomeComponent } from './features/student/home/home.component';
 import { ProblemsListComponent } from './features/student/problems-list/problems-list.component';
+import { FAQsComponent } from './features/student/faqs/faqs.component';
 import { ProblemDetailComponent } from './features/student/problem-detail/problem-detail.component';
 import { AdminUsersComponent } from './features/admin/users/admin-users.component';
 import { UserDetailsComponent } from './features/admin/users/user-details/user-details.component';
@@ -36,6 +37,10 @@ export const routes: Routes = [
     {
         path: 'website/home',
         component: StudentHomeComponent
+    },
+    {
+        path: 'website/faqs',
+        component: FAQsComponent
     },
     {
         path: 'interview/:roomId',

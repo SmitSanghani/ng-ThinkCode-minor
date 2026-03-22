@@ -7,11 +7,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { StudentService } from '../../../core/services/student.service';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { CalendarComponent } from '../../../shared/components/calendar/calendar.component';
+import { FooterComponent } from '../../../shared/components/footer/footer.component';
 
 @Component({
   selector: 'app-problems-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, CalendarComponent, RouterLink],
+  imports: [CommonModule, FormsModule, NavbarComponent, CalendarComponent, RouterLink, FooterComponent],
   templateUrl: './problems-list.component.html',
   styleUrls: ['./problems-list.component.css']
 })

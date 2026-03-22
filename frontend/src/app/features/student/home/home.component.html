@@ -27,12 +27,10 @@
                 Join 50,000+ students learning the future of software development with our industry-leading coding
                 platform.
             </p>
-
         </div>
 
         <!-- Stats Section -->
-        <div
-            class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-5xl animate-fade-in-up-delay opacity-0 px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full max-w-5xl animate-fade-in-up-delay px-4">
             <div
                 class="bg-white/60 backdrop-blur-md p-5 md:p-6 rounded-2xl border border-black/5 flex items-center gap-5 text-left transition-all duration-300 hover:bg-white hover:border-indigo-100 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
                 <div
@@ -68,4 +66,254 @@
             </div>
         </div>
     </section>
+
+    <!-- Features Section -->
+    <section class="features-section relative z-20 py-24 px-4 md:px-8 bg-slate-50">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-5xl font-bold text-slate-900 mb-4">Powerful Features for Modern Coders</h2>
+                <p class="text-slate-600 max-w-2xl mx-auto">Everything you need to master technical interviews and build
+                    a successful career.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card">
+                    <div class="feature-icon bg-blue-100 text-blue-600">
+                        <i class="bi bi-code-slash"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Vibrant Problem Library</h3>
+                    <p class="text-slate-600">Over 2,000+ hand-curated questions covering all major data structures and
+                        algorithms.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card">
+                    <div class="feature-icon bg-purple-100 text-purple-600">
+                        <i class="bi bi-lightning"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Real-time IDE</h3>
+                    <p class="text-slate-600">Advanced coding environment with multi-language support and instant
+                        execution.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card">
+                    <div class="feature-icon bg-emerald-100 text-emerald-600">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Progress Analytics</h3>
+                    <p class="text-slate-600">Detailed insights into your coding performance and areas for improvement.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interview Experience Section -->
+    <section class="interview-section relative z-20 py-24 px-4 md:px-8 bg-slate-900 border-y border-slate-800">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <div class="inline-flex px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-full mb-6 border border-emerald-500/20 uppercase tracking-widest">Live Experience</div>
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6">Professional Mock Interviews</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">Experience our state-of-the-art live interview system. Real-time video, coding, and chat - designed to simulate top-tier technical interviews with ThinkCode.</p>
+            </div>
+
+            <!-- Mock Meeting UI -->
+            <div class="meeting-mockup relative bg-[#0a0a0a] rounded-[32px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] border border-white/5 mx-auto max-w-5xl animate-fade-in-up-delay">
+                <!-- Window Top Header -->
+                <div class="mockup-header h-10 bg-[#000] flex items-center justify-between px-6">
+                    <div class="window-controls flex gap-2">
+                        <span class="w-2 h-2 rounded-full bg-[#FF5F56]"></span>
+                        <span class="w-2 h-2 rounded-full bg-[#FFBD2E]"></span>
+                        <span class="w-2 h-2 rounded-full bg-[#27C93F]"></span>
+                    </div>
+                    <div class="mockup-menu text-[8px] font-bold text-slate-500 tracking-[0.3em] flex items-center gap-4">
+                        <div class="flex items-center gap-1.5"><i class="bi bi-shield-lock-fill text-emerald-500"></i> PROTECTED SESSION</div>
+                        <i class="bi bi-three-dots text-slate-400 cursor-pointer"></i>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="main-meeting-area flex md:flex-row flex-col bg-[#000]">
+                    <!-- Video Grid Area -->
+                    <div class="flex-1 flex items-center justify-center p-4 min-h-[400px]">
+                        <div class="grid grid-cols-2 gap-2 w-full max-w-4xl">
+                            <!-- Participant 1 -->
+                            <div class="relative group rounded-xl overflow-hidden aspect-video bg-[#111] border-2 border-[#84CC16]">
+                                <img src="/images/interviewer_pro.png" alt="Interviewer" class="w-full h-full object-cover object-[center_20%]">
+                                <div class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded text-[9px] font-bold text-white tracking-wide uppercase">
+                                    Interviewer
+                                </div>
+                            </div>
+                            <!-- Participant 2 -->
+                            <div class="relative group rounded-xl overflow-hidden aspect-video bg-[#111] border border-white/5">
+                                <img src="/images/student_pro.png" alt="Student" class="w-full h-full object-cover object-[center_20%]">
+                                <div class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded text-[9px] font-bold text-white tracking-wide uppercase">
+                                    Student (You)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Sidebar -->
+                    <div class="chat-sidebar w-full md:w-[300px] bg-[#0a0a0a] border-l border-white/5 flex flex-col">
+                        <div class="h-12 flex items-center justify-between px-5 border-bottom border-white/5">
+                            <span class="text-[9px] font-black text-white uppercase tracking-widest">Chat Feed</span>
+                            <span class="text-[8px] text-slate-500 bg-white/5 px-2 py-0.5 rounded-full">00:15:42</span>
+                        </div>
+                        
+                        <div class="flex-1 p-5 overflow-y-auto space-y-5">
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-baseline">
+                                    <span class="text-[8px] font-black text-blue-400 uppercase tracking-widest">Interviewer</span>
+                                </div>
+                                <p class="text-[11px] leading-relaxed text-slate-300 bg-white/5 p-2.5 rounded-xl rounded-tl-none border border-white/5">Can you explain your approach for the optimized Two Sum solution?</p>
+                            </div>
+                            
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-baseline">
+                                    <span class="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Student</span>
+                                </div>
+                                <p class="text-[11px] leading-relaxed text-slate-300 bg-blue-500/10 p-2.5 rounded-xl rounded-tl-none border border-blue-500/10">Sure! I'm using a Hash Map to store the complements for a single-pass O(n) complexity.</p>
+                            </div>
+                        </div>
+
+                        <div class="p-4">
+                            <div class="relative">
+                                <input type="text" placeholder="Type a message..." class="w-full h-9 bg-[#111] border border-white/10 rounded-lg px-4 pr-10 text-[10px] text-white focus:border-blue-500/50 outline-none">
+                                <button class="absolute top-1/2 right-1.5 -translate-y-1/2 w-6 h-6 bg-blue-600 text-white rounded flex items-center justify-center">
+                                    <i class="bi bi-send-fill text-[9px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="px-6 py-4 bg-[#000] border-t border-white/5 flex justify-center">
+                    <div class="flex items-center gap-3 md:gap-6 px-6 py-2 bg-[#111] rounded-full border border-white/10 shadow-2xl">
+                        <div class="flex flex-col items-center gap-1 group cursor-pointer">
+                            <div class="w-9 h-9 bg-white/5 text-slate-300 rounded-full flex items-center justify-center text-base hover:bg-white hover:text-black transition-all">
+                                <i class="bi bi-mic-fill"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col items-center gap-1 group cursor-pointer">
+                            <div class="w-9 h-9 bg-white/5 text-slate-300 rounded-full flex items-center justify-center text-base hover:bg-white hover:text-black transition-all">
+                                <i class="bi bi-camera-video-fill"></i>
+                            </div>
+                        </div>
+
+                        <div class="w-px h-6 bg-white/10 mx-1"></div>
+
+                        <div class="flex flex-col items-center gap-1 group cursor-pointer">
+                            <div class="w-9 h-9 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center text-base hover:bg-blue-500 hover:text-white transition-all">
+                                <i class="bi bi-display"></i>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-1 group cursor-pointer">
+                            <div class="w-9 h-9 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-base hover:bg-indigo-500 hover:text-white transition-all">
+                                <i class="bi bi-chat-dots"></i>
+                            </div>
+                        </div>
+
+                        <div class="w-px h-6 bg-white/10 mx-1"></div>
+
+                        <div class="flex flex-col items-center gap-1 group cursor-pointer">
+                            <button class="w-9 h-9 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-base shadow-lg shadow-red-500/20 active:scale-95">
+                                <i class="bi bi-telephone-x-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Us Section -->
+    <section class="why-us-section relative z-20 py-24 px-4 md:px-8 bg-white overflow-hidden">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-16">
+            <div class="md:w-1/2">
+                <div class="inline-flex px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full mb-6">WHY
+                    CHOOSE US</div>
+                <h2 class="text-3xl md:text-5xl font-bold text-slate-900 mb-8 leading-tight">Elevate Your Engineering
+                    <span class="text-blue-600">Core Skills</span></h2>
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                            <i class="bi bi-check2 text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-1">Company-Specific Tracks</h4>
+                            <p class="text-slate-600">Prepare for top tech companies like Google, Meta, and Amazon with
+                                targeted problem sets.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                            <i class="bi bi-check2 text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-1">Mock Interviews</h4>
+                            <p class="text-slate-600">Practice with peer-to-peer or AI-driven mock interviews to build
+                                confidence.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="md:w-1/2 relative">
+                <div class="aspect-square bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl p-8">
+                    <div
+                        class="w-full h-full bg-slate-900 rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden border border-slate-800">
+                        <div class="w-full h-full p-6 text-emerald-400 font-mono text-sm">
+                            <div class="mb-4"><span class="text-slate-500">// Optimized Two Sum Solution</span></div>
+                            <div class="mb-2">function solve(nums, target) &#123;</div>
+                            <div class="pl-4 mb-2">const map = new Map();</div>
+                            <div class="pl-4 mb-2">for(let i=0; i&lt;nums.length; i++) &#123;</div>
+                            <div class="pl-8 mb-2">const complement = target - nums[i];</div>
+                            <div class="pl-8 mb-2">if(map.has(complement)) return [map.get(complement), i];</div>
+                            <div class="pl-8 mb-2">map.set(nums[i], i);</div>
+                            <div class="pl-4 mb-2">&#125;</div>
+                            <div class="pl-2">&#125;</div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="absolute -bottom-6 -left-6 bg-white p-4 shadow-xl rounded-xl border border-slate-100 animate-bounce">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <i class="bi bi-trophy text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm font-bold">100 Days streak!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section relative z-20 py-24 px-4 md:px-8">
+        <div class="max-w-5xl mx-auto rounded-3xl bg-slate-900 p-12 md:p-20 text-center relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10"
+                style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;20&quot; height=&quot;20&quot; viewBox=&quot;0 0 20 20&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;%239C92AC&quot; fill-opacity=&quot;0.4&quot; fill-rule=&quot;evenodd&quot;%3E%3Ccircle cx=&quot;3&quot; cy=&quot;3&quot; r=&quot;3&quot;/%3E%3Ccircle cx=&quot;13&quot; cy=&quot;13&quot; r=&quot;3&quot;/%3E%3C/g%3E%3C/svg%3E');">
+            </div>
+            <div class="relative z-10">
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-8">Ready to start your journey?</h2>
+                <p class="text-slate-400 max-w-xl mx-auto mb-12 text-lg">Join thousands of others who have already
+                    accelerated their careers with ThinkCode.</p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a routerLink="/register"
+                        class="px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/20">Get
+                        Started Now</a>
+                    <a routerLink="/student/problems"
+                        class="px-8 py-4 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-all backdrop-blur-sm border border-white/10">Browse
+                        Problems</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <app-footer></app-footer>
 </main>
