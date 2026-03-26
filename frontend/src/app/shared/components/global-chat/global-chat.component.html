@@ -1,8 +1,6 @@
 <div class="global-chat-container" *ngIf="isOpen() && activeRecipient() && !isInterviewRoom()"
-    [style.left]="posX !== null ? posX + 'px' : null"
-    [style.right]="posX !== null ? 'auto' : '20px'"
-    [style.top]="posY !== null ? posY + 'px' : null"
-    [style.bottom]="posY !== null ? 'auto' : '80px'">
+    [style.left]="posX !== null ? posX + 'px' : null" [style.right]="posX !== null ? 'auto' : '20px'"
+    [style.top]="posY !== null ? posY + 'px' : null" [style.bottom]="posY !== null ? 'auto' : '80px'">
     <div class="chat-header drag-handle" (mousedown)="startDrag($event)">
         <div class="chat-title" [title]="'ID: ' + activeRecipient()?.id">
             <i class="bi bi-grip-vertical drag-icon"></i>

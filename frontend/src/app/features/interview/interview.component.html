@@ -17,10 +17,12 @@
                 <div class="videos-grid" [class.has-maximized]="isRemoteMaximized">
                     <!-- Local Video -->
                     <div class="video-card local" [class.pip-mode]="isRemoteMaximized">
-                        <video #localVideo autoplay muted playsinline [hidden]="!localHasVideo() && !isSharingScreen"></video>
-                        
+                        <video #localVideo autoplay muted playsinline
+                            [hidden]="!localHasVideo() && !isSharingScreen"></video>
+
                         <!-- Placeholder if no local video track -->
-                        <div class="no-video-placeholder" *ngIf="(!localHasVideo() || !isVideoActive) && !isSharingScreen">
+                        <div class="no-video-placeholder"
+                            *ngIf="(!localHasVideo() || !isVideoActive) && !isSharingScreen">
                             <div class="user-avatar">
                                 <i class="bi bi-person-fill"></i>
                             </div>
@@ -29,8 +31,10 @@
 
                         <div class="video-overlay">
                             <div class="user-info">
-                                <i class="bi" [ngClass]="isAudioActive ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
-                                <i class="bi" [ngClass]="(isVideoActive && localHasVideo()) ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
+                                <i class="bi"
+                                    [ngClass]="isAudioActive ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
+                                <i class="bi"
+                                    [ngClass]="(isVideoActive && localHasVideo()) ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
                                 <span class="name">You</span>
                                 <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? 'Host' : 'Guest' }}</span>
@@ -39,11 +43,11 @@
                     </div>
 
                     <!-- Remote Video -->
-                    <div class="video-card remote" *ngIf="isRemoteConnected" 
-                         [class.maximized]="isRemoteMaximized"
-                         [class.is-sharing]="isRemoteSharing">
-                        <video #remoteVideo autoplay playsinline [hidden]="!remoteHasVideo() && !isRemoteSharing"></video>
-                        
+                    <div class="video-card remote" *ngIf="isRemoteConnected" [class.maximized]="isRemoteMaximized"
+                        [class.is-sharing]="isRemoteSharing">
+                        <video #remoteVideo autoplay playsinline
+                            [hidden]="!remoteHasVideo() && !isRemoteSharing"></video>
+
                         <!-- Placeholder if no remote video track -->
                         <div class="no-video-placeholder" *ngIf="!remoteHasVideo() && !isRemoteSharing">
                             <div class="user-avatar">
@@ -54,8 +58,10 @@
 
                         <div class="video-overlay">
                             <div class="user-info">
-                                <i class="bi" [ngClass]="isRemoteAudioActive() ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
-                                <i class="bi" [ngClass]="remoteHasVideo() ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
+                                <i class="bi"
+                                    [ngClass]="isRemoteAudioActive() ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
+                                <i class="bi"
+                                    [ngClass]="remoteHasVideo() ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
                                 <span class="name">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? (interviewDetails?.candidateId?.username ||
                                     'Candidate') : (interviewDetails?.interviewerId?.username || 'Interviewer')
@@ -63,9 +69,13 @@
                                 <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? 'Guest' : 'Host' }}</span>
                             </div>
-                            <span class="live-badge" *ngIf="remoteHasVideo() || isRemoteSharing"><i class="bi bi-record-circle-fill"></i> LIVE</span>
-                            <button class="btn-maximize" (click)="toggleMaximize()" [title]="isRemoteMaximized ? 'Restore Size' : 'Maximize Video'" *ngIf="remoteHasVideo() || isRemoteSharing">
-                                <i class="bi" [ngClass]="isRemoteMaximized ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
+                            <span class="live-badge" *ngIf="remoteHasVideo() || isRemoteSharing"><i
+                                    class="bi bi-record-circle-fill"></i> LIVE</span>
+                            <button class="btn-maximize" (click)="toggleMaximize()"
+                                [title]="isRemoteMaximized ? 'Restore Size' : 'Maximize Video'"
+                                *ngIf="remoteHasVideo() || isRemoteSharing">
+                                <i class="bi"
+                                    [ngClass]="isRemoteMaximized ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
                             </button>
                         </div>
                     </div>
@@ -119,8 +129,7 @@
 
                     <div class="chat-viewport" #chatContainer>
                         <div class="chat-background"></div>
-                        <div *ngFor="let msg of chatMessages" class="chat-msg"
-                            [class.me]="isCurrentUser(msg.senderId)">
+                        <div *ngFor="let msg of chatMessages" class="chat-msg" [class.me]="isCurrentUser(msg.senderId)">
                             <div class="bubble">
                                 <div class="author">{{ isCurrentUser(msg.senderId) ? 'You' : msg.sender }}</div>
                                 <div class="text">{{ msg.text }}</div>
@@ -133,7 +142,8 @@
                         <div class="empty-state" *ngIf="chatMessages.length === 0">
                             <div class="lock-msg">
                                 <i class="bi bi-lock-fill"></i>
-                                Messages are end-to-end encrypted. No one outside of this chat, not even ThinkCode, can read them.
+                                Messages are end-to-end encrypted. No one outside of this chat, not even ThinkCode, can
+                                read them.
                             </div>
                         </div>
                     </div>
@@ -153,8 +163,10 @@
                                     placeholder="Type a message">
                             </div>
                             <div class="actions-right">
-                                <button *ngIf="!newMessage.trim()" class="btn-voice"><i class="bi bi-mic-fill"></i></button>
-                                <button *ngIf="newMessage.trim()" (click)="sendMessage()" class="btn-send"><i class="bi bi-send-fill"></i></button>
+                                <button *ngIf="!newMessage.trim()" class="btn-voice"><i
+                                        class="bi bi-mic-fill"></i></button>
+                                <button *ngIf="newMessage.trim()" (click)="sendMessage()" class="btn-send"><i
+                                        class="bi bi-send-fill"></i></button>
                             </div>
                         </div>
                     </div>

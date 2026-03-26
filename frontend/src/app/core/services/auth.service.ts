@@ -28,8 +28,14 @@ export class AuthService {
     constructor(private http: HttpClient, private router: Router) {
         // Recover session from localStorage on app start
         const token = localStorage.getItem('accessToken');
-        if (token) {
-            this.isAuthenticated.set(true);
+        const user = localStorage.getItem('user');
+        if (token && user) {
+            try {
+                this.currentUser.set(JSON.parse(user));
+                this.isAuthenticated.set(true);
+            } catch (e) {
+                this.clearSession();
+            }
         }
     }
 
@@ -124,6 +130,7 @@ export class AuthService {
     private setSession(accessToken: string, refreshToken: string, user: User): void {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
         this.currentUser.set(user);
         this.isAuthenticated.set(true);
     }
@@ -131,6 +138,7 @@ export class AuthService {
     private clearSession(): void {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         this.currentUser.set(null);
         this.isAuthenticated.set(false);
     }

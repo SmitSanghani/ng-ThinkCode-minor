@@ -151,7 +151,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
             console.log('WebRTC: Accessing media...');
             await this.startLocalMedia();         // 3. get camera/mic
-            
+
             console.log('WebRTC: Setting up WebRTC...');
             this.setupWebRTC();                   // 4. create RTCPeerConnection
 
@@ -161,10 +161,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
             // 5. JOIN LAST - only when ready to negotiate
             console.log('Interview: Joining room...');
             this.socket.emit('join-interview', { roomId: this.roomId });
-            this.socket.emit('media-status', { 
-                roomId: this.roomId, 
+            this.socket.emit('media-status', {
+                roomId: this.roomId,
                 isVideoActive: this.isVideoActive && this.localHasVideo(),
-                isAudioActive: this.isAudioActive 
+                isAudioActive: this.isAudioActive
             });
 
         } catch (err: any) {
@@ -220,14 +220,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('user-joined', async (data: any) => {
             console.log('WebRTC: User joined, signaling starting...', data);
             this.isRemoteConnected = true;
-            
+
             // Re-broadcast my status to the new joiner
-            this.socket.emit('media-status', { 
-                roomId: this.roomId, 
+            this.socket.emit('media-status', {
+                roomId: this.roomId,
                 isVideoActive: this.isVideoActive && this.localHasVideo(),
-                isAudioActive: this.isAudioActive 
+                isAudioActive: this.isAudioActive
             });
-            
+
             // If I am Guest and Host (Interviewer) joins, I must request them to start negotiation
             const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
             if (!this.isInterviewer && data.userId === interviewerId?.toString()) {
@@ -255,7 +255,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log('WebRTC: Received offer, state:', this.peerConnection?.signalingState);
             this.isRemoteConnected = true;
             if (!this.peerConnection) this.setupWebRTC();
-            
+
             // Only accept offer if we are stable
             if (this.peerConnection.signalingState !== 'stable') {
                 console.warn('WebRTC: Received offer while not stable, state:', this.peerConnection.signalingState);
@@ -263,7 +263,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             }
 
             await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            
+
             // Flush buffered ICE candidates
             while (this.iceCandidatesBuffer.length > 0) {
                 const candidate = this.iceCandidatesBuffer.shift();
@@ -280,7 +280,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.isRemoteConnected = true;
             if (this.peerConnection && this.peerConnection.signalingState === 'have-local-offer') {
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                
+
                 // Flush buffered ICE candidates
                 while (this.iceCandidatesBuffer.length > 0) {
                     const candidate = this.iceCandidatesBuffer.shift();
@@ -420,7 +420,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     ngOnDestroy() {
         if (this.videoBindInterval) clearInterval(this.videoBindInterval);
-        
+
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => track.stop());
         }
@@ -582,7 +582,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 console.log('WebRTC: Video + Audio access granted');
             } catch (videoError: any) {
                 console.warn('WebRTC: Full media access failed, trying audio-only...', videoError.name);
-                
+
                 // 2. If video failed (missing hardware/denied), try Audio Only
                 if (videoError.name === 'NotFoundError' || videoError.name === 'DevicesNotFoundError' || videoError.name === 'NotAllowedError') {
                     try {
@@ -611,7 +611,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         } catch (err: any) {
             console.error('WebRTC: Media error.', err);
-            
+
             // Only show blocking error if even Audio fails
             if (err.message.includes('microphone')) {
                 Swal.fire('Hardware Error', err.message, 'error');
@@ -637,14 +637,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private setupWebRTC() {
         if (this.peerConnection) return;
-        
+
         console.log('WebRTC: Initializing RTCPeerConnection with STUN/TURN');
         this.peerConnection = new RTCPeerConnection(this.iceServers);
 
         // Track listener for remote media
         this.peerConnection.ontrack = (event) => {
             console.log('WebRTC: Remote track received', event.track.kind);
-            
+
             // Re-initialize remote stream if not present
             if (!this.remoteStream) {
                 this.remoteStream = new MediaStream();
@@ -654,7 +654,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             if (!this.remoteStream.getTracks().find(t => t.id === event.track.id)) {
                 this.remoteStream.addTrack(event.track);
             }
-            
+
             this.hasRemoteVideo = true;
             this.cdr.detectChanges();
 
@@ -685,7 +685,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.peerConnection.onconnectionstatechange = () => {
             const state = this.peerConnection.connectionState;
             console.log("WebRTC: Connection State Changed:", state);
-            
+
             if (state === 'failed') {
                 console.warn('WebRTC: Connection failed, restarting ICE...');
                 this.peerConnection.restartIce();
@@ -704,7 +704,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private initiateNegotiation() {
         if (!this.peerConnection) return;
-        
+
         setTimeout(async () => {
             try {
                 if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') {
@@ -762,7 +762,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.isSharingScreen = false;
             if (this.screenStream) {
                 this.screenStream.getTracks().forEach(t => t.stop());
-                
+
                 const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
                 const videoTrack = this.localStream?.getVideoTracks()[0];
 
@@ -781,21 +781,21 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 }
                 this.screenStream = null;
             }
-            
+
             if (this._localVideo?.nativeElement) this._localVideo.nativeElement.srcObject = this.localStream;
             this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: false });
         } else {
             try {
-                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                this.screenStream = await navigator.mediaDevices.getDisplayMedia({
                     video: { cursor: "always" } as any,
-                    audio: false 
+                    audio: false
                 });
                 this.isSharingScreen = true;
                 const screenTrack = this.screenStream.getVideoTracks()[0];
-                
+
                 // Try to find existing video sender
                 let sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-                
+
                 if (sender) {
                     await sender.replaceTrack(screenTrack);
                     console.log('WebRTC: Replaced existing track with screen share');
@@ -805,13 +805,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
                     // MUST renegotiate because we added a new track kind
                     this.socket?.emit('request-negotiation', { roomId: this.roomId });
                 }
-                
+
                 if (this._localVideo?.nativeElement) {
                     this._localVideo.nativeElement.srcObject = this.screenStream;
-                    this._localVideo.nativeElement.play().catch(() => {});
+                    this._localVideo.nativeElement.play().catch(() => { });
                 }
                 this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: true });
-                
+
                 screenTrack.onended = () => {
                     if (this.isSharingScreen) this.toggleScreenShare();
                 };
