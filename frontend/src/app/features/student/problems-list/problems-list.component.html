@@ -52,6 +52,7 @@
             <!-- Problem Table Container -->
             <div class="table-container shadow-premium">
                 <div class="table-header">
+                    <div class="col-index text-center w-8">#</div>
                     <div class="col-status text-center w-12">Status</div>
                     <div class="col-title">Title</div>
 
@@ -63,6 +64,11 @@
                 <div class="table-body" *ngIf="!isLoading">
                     <div *ngFor="let p of problems; let i = index" (click)="viewProblem(p)"
                         class="problem-row group animate-fadeIn">
+                        
+                        <!-- Row Index -->
+                        <div class="col-index text-center w-8 text-white font-bold text-sm pt-1">
+                            {{ (pagination.page - 1) * pagination.limit + i + 1 }}
+                        </div>
 
                         <!-- Status Icon -->
                         <div class="col-status flex justify-center w-12 pt-1">

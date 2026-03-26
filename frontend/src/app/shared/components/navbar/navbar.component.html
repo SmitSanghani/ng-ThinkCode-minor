@@ -22,12 +22,6 @@
         <!-- Utility Section -->
         <div class="utility-section">
             <div class="flex items-center gap-3 md:gap-6">
-                <!-- Search Bar -->
-                <div class="search-wrapper d-none d-md-flex">
-                    <i class="bi bi-search search-icon"></i>
-                    <input type="text" placeholder="Search" class="search-input">
-                    <span class="search-shortcut">⌘K</span>
-                </div>
                 <!-- Dashboard Quick Link -->
                 <a *ngIf="user()?.role === 'admin'" routerLink="/admin/dashboard"
                     class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-[13px] font-semibold border border-slate-200">

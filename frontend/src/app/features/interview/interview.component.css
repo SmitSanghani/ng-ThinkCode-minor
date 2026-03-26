@@ -645,15 +645,25 @@
 }
 
 .lock-msg {
-    background: #182229;
-    color: #ffd279;
-    font-size: 0.75rem;
-    padding: 8px 12px;
-    border-radius: 8px;
+    background: rgba(29, 39, 47, 0.9);
+    color: #8696a0;
+    font-size: 0.78rem;
+    padding: 16px;
+    border-radius: 10px;
     text-align: center;
-    max-width: 85%;
-    margin: 20px auto;
-    border-left: 3px solid #ffd279;
+    max-width: 280px;
+    margin: auto;
+    border: 1px solid rgba(248, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.lock-msg i {
+    color: #ffd700; /* Bright Yellow/Gold */
+    font-size: 1.6rem; /* Larger icon */
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
 }
 
 .chat-composer {

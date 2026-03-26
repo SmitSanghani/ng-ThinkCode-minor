@@ -38,7 +38,7 @@ export class ProblemsListComponent implements OnInit {
   isFavoritesOnly: boolean = false;
 
   // Pagination State
-  pagination = { total: 0, page: 1, limit: 12, totalPages: 0 };
+  pagination = { total: 0, page: 1, limit: 5, totalPages: 0 };
 
 
 

@@ -28,7 +28,10 @@
         <span *ngFor="let empty of [].constructor(startDay)" class="day-empty"></span>
 
         <!-- Actual days -->
-        <span *ngFor="let day of daysInMonth" class="day" [class.today]="isToday(day)">
+        <span *ngFor="let day of daysInMonth" class="day" 
+            [class.today]="isToday(day)" 
+            [class.selected]="selectedDay === day"
+            (click)="selectDay(day)">
             {{ day }}
         </span>
     </div>
@@ -36,7 +39,12 @@
     <div class="calendar-footer">
         <div class="flex items-center gap-2">
             <div class="w-2 h-2 rounded-full bg-[#3b82f6]"></div>
-            <span class="text-[11px] text-[#94a3b8] font-medium">{{ solvedThisMonth }} problems solved this month</span>
+            <span *ngIf="selectedDay" class="text-[11px] text-[#94a3b8] font-medium">
+                {{ solvedOnSelectedDay }} problems solved on {{ selectedDay }} {{ monthName }}
+            </span>
+            <span *ngIf="!selectedDay" class="text-[11px] text-[#94a3b8] font-medium">
+                {{ solvedThisMonth }} problems solved in {{ monthName }}
+            </span>
         </div>
     </div>
 </div>

@@ -19,6 +19,8 @@ export class CalendarComponent implements OnInit {
     year: number = 0;
     solvedThisMonth: number = 0;
     allSubmissions: any[] = [];
+    selectedDay: number | null = null;
+    solvedOnSelectedDay: number = 0;
 
     ngOnInit() {
         this.loadSubmissions();
@@ -72,7 +74,46 @@ export class CalendarComponent implements OnInit {
 
         this.startDay = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
         this.daysInMonth = Array.from({ length: lastDay.getDate() }, (_, i) => i + 1);
+        
+        // Auto-select today if we're in the current month
+        const today = new Date();
+        if (this.currentDate.getMonth() === today.getMonth() && this.currentDate.getFullYear() === today.getFullYear()) {
+            this.selectedDay = today.getDate();
+        } else {
+            this.selectedDay = null; // Reset selection on month change
+        }
+
         this.updateSolvedCount();
+        if (this.selectedDay) {
+            this.updateSolvedCountForDay(this.selectedDay);
+        }
+    }
+
+    selectDay(day: number) {
+        this.selectedDay = day;
+        this.updateSolvedCountForDay(day);
+    }
+
+    updateSolvedCountForDay(day: number) {
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+        
+        const solvedProblems = new Set();
+        this.allSubmissions.forEach(sub => {
+            const status = (sub.status || '').toLowerCase();
+            if (status === 'accepted' || status === 'solved') {
+                const dateVal = sub.submittedAt || sub.createdAt || sub.date;
+                if (dateVal) {
+                    const subDate = new Date(dateVal);
+                    if (subDate.getFullYear() === year && 
+                        subDate.getMonth() === month && 
+                        subDate.getDate() === day) {
+                        solvedProblems.add(sub.question?._id || sub.question?.id || sub.question || sub.problemId);
+                    }
+                }
+            }
+        });
+        this.solvedOnSelectedDay = solvedProblems.size;
     }
 
     isToday(day: number): boolean {

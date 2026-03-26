@@ -93,6 +93,16 @@
     box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
 }
 
+.day.selected:not(.today) {
+    border: 1px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.day.today.selected {
+    outline: 2px solid white;
+    outline-offset: -2px;
+}
+
 .day-empty {
     aspect-ratio: 1;
 }
