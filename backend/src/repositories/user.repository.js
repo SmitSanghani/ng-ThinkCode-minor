@@ -9,8 +9,10 @@ class UserRepository {
         return await User.findOne({ username });
     }
 
-    async findById(id) {
-        return await User.findById(id);
+    async findById(id, select = '') {
+        let query = User.findById(id);
+        if (select) query = query.select(select);
+        return await query;
     }
 
     async create(userData) {

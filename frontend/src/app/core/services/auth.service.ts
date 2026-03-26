@@ -135,6 +135,10 @@ export class AuthService {
         this.isAuthenticated.set(false);
     }
 
+    getAdminInfo(): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/admin-info`);
+    }
+
     private handleError(error: HttpErrorResponse) {
         const message = error.error?.message || error.error?.error || 'Server error';
         return throwError(() => new Error(message));

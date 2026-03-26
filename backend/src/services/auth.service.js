@@ -133,8 +133,37 @@ class AuthService {
             username: user.username,
             email: user.email,
             role: user.role,
-            plan: user.plan || 'Free',
-            paymentReturnUrl: user.paymentReturnUrl
+        };
+    }
+
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await userRepository.findById(userId, '+passwordHash');
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const isMatch = await comparePassword(currentPassword, user.passwordHash);
+        if (!isMatch) {
+            throw new Error('Incorrect current password');
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        user.passwordHash = hashedPassword;
+        await user.save();
+
+        return { success: true, message: 'Password updated successfully' };
+    }
+
+    async getAdminInfo() {
+        const admin = await userRepository.findOne({ role: 'admin' });
+        if (!admin) {
+            throw new Error('No admin found in the system');
+        }
+        return {
+            id: admin._id,
+            name: admin.name || admin.username,
+            username: admin.username,
+            email: admin.email
         };
     }
 }

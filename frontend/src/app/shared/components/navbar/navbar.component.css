@@ -177,6 +177,117 @@
     border: 2px solid #0d1117;
 }
 
+.admin-notifications {
+    position: relative;
+    cursor: pointer;
+}
+
+.admin-notifications.has-unread i {
+    animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); color: #f85149; }
+    100% { transform: scale(1); }
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: -10px;
+    width: 320px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2000;
+    overflow: hidden;
+}
+
+.notifications-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.notifications-dropdown .dropdown-header {
+    background: #f9fafb;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notifications-dropdown .dropdown-header h6 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notifications-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 16px;
+    transition: background 0.15s ease;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+.notification-item:hover {
+    background: #f3f4f6;
+}
+
+.student-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.student-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dot-unread {
+    width: 8px;
+    height: 8px;
+    background: #6366F1;
+    border-radius: 50%;
+}
+
+.last-msg {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.notification-item .time {
+    font-size: 11px;
+    color: #9CA3AF;
+    margin-left: 12px;
+    white-space: nowrap;
+}
+
+.empty-notif {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
 .utility-section {
     display: flex;
     align-items: center;

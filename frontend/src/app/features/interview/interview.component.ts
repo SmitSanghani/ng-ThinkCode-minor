@@ -319,6 +319,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log('Chat: Received message via Socket.io', msg);
             // Deduplicate local messages
             if (!this.chatMessages.some(m => m.id === msg.id)) {
+                // Ensure sender name is 'You' if it's from me (shouldn't happen via socket but for safety)
+                if (this.isCurrentUser(msg.senderId)) {
+                    msg.sender = 'You';
+                }
                 this.chatMessages = [...this.chatMessages, msg];
                 this.scrollToBottom();
                 this.cdr.detectChanges();
@@ -327,13 +331,16 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('roomChatHistory', (data: { roomId: string, messages: any[] }) => {
             console.log('Chat: Received room history', data);
-            const history: ChatMessage[] = data.messages.map(m => ({
-                id: Math.random().toString(36).substring(2, 9),
-                sender: m.senderId === this.authService.currentUser()?.id ? 'You' : m.sender,
-                senderId: m.senderId,
-                text: m.text,
-                timestamp: new Date(m.timestamp)
-            }));
+            const history: ChatMessage[] = data.messages.map(m => {
+                const isFromMe = this.isCurrentUser(m.senderId);
+                return {
+                    id: Math.random().toString(36).substring(2, 9),
+                    sender: isFromMe ? 'You' : (m.sender || 'Other'),
+                    senderId: m.senderId,
+                    text: m.text,
+                    timestamp: new Date(m.timestamp)
+                };
+            });
             this.chatMessages = history;
             this.scrollToBottom();
             this.cdr.detectChanges();
@@ -468,10 +475,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     sendMessage() {
         if (!this.newMessage.trim()) return;
+        const currentUserId = this.authService.currentUser()?.id;
         const msg: ChatMessage = {
             id: Math.random().toString(36).substring(2, 9),
-            sender: this.authService.currentUser()?.username || 'User',
-            senderId: this.authService.currentUser()?.id, // Use ID for better reliability
+            sender: 'You',
+            senderId: currentUserId,
             text: this.newMessage.trim(),
             timestamp: new Date(),
             replyTo: this.replyingToMessage
@@ -546,6 +554,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 };
             }
         });
+    }
+
+    public isCurrentUser(senderId: string | undefined): boolean {
+        if (!senderId) return false;
+        const currentUserId = this.authService.currentUser()?.id;
+        if (!currentUserId) return false;
+        return senderId.toString() === currentUserId.toString();
     }
 
     private async startLocalMedia() {

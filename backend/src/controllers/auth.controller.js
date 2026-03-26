@@ -127,6 +127,33 @@ class AuthController {
             next(err);
         }
     }
+
+    async changePassword(req, res, next) {
+        try {
+            const { currentPassword, newPassword } = req.body;
+            if (!currentPassword || !newPassword) {
+                return responseHandler(res, 400, false, null, 'Current and new passwords are required');
+            }
+
+            const result = await authService.changePassword(req.user.id || req.user._id, currentPassword, newPassword);
+            responseHandler(res, 200, true, null, result.message);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getAdmin(req, res, next) {
+        try {
+            const admin = await authService.getAdminInfo();
+            res.status(200).json({
+                success: true,
+                data: admin,
+                message: 'Admin information retrieved'
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 module.exports = new AuthController();

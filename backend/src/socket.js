@@ -196,6 +196,34 @@ const initSocket = (server) => {
             socket.on('stopTyping', ({ receiverId }) => {
                 if (receiverId) emitToUser(receiverId, 'stopTyping', { userId });
             });
+            
+            socket.on('loadChatHistory', async ({ otherUserId }) => {
+                try {
+                    const chat = await Chat.findOne({
+                        participants: { $all: [userId, otherUserId] }
+                    });
+                    
+                    if (chat) {
+                        socket.emit('chatHistory', {
+                            userId: otherUserId,
+                            messages: chat.messages.map(m => ({
+                                senderId: m.senderId,
+                                text: m.text,
+                                isInvite: m.isInvite,
+                                roomId: m.roomId,
+                                timestamp: m.createdAt
+                            }))
+                        });
+                    } else {
+                        socket.emit('chatHistory', {
+                            userId: otherUserId,
+                            messages: []
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error loading chat history:', e.message);
+                }
+            });
 
             socket.on('disconnect', () => {
                 const userData = activeUsers.get(userId);

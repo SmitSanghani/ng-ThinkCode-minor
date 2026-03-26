@@ -120,13 +120,13 @@
                     <div class="chat-viewport" #chatContainer>
                         <div class="chat-background"></div>
                         <div *ngFor="let msg of chatMessages" class="chat-msg"
-                            [class.me]="msg.senderId === authService.currentUser()?.id">
+                            [class.me]="isCurrentUser(msg.senderId)">
                             <div class="bubble">
-                                <div class="author" *ngIf="msg.sender !== authService.currentUser()?.username">{{ msg.sender }}</div>
+                                <div class="author">{{ isCurrentUser(msg.senderId) ? 'You' : msg.sender }}</div>
                                 <div class="text">{{ msg.text }}</div>
                                 <div class="meta">
                                     <span class="time">{{ msg.timestamp | date:'HH:mm' }}</span>
-                                    <i class="bi bi-check2-all" *ngIf="msg.sender === authService.currentUser()?.username"></i>
+                                    <i class="bi bi-check2-all" *ngIf="isCurrentUser(msg.senderId)"></i>
                                 </div>
                             </div>
                         </div>
@@ -148,10 +148,6 @@
                             <i class="bi bi-x" (click)="cancelReply()"></i>
                         </div>
                         <div class="input-area">
-                            <div class="actions-left">
-                                <i class="bi bi-emoji-smile"></i>
-                                <i class="bi bi-plus-lg"></i>
-                            </div>
                             <div class="input-wrap">
                                 <input type="text" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()"
                                     placeholder="Type a message">

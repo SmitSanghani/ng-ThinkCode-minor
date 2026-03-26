@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,7 +10,7 @@ import { NavbarComponent } from '../../../shared/components/navbar/navbar.compon
 @Component({
     selector: 'app-student-profile',
     standalone: true,
-    imports: [CommonModule, RouterLink, NavbarComponent],
+    imports: [CommonModule, RouterLink, NavbarComponent, FormsModule],
     templateUrl: './student-profile.component.html',
     styleUrls: ['./student-profile.component.css']
 })
@@ -20,6 +21,16 @@ export class StudentProfileComponent implements OnInit {
 
     isLoading = true;
     profileData: any = null;
+
+    // Password change fields
+    passwordModel = {
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    };
+    isChangingPassword = false;
+    passwordError = '';
+    passwordSuccess = '';
 
     get user() { return this.profileData?.user; }
     get stats() { return this.profileData?.stats; }
@@ -36,7 +47,7 @@ export class StudentProfileComponent implements OnInit {
     loadProfile() {
         this.isLoading = true;
         this.http.get<any>(`${environment.apiUrl}/student/profile`).subscribe({
-            next: (res) => {
+            next: (res: any) => {
                 if (res.success && res.data) {
                     this.profileData = res.data;
                     this.isLoading = false;
@@ -46,9 +57,39 @@ export class StudentProfileComponent implements OnInit {
                     this.cdr.detectChanges();
                 }
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Profile load error:', err);
                 this.isLoading = false;
+                this.cdr.detectChanges();
+            }
+        });
+    }
+
+    changePassword() {
+        this.passwordError = '';
+        this.passwordSuccess = '';
+
+        if (!this.passwordModel.currentPassword || !this.passwordModel.newPassword || !this.passwordModel.confirmPassword) {
+            this.passwordError = 'All fields are required';
+            return;
+        }
+
+        if (this.passwordModel.newPassword !== this.passwordModel.confirmPassword) {
+            this.passwordError = 'Passwords do not match';
+            return;
+        }
+
+        this.isChangingPassword = true;
+        this.http.post<any>(`${environment.apiUrl}/auth/change-password`, this.passwordModel).subscribe({
+            next: (res: any) => {
+                this.isChangingPassword = false;
+                this.passwordSuccess = 'Password updated successfully';
+                this.passwordModel = { currentPassword: '', newPassword: '', confirmPassword: '' };
+                this.cdr.detectChanges();
+            },
+            error: (err: any) => {
+                this.isChangingPassword = false;
+                this.passwordError = err.error?.message || 'Failed to update password';
                 this.cdr.detectChanges();
             }
         });

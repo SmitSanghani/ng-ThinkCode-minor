@@ -9,6 +9,8 @@ router.post('/login', limiter, authController.login);
 router.post('/logout', protect, authController.logout);
 router.post('/refresh-token', authController.refreshToken);
 router.get('/me', protect, authController.getMe);
+router.get('/admin-info', protect, authController.getAdmin);
+router.post('/change-password', protect, authController.changePassword);
 
 // Example protected role routes
 router.get('/admin-only', protect, authorize('admin'), (req, res) => {

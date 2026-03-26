@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-admin-submissions',
@@ -145,23 +146,52 @@ export class SubmissionsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        alert('Failed to update grade: ' + (err.error?.message || 'Server error'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Update Failed',
+          text: err.error?.message || 'Server error',
+          confirmButtonColor: '#0f172a'
+        });
       }
     });
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
   deleteSubmission(submission: any) {
-    if (!confirm(`Are you sure you want to delete this submission by "${submission.student?.username}"?`)) return;
-
-    this.adminService.deleteSubmission(submission._id).subscribe({
-      next: () => {
-        this.allSubmissions = this.allSubmissions.filter(s => s._id !== submission._id);
-        this.applyFilters();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        alert('Failed to delete submission: ' + (err.error?.message || 'Server error'));
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete the submission by "${submission.student?.username || 'this student'}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, delete it!',
+      background: '#ffffff'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.adminService.deleteSubmission(submission._id).subscribe({
+          next: () => {
+            this.allSubmissions = this.allSubmissions.filter(s => s._id !== submission._id);
+            this.applyFilters();
+            this.cdr.detectChanges();
+            
+            Swal.fire({
+              title: 'Deleted!',
+              text: 'Submission has been deleted.',
+              icon: 'success',
+              confirmButtonColor: '#0f172a',
+              timer: 2000
+            });
+          },
+          error: (err) => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Delete Failed',
+              text: err.error?.message || 'Server error',
+              confirmButtonColor: '#0f172a'
+            });
+          }
+        });
       }
     });
   }

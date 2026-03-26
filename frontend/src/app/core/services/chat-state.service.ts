@@ -32,6 +32,50 @@ export class ChatStateService {
         return msgs.filter(m => !m.seenByMe && m.sender !== 'You' && m.senderId !== currentUser?.id).length;
     });
 
+    // Derived list of unique users who have messaged the current user
+    studentsWithMessages = computed(() => {
+        const msgs = this.messages();
+        const currentUser = this.authService.currentUser();
+        if (!currentUser) return [];
+
+        const usersMap = new Map<string, { id: string, name: string, lastText: string, timestamp: Date, unreadCount: number }>();
+
+        msgs.forEach(m => {
+            const otherId = m.senderId === currentUser.id ? m.receiverId : m.senderId;
+            const otherName = m.sender === 'You' ? (this.activeRecipient()?.id === otherId ? this.activeRecipient()?.name : 'Unknown') : m.sender;
+
+            if (otherId && otherId !== currentUser.id) {
+                const existing = usersMap.get(otherId);
+                const unread = !m.seenByMe && m.senderId === otherId ? 1 : 0;
+
+                if (!existing || m.timestamp > existing.timestamp) {
+                    usersMap.set(otherId, {
+                        id: otherId,
+                        name: otherName || 'User',
+                        lastText: m.text,
+                        timestamp: m.timestamp,
+                        unreadCount: (existing?.unreadCount || 0) + unread
+                    });
+                } else if (unread) {
+                    existing.unreadCount += 1;
+                }
+            }
+        });
+
+        return Array.from(usersMap.values()).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    });
+
+    openChatWithAdmin() {
+        this.authService.getAdminInfo().subscribe({
+            next: (res) => {
+                if (res.success && res.data) {
+                    this.toggleChat({ id: res.data.id, name: res.data.name });
+                }
+            },
+            error: (err) => console.error('Failed to get admin info:', err)
+        });
+    }
+
     constructor(
         private socketService: SocketService,
         private authService: AuthService,
@@ -84,13 +128,24 @@ export class ChatStateService {
                 }));
             }
 
-            // Auto-open chat if an invite comes in or if it's from current active recipient
-            if (newMessage.isInvite || (this.activeRecipient()?.id === msg.senderId)) {
-                if (newMessage.isInvite) {
-                    this.activeRecipient.set({ id: msg.senderId!, name: msg.sender });
+            // Auto-open chat if:
+            // 1. It's an interview invite
+            // 2. AND it's from current active recipient
+            // 3. AND we are NOT in an interview room (interview rooms have their own chat sidebar)
+            // 4. AND I'm NOT an admin (Admins want to click manually) OR the chat is ALREADY open
+            const isInvite = !!newMessage.isInvite;
+            const isChatActive = this.activeRecipient()?.id === msg.senderId;
+            const isInInterview = this.router.url.includes('/interview/');
+            const isUserAdmin = this.authService.currentUser()?.role === 'admin';
+
+            if (!isInInterview) {
+                if (isInvite || (isChatActive && (!isUserAdmin || this.isOpen()))) {
+                    if (isInvite) {
+                        this.activeRecipient.set({ id: msg.senderId!, name: msg.sender });
+                    }
+                    this.isOpen.set(true);
+                    this.markAsSeen(msg.senderId!);
                 }
-                this.isOpen.set(true);
-                this.markAsSeen(msg.senderId!);
             }
         });
 

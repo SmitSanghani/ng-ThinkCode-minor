@@ -35,11 +35,55 @@
                     Dashboard
                 </a>
 
-                <!-- Global Chat Icon -->
-                <div class="chat-icon-wrapper" (click)="toggleChat()">
-                    <i class="bi bi-chat-dots-fill"></i>
-                    <span class="unread-badge" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
-                </div>
+                <!-- Role-Specific Communication -->
+                <ng-container *ngIf="user()">
+                    <!-- Student: Message Admin Button -->
+                    <button *ngIf="user()?.role === 'student'" (click)="chatService.openChatWithAdmin()"
+                        class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all text-[13px] font-semibold border border-indigo-100">
+                        <i class="bi bi-chat-left-text-fill"></i>
+                        Message Admin
+                    </button>
+
+                    <!-- Admin: Global Chat Icon with Dropdown -->
+                    <div *ngIf="user()?.role === 'admin'" class="admin-notifications" 
+                         [class.has-unread]="unreadCount() > 0">
+                        <div class="chat-icon-wrapper" (click)="toggleNotification($event)">
+                            <i class="bi bi-chat-dots-fill"></i>
+                            <span *ngIf="unreadCount() > 0" class="unread-badge">
+                                {{ unreadCount() }}
+                            </span>
+                        </div>
+
+                        <!-- Chat Dropdown -->
+                        <div class="notifications-dropdown" [class.show]="showNotifications">
+                            <div class="dropdown-header">
+                                <h6>Recent Messages</h6>
+                            </div>
+                            <div class="notifications-list">
+                                <div *ngFor="let student of chatService.studentsWithMessages()" 
+                                     class="notification-item">
+                                    <div class="student-info">
+                                        <div class="student-name">
+                                            {{ student.name }}
+                                            <span *ngIf="student.unreadCount > 0" class="dot-unread"></span>
+                                        </div>
+                                        <div class="last-msg text-truncate">{{ student.lastText }}</div>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-2">
+                                        <span class="time">{{ student.timestamp | date:'shortTime' }}</span>
+                                        <button (click)="openStudentChat(student)" 
+                                                class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold hover:bg-indigo-100 transition-all border border-indigo-100">
+                                            Reply
+                                        </button>
+                                    </div>
+                                </div>
+                                <div *ngIf="chatService.studentsWithMessages().length === 0" class="empty-notif">
+                                    No messages yet
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
             </div>
 
             <!-- User Actions -->
