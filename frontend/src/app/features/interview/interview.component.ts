@@ -470,28 +470,39 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private ensureVideoBinding() {
         if (this._localVideo?.nativeElement) {
             const streamToBind = this.isSharingScreen ? this.screenStream : this.localStream;
-            if (streamToBind) {
+            if (streamToBind && this._localVideo.nativeElement.srcObject !== streamToBind) {
+                console.log('WebRTC: Refreshing local video binding');
+                this._localVideo.nativeElement.srcObject = streamToBind;
                 this._localVideo.nativeElement.muted = true;
-                if (this._localVideo.nativeElement.srcObject !== streamToBind) {
-                    this._localVideo.nativeElement.srcObject = streamToBind;
-                }
-                if (this._localVideo.nativeElement.paused) {
-                    this._localVideo.nativeElement.play().catch(() => { });
-                }
             }
         }
 
         if (this._remoteVideo?.nativeElement && this.remoteStream) {
-            this._remoteVideo.nativeElement.muted = false; // ensure remote NOT muted
-            if (this._remoteVideo.nativeElement.srcObject !== this.remoteStream) {
-                console.log('Video: Force binding Remote Stream');
-                this._remoteVideo.nativeElement.srcObject = this.remoteStream;
-            }
-            if (this._remoteVideo.nativeElement.paused) {
-                this._remoteVideo.nativeElement.play().catch(e => console.error('Remote Play Error:', e));
+            const video = this._remoteVideo.nativeElement;
+            
+            // Check if track is actually active
+            const tracks = this.remoteStream.getVideoTracks();
+            const isTrackEnabled = tracks.length > 0 && tracks[0].enabled && tracks[0].readyState === 'live';
+
+            if (isTrackEnabled) {
+                // Force bind if srcObject is missing or mismatched
+                if (video.srcObject !== this.remoteStream) {
+                    console.log('WebRTC: Force binding remote stream to video element');
+                    video.srcObject = this.remoteStream;
+                }
+
+                // Force play if paused
+                if (video.paused && this.remoteHasVideo()) {
+                    console.log('WebRTC: Attempting to play remote video...');
+                    video.play().catch(e => {
+                        console.warn('WebRTC: Remote play failed (user gesture required?)', e);
+                    });
+                }
             }
         }
+        this.cdr.detectChanges();
     }
+
 
     ngOnDestroy() {
         if (this.videoBindInterval) clearInterval(this.videoBindInterval);
@@ -767,12 +778,16 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
 
         this.peerConnection.ontrack = (event) => {
-            console.log('WebRTC Debug: Received Remote Track', event.track.kind);
+            console.log('WebRTC: Received Remote Track:', event.track.kind, 'ReadyState:', event.track.readyState);
             
-            if (event.streams && event.streams[0]) {
-                this.remoteStream = event.streams[0];
-            } else {
-                if (!this.remoteStream) this.remoteStream = new MediaStream();
+            if (!this.remoteStream) {
+                this.remoteStream = new MediaStream();
+            }
+
+            // Always add the track to our existing stream object instead of replacing the entire stream
+            // This prevents broken references in the video element
+            const existingTracks = this.remoteStream.getTracks();
+            if (!existingTracks.find(t => t.id === event.track.id)) {
                 this.remoteStream.addTrack(event.track);
             }
 
@@ -782,14 +797,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 this.isRemoteConnected = true;
                 
                 event.track.onmute = () => {
-                    console.log('WebRTC Track: Muted');
+                    console.log('WebRTC Track: Track Muted (Network issue or Peer closed camera)');
                     this.remoteHasVideo.set(false);
                 };
                 event.track.onunmute = () => {
-                    console.log('WebRTC Track: Unmuted');
+                    console.log('WebRTC Track: Track Unmuted');
                     this.remoteHasVideo.set(true);
                 };
+
+                // Immediate binding attempt
+                setTimeout(() => this.ensureVideoBinding(), 100);
             }
+
 
             if (event.track.kind === 'audio') {
                 this.isRemoteAudioActive.set(true);
