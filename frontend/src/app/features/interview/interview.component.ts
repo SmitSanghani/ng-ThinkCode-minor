@@ -412,9 +412,6 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('chat-message', (msg: ChatMessage) => {
             if (!this.chatMessages.some(m => m.id === msg.id)) {
-                if (this.isCurrentUser(msg.senderId)) {
-                    msg.sender = 'You';
-                }
                 this.chatMessages = [...this.chatMessages, msg];
                 if (!this.isChatVisibleOnMobile() && !this.isCurrentUser(msg.senderId)) {
                     this.hasNewMessage.set(true);
@@ -429,7 +426,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 const isFromMe = this.isCurrentUser(m.senderId);
                 return {
                     id: Math.random().toString(36).substring(2, 9),
-                    sender: isFromMe ? 'You' : (m.sender || 'Other'),
+                    sender: m.sender || (this.isCurrentUser(m.senderId) ? 'You' : 'Other'),
                     senderId: m.senderId,
                     text: m.text,
                     timestamp: new Date(m.timestamp)
@@ -1058,10 +1055,15 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     sendMessage() {
         if (!this.newMessage.trim()) return;
-        const currentUserId = this.authService.currentUser()?.id;
+        const currentUser = this.authService.currentUser();
+        const currentUserId = currentUser?.id || currentUser?.['_id'];
+        
+        // Use 'Admin' for interviewer, otherwise use the username
+        const senderName = this.isInterviewer ? 'Admin' : (currentUser?.username || 'Student');
+
         const msg: ChatMessage = {
             id: Math.random().toString(36).substring(2, 9),
-            sender: 'You',
+            sender: senderName,
             senderId: currentUserId,
             text: this.newMessage.trim(),
             timestamp: new Date(),
