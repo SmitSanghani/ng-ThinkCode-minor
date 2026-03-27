@@ -783,13 +783,26 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         if (this._remoteVideo?.nativeElement) {
             const video = this._remoteVideo.nativeElement;
+            
+            // FIX: Only re-bind if the stream instance has actually changed
+            // Changing srcObject triggers a 'load' event which cancels pending play() calls
             if (video.srcObject !== this.remoteStream) {
-                console.log('[Video] Binding remote stream to <video> element');
+                console.log('[Video] New stream detected - assigning to element');
                 video.srcObject = this.remoteStream;
             }
-            video.play().catch(e => console.warn('[Video] Remote video play() failed:', e));
+
+            if (video.paused) {
+                // Wrap play() to handle AbortError/Interruptions gracefully
+                video.play().then(() => {
+                    console.log('[Video] Remote playback started successfully');
+                }).catch(e => {
+                    if (e.name !== 'AbortError') {
+                        console.warn('[Video] Remote play() failed:', e);
+                    }
+                });
+            }
         } else {
-            console.warn('[Video] Remote video element not in DOM yet — interval will retry');
+            console.warn('[Video] Remote video element not in DOM yet — will retry');
         }
         this.cdr.detectChanges();
     }

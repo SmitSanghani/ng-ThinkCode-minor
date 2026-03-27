@@ -261,7 +261,13 @@ export class ChatStateService {
     }
 
     loadHistory(otherUserId: string) {
-        this.socketService.emit('loadChatHistory', { otherUserId });
+        if (this.socketService.getSocket()?.connected) {
+            this.socketService.emit('loadChatHistory', { otherUserId });
+        } else {
+            console.log('Socket not connected - postponing chat history load');
+            // SocketService.on() already handles waiting for connection for listeners,
+            // but for one-off emits like history, we just skip it as history comes via join-interview anyway.
+        }
     }
 
     sendTyping() {
