@@ -110,6 +110,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
             { urls: 'stun:stun2.l.google.com:19302' },
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:stunserver.org' },
+            { urls: 'stun:stun.ekiga.net' },
+            { urls: 'stun:stun.ideasip.com' },
+            { urls: 'stun:stun.schlund.de' },
+            { urls: 'stun:stun.voiparound.com' },
+            { urls: 'stun:stun.voipbuster.com' },
+            { urls: 'stun:stun.voipstunt.com' },
+            { urls: 'stun:stun.voxgratia.org' },
             { urls: 'stun:stun.services.mozilla.com' },
             // Public STUN from Metered
             { urls: 'stun:stun.metered.ca:80' },
@@ -279,7 +287,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 return;
             }
 
+            if (data.offer) {
+                // Prefer H.264 for mobile compatibility (SDP Munging)
+                data.offer.sdp = this.preferH264(data.offer.sdp);
+            }
             await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
 
             // Flush buffered ICE candidates
             while (this.iceCandidatesBuffer.length > 0) {
@@ -301,7 +314,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log('WebRTC: Received answer, state:', this.peerConnection?.signalingState);
             this.isRemoteConnected = true;
             if (this.peerConnection && this.peerConnection.signalingState === 'have-local-offer') {
+                if (data.answer) {
+                    // Prefer H.264 for mobile compatibility (SDP Munging)
+                    data.answer.sdp = this.preferH264(data.answer.sdp);
+                }
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+
 
                 // Flush buffered ICE candidates
                 while (this.iceCandidatesBuffer.length > 0) {
@@ -468,7 +486,9 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
         if (this.peerConnection) {
             this.peerConnection.close();
+            this.peerConnection = null as any;
         }
+
         if (this.socket) {
             this.socket.emit('leave-interview', { roomId: this.roomId });
             this.socket.off('webrtc-offer');
@@ -804,10 +824,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
                     return;
                 }
                 console.log('WebRTC: Creating proactive offer...');
-                const offer = await this.peerConnection.createOffer({
+                let offer = await this.peerConnection.createOffer({
                     offerToReceiveAudio: true,
                     offerToReceiveVideo: true
                 });
+
+                // Prefer H.264 for mobile compatibility (SDP Munging)
+                offer.sdp = this.preferH264(offer.sdp!);
+
                 await this.peerConnection.setLocalDescription(offer);
                 this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
             } catch (err) {
@@ -819,6 +843,30 @@ export class InterviewComponent implements OnInit, OnDestroy {
             }
         }, 800);
     }
+
+    // Helper to prioritize H.264 video codec in SDP
+    private preferH264(sdp: string): string {
+        if (!sdp.includes('H264')) return sdp;
+        const lines = sdp.split('\r\n');
+        const videoIndex = lines.findIndex(l => l.startsWith('m=video'));
+        if (videoIndex === -1) return sdp;
+
+        const mLine = lines[videoIndex].split(' ');
+        const h264Payloads = lines
+            .filter(l => l.startsWith('a=rtpmap') && l.includes('H264'))
+            .map(l => l.split(':')[1].split(' ')[0]);
+
+        if (h264Payloads.length === 0) return sdp;
+
+        // Move H264 payloads to the front of the m=video line
+        const newMLine = mLine.slice(0, 3);
+        const otherPayloads = mLine.slice(3).filter(p => !h264Payloads.includes(p));
+        
+        // Final line construction
+        lines[videoIndex] = [...newMLine, ...h264Payloads, ...otherPayloads].join(' ');
+        return lines.join('\r\n');
+    }
+
 
     toggleAudio() {
         this.isAudioActive = !this.isAudioActive;
