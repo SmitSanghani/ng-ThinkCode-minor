@@ -469,12 +469,27 @@
     gap: 8px;
 }
 
-.btn-ctrl.leave:hover {
-    background: #f85149;
-    color: white;
+/* Floating Chat Toggle (Mobile Only) */
+.btn-mobile-chat {
+    display: none; /* Hidden by default on desktop */
+    position: relative;
+    background: rgba(88, 166, 255, 0.1) !important;
+    border-color: rgba(88, 166, 255, 0.2) !important;
+    color: #58a6ff !important;
 }
 
-/* Workspace Area */
+.btn-mobile-chat .badge-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    background: #f85149;
+    border-radius: 50%;
+    border: 2px solid #161b22;
+    animation: pulse-live 1.5s infinite;
+}
+
 .sidebar-spacer {
     width: 20px;
 }
@@ -898,31 +913,22 @@
         height: 100vh;
         z-index: 9999;
         background: #0b141a;
+        padding: 0;
     }
 
     .btn-mobile-chat {
         display: flex !important;
-        background: rgba(88, 166, 255, 0.15) !important;
-        color: #58a6ff !important;
-    }
-
-    .btn-mobile-chat .badge {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 12px;
-        height: 12px;
-        background: #f85149;
-        border-radius: 50%;
-        border: 2px solid #161b22;
-        animation: pulse-live 1.5s infinite;
     }
 
     .back-btn-mobile {
         display: flex !important;
-        color: #8696a0;
-        margin-right: 10px;
         align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        color: #8696a0;
+        margin-right: 8px;
+        cursor: pointer;
     }
 
 }

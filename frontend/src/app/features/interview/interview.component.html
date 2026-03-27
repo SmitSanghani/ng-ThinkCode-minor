@@ -113,7 +113,7 @@
                     <!-- Mobile Chat Toggle Button -->
                     <button class="btn-ctrl btn-mobile-chat" (click)="toggleMobileChat()">
                         <i class="bi" [class.bi-chat-dots-fill]="!hasNewMessage()" [class.bi-chat-right-text-fill]="hasNewMessage()"></i>
-                        <span class="badge" *ngIf="hasNewMessage()"></span>
+                        <span class="badge-dot" *ngIf="hasNewMessage()"></span>
                     </button>
                 </div>
             </div>

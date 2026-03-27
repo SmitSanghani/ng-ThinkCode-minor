@@ -24,18 +24,18 @@
             <div class="flex items-center gap-3 md:gap-6">
                 <!-- Dashboard Quick Link -->
                 <a *ngIf="user()?.role === 'admin'" routerLink="/admin/dashboard"
-                    class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-[13px] font-semibold border border-slate-200">
+                    class="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-xs md:text-[13px] font-semibold border border-slate-200">
                     <i class="bi bi-grid-fill"></i>
-                    Dashboard
+                    <span class="hidden md:inline">Dashboard</span>
                 </a>
 
                 <!-- Role-Specific Communication -->
                 <ng-container *ngIf="user()">
                     <!-- Student: Message Admin Button -->
                     <button *ngIf="user()?.role === 'student'" (click)="chatService.openChatWithAdmin()"
-                        class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all text-[13px] font-semibold border border-indigo-100">
+                        class="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all text-xs md:text-[13px] font-semibold border border-indigo-100">
                         <i class="bi bi-chat-left-text-fill"></i>
-                        Message Admin
+                        <span class="hidden md:inline">Message Admin</span>
                     </button>
 
                     <!-- Admin: Global Chat Icon with Dropdown -->
