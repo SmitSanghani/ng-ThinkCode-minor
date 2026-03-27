@@ -20,6 +20,9 @@ const submissionController = require('./controllers/submission.controller');
 
 const app = express();
 
+// Trust Render / Vercel / Heroku reverse proxy (fixes X-Forwarded-For & rate-limit errors)
+app.set('trust proxy', 1);
+
 // Request Logger
 app.use((req, res, next) => {
     console.log(`[REQ] ${req.method} ${req.url}`);

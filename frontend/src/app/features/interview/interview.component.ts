@@ -663,23 +663,24 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log(`[WebRTC] *** REMOTE TRACK RECEIVED *** kind=${event.track.kind} state=${event.track.readyState}`);
             console.log('[WebRTC] Streams in event:', event.streams.length);
 
-            if (!this.remoteStream) {
-                this.remoteStream = new MediaStream();
-                console.log('[WebRTC] Created new MediaStream for remote');
-            }
-
-            // Add track if not already in the stream
-            const exists = this.remoteStream.getTracks().find(t => t.id === event.track.id);
-            if (!exists) {
-                this.remoteStream.addTrack(event.track);
-                console.log(`[WebRTC] Added remote ${event.track.kind} track to MediaStream`);
+            // FIX: Use event.streams[0] directly — most reliable approach
+            // Only fallback to building our own MediaStream if browser doesn't provide one
+            if (event.streams && event.streams[0]) {
+                this.remoteStream = event.streams[0];
+                console.log('[WebRTC] Using event.streams[0] directly as remoteStream');
+            } else {
+                // Fallback: build stream manually
+                if (!this.remoteStream) this.remoteStream = new MediaStream();
+                const exists = this.remoteStream.getTracks().find(t => t.id === event.track.id);
+                if (!exists) this.remoteStream.addTrack(event.track);
+                console.log('[WebRTC] Built remoteStream manually (no event.streams[0])');
             }
 
             if (event.track.kind === 'video') {
                 this.hasRemoteVideo = true;
                 this.remoteHasVideo.set(true);
                 this.isRemoteConnected = true;
-                console.log('[WebRTC] Remote video track added — binding to element...');
+                console.log('[WebRTC] Remote VIDEO track ready — will bind stream...');
 
                 event.track.onunmute = () => {
                     console.log('[WebRTC] Remote video track unmuted');
@@ -687,9 +688,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                     this.bindRemoteStream();
                     this.cdr.detectChanges();
                 };
-                event.track.onmute = () => {
-                    console.log('[WebRTC] Remote video track muted');
-                };
+                event.track.onmute = () => console.log('[WebRTC] Remote video track muted');
                 event.track.onended = () => {
                     console.log('[WebRTC] Remote video track ended');
                     this.remoteHasVideo.set(false);
@@ -699,11 +698,16 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
             if (event.track.kind === 'audio') {
                 this.isRemoteAudioActive.set(true);
+                console.log('[WebRTC] Remote AUDIO track ready');
             }
 
-            // Bind remote stream immediately
-            this.bindRemoteStream();
+            // FIX: Force change detection FIRST so *ngIf="isRemoteConnected" renders the
+            // <video #remoteVideo> element, THEN bind the stream after DOM update
             this.cdr.detectChanges();
+            setTimeout(() => {
+                this.bindRemoteStream();
+                this.cdr.detectChanges();
+            }, 100);
         };
 
         // ICE candidate exchange
@@ -794,10 +798,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         try {
             const offer = await this.peerConnection.createOffer();
-            offer.sdp = this.preferH264(offer.sdp!);
+            // NOTE: No SDP munging — let browser negotiate codec naturally
+            // preferH264 was removed because it can corrupt SDP on some browsers/networks
             await this.peerConnection.setLocalDescription(offer);
             this.socket.emit('webrtc-offer', { roomId: this.roomId, offer: this.peerConnection.localDescription });
-            console.log('[WebRTC] Offer sent to peer');
+            console.log('[WebRTC] Offer sent to peer. SDP length:', offer.sdp?.length);
         } catch (err) {
             console.error('[WebRTC] Offer creation failed:', err);
         } finally {
