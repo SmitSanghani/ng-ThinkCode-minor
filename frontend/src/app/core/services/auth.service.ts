@@ -91,10 +91,22 @@ export class AuthService {
     }
 
     logout(): void {
-        this.http.post(`${this.apiUrl}/logout`, {}).subscribe(() => {
-            this.clearSession();
-            this.router.navigate(['/login']);
-        });
+        // 🔑 IMPORTANT: Clear session FIRST — don't wait for HTTP response.
+        // If the access token is already expired, the POST to /logout will also
+        // return 401, and the subscribe() 'next' callback will never fire,
+        // leaving the user stuck in a broken state forever.
+        const token = this.token; // capture before clearing
+        this.clearSession();
+        this.router.navigate(['/login']);
+
+        // Best-effort: tell the server to invalidate the refresh token cookie.
+        // We pass the token manually so the interceptor's 401-retry logic
+        // doesn't kick in and cause another loop.
+        if (token) {
+            this.http.post(`${this.apiUrl}/logout`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).subscribe({ error: () => {} }); // silently ignore errors
+        }
     }
 
     refreshToken(): Observable<AuthResponse> {
@@ -106,6 +118,12 @@ export class AuthService {
                 if (response.success && response.accessToken && response.refreshToken) {
                     localStorage.setItem('accessToken', response.accessToken);
                     localStorage.setItem('refreshToken', response.refreshToken);
+                    // Also update the user signal if backend returns user data
+                    if (response.user) {
+                        this.currentUser.set(response.user);
+                        this.isAuthenticated.set(true);
+                        localStorage.setItem('user', JSON.stringify(response.user));
+                    }
                 }
             })
         );

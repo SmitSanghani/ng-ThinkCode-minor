@@ -165,10 +165,29 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.cdr.detectChanges();
 
             // Get interview role BEFORE setting up anything
-            const currentUserId = this.authService.currentUser()?.id;
-            const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
+            // Fallback: read userId from localStorage if signal is not populated (app init timeout)
+            let currentUserId = this.authService.currentUser()?.id
+                || this.authService.currentUser()?.['_id'];
+
+            if (!currentUserId) {
+                // Signal not populated — read directly from localStorage
+                try {
+                    const stored = localStorage.getItem('user');
+                    if (stored) {
+                        const parsedUser = JSON.parse(stored);
+                        currentUserId = parsedUser.id || parsedUser._id;
+                        // Also restore the signal so the rest of the app works
+                        this.authService.currentUser.set(parsedUser);
+                        this.authService.isAuthenticated.set(true);
+                        console.log('[Interview] Restored currentUser from localStorage:', currentUserId);
+                    }
+                } catch (e) {}
+            }
+
+            const interviewerData = this.interviewDetails?.interviewerId;
+            const interviewerId = interviewerData?._id || interviewerData;
             this.isInterviewer = interviewerId?.toString() === currentUserId?.toString();
-            console.log('[Interview] Is Interviewer?', this.isInterviewer);
+            console.log('[Interview] Is Interviewer?', this.isInterviewer, '| currentUserId:', currentUserId, '| interviewerId:', interviewerId?.toString());
 
             // STEP 1: Connect socket
             console.log('[Interview] Initializing socket...');
