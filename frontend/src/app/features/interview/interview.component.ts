@@ -520,7 +520,9 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 }
                 
                 // Try and play if stalled or newly bound
-                video.play().catch(e => {
+                video.play().then(() => {
+                    if (video.currentTime > 0) console.log('[Video] Remote playback is active and flowing');
+                }).catch(e => {
                     if (e.name !== 'AbortError') console.warn('[Video] Periodic remote play error:', e);
                 });
 
@@ -810,6 +812,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
             if (video.paused) {
                 // Wrap play() to handle AbortError/Interruptions gracefully
+                console.log('[Video] Attempting to wake up remote video...');
                 video.play().then(() => {
                     console.log('[Video] Remote playback started successfully');
                 }).catch(e => {
