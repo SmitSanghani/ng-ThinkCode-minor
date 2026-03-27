@@ -44,15 +44,15 @@
                     </div>
 
                     <!-- Remote Video -->
-                    <div class="video-card remote" *ngIf="isRemoteConnected" [class.maximized]="isRemoteMaximized"
+                    <div class="video-card remote" *ngIf="isRemoteConnected()" [class.maximized]="isRemoteMaximized"
                         [class.is-sharing]="isRemoteSharing">
                         <!-- Video is ALWAYS in DOM when connected — hidden only when no track -->
                         <video #remoteVideo autoplay playsinline
-                            [style.display]="(remoteHasVideo() || hasRemoteVideo || isRemoteSharing) ? 'block' : 'none'">
+                            [style.display]="(remoteHasVideo() || isRemoteSharing) ? 'block' : 'none'">
                         </video>
 
                         <!-- Placeholder if no remote video track -->
-                        <div class="no-video-placeholder" *ngIf="!remoteHasVideo() && !hasRemoteVideo && !isRemoteSharing">
+                        <div class="no-video-placeholder" *ngIf="!remoteHasVideo() && !isRemoteSharing">
                             <div class="user-avatar">
                                 <i class="bi bi-person-fill"></i>
                             </div>
@@ -62,9 +62,9 @@
                         <div class="video-overlay">
                             <div class="user-info">
                                 <i class="bi"
-                                    [ngClass]="isRemoteAudioActive() ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
+                                     [ngClass]="isRemoteAudioActive() ? 'bi-mic-fill text-success' : 'bi-mic-mute-fill text-danger'"></i>
                                 <i class="bi"
-                                    [ngClass]="(remoteHasVideo() || hasRemoteVideo) ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
+                                     [ngClass]="remoteHasVideo() ? 'bi-camera-video-fill text-success' : 'bi-camera-video-off-fill text-danger'"></i>
                                 <span class="name">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? (interviewDetails?.candidateId?.username ||
                                     'Candidate') : (interviewDetails?.interviewerId?.username || 'Interviewer')
@@ -72,11 +72,11 @@
                                 <span class="role-tag">{{ (interviewDetails?.interviewerId?._id ===
                                     authService.currentUser()?.id) ? 'Guest' : 'Host' }}</span>
                             </div>
-                            <span class="live-badge" *ngIf="remoteHasVideo() || hasRemoteVideo || isRemoteSharing"><i
+                            <span class="live-badge" *ngIf="remoteHasVideo() || isRemoteSharing"><i
                                     class="bi bi-record-circle-fill"></i> LIVE</span>
                             <button class="btn-maximize" (click)="toggleMaximize()"
                                 [title]="isRemoteMaximized ? 'Restore Size' : 'Maximize Video'"
-                                *ngIf="remoteHasVideo() || hasRemoteVideo || isRemoteSharing">
+                                *ngIf="remoteHasVideo() || isRemoteSharing">
                                 <i class="bi"
                                     [ngClass]="isRemoteMaximized ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'"></i>
                             </button>
@@ -84,7 +84,7 @@
                     </div>
 
                     <!-- Remote Waiting State (Only if not connected at all) -->
-                    <div class="video-card remote waiting" *ngIf="!isRemoteConnected">
+                    <div class="video-card remote waiting" *ngIf="!isRemoteConnected()">
                         <div class="pulse-icon">
                             <i class="bi bi-person-plus-fill"></i>
                         </div>
@@ -132,9 +132,10 @@
                             </div>
                             <div class="details">
                                 <span class="title">Discussion Room</span>
-                                <span class="subtitle">{{ isRemoteConnected ? 'Online' : 'Waiting...' }}</span>
+                                <span class="subtitle">{{ isRemoteConnected() ? 'Online' : 'Waiting...' }}</span>
                             </div>
                         </div>
+
 
                         <div class="header-actions">
                         </div>

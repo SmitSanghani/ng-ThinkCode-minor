@@ -30,9 +30,8 @@ export interface ChatMessage {
 export class InterviewComponent implements OnInit, OnDestroy {
     isLoading = signal<boolean>(true);
     error = signal<string | null>(null);
-    hasRemoteVideo: boolean = false;
     remoteStream: MediaStream | null = null;
-    isRemoteConnected: boolean = false;
+    isRemoteConnected = signal<boolean>(false);
     remoteHasVideo = signal<boolean>(false);
     isRemoteAudioActive = signal<boolean>(true);
     localHasVideo = signal<boolean>(false);
@@ -259,8 +258,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('user-left', () => {
             console.log('[WebRTC] Peer left');
-            this.isRemoteConnected = false;
-            this.hasRemoteVideo = false;
+            this.isRemoteConnected.set(false);
             this.remoteHasVideo.set(false);
             this.remoteStream = null;
             if (this._remoteVideo?.nativeElement) {
@@ -273,7 +271,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('user-joined', (data: any) => {
             console.log(`[Socket] User entered: ${data.userId} | Role: ${data.role}`);
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
             this.cdr.detectChanges();
         });
 
@@ -286,17 +284,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
             if (hasOther) {
                 console.log('[Socket] Internal: Peer detected in room sync');
-                this.isRemoteConnected = true;
+                this.isRemoteConnected.set(true);
                 
                 // If I am Host and Guest is here — check if I need to initiate
                 const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
-                if (this.isInterviewer && data.activeUserId && data.activeUserId.toString() !== currentUserId?.toString()) {
+                if (this.isInterviewer && this.isReadyToNegotiate && this.isRemoteConnected()) {
                     console.log('[WebRTC] Guest recently joined. Negotiating...');
                     setTimeout(() => this.initiateNegotiation(), 1000);
                 }
             } else {
-                this.isRemoteConnected = false;
-                this.hasRemoteVideo = false;
+                this.isRemoteConnected.set(false);
+                this.remoteHasVideo.set(false);
             }
             this.cdr.detectChanges();
         });
@@ -313,7 +311,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('request-negotiation', () => {
             console.log('[WebRTC] Negotiation requested by remote');
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
             if (this.isInterviewer) {
                 setTimeout(() => this.initiateNegotiation(), 500);
             }
@@ -322,7 +320,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('webrtc-offer', async (data: any) => {
             const state = this.peerConnection?.signalingState;
             console.log(`[WebRTC] Received offer | signalingState: ${state}`);
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
 
             if (!this.peerConnection) {
                 console.warn('[WebRTC] No peer connection! Setting up...');
@@ -365,7 +363,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('webrtc-answer', async (data: any) => {
             const state = this.peerConnection?.signalingState;
             console.log(`[WebRTC] Received answer | signalingState: ${state}`);
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
 
             if (!this.peerConnection) return;
 
@@ -457,7 +455,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('peer-media-status', (data: any) => {
             console.log('[WebRTC] Peer media status:', data);
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
             this.remoteHasVideo.set(data.isVideoActive);
             this.isRemoteAudioActive.set(data.isAudioActive);
             this.cdr.detectChanges();
@@ -465,13 +463,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('peer-camera-toggled', ({ isVideoActive }: { isVideoActive: boolean }) => {
             console.log('[WebRTC] Peer camera toggled:', isVideoActive);
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
             this.remoteHasVideo.set(isVideoActive);
             this.cdr.detectChanges();
         });
 
         this.socket.on('peer-mic-toggled', ({ isAudioActive }: { isAudioActive: boolean }) => {
-            this.isRemoteConnected = true;
+            this.isRemoteConnected.set(true);
             this.isRemoteAudioActive.set(isAudioActive);
             this.cdr.detectChanges();
         });
@@ -515,13 +513,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
             const tracks = this.remoteStream.getVideoTracks();
 
             if (tracks.length > 0) {
+                // If the track exists and is active, ensure element reflects it
                 if (video.srcObject !== this.remoteStream) {
                     console.log('[Video] Force binding remote stream to video element');
                     video.srcObject = this.remoteStream;
                 }
-                if (video.paused) {
-                    video.play().catch(e => console.warn('[Video] Remote play error:', e));
-                }
+                
+                // Try and play if stalled or newly bound
+                video.play().catch(e => {
+                    if (e.name !== 'AbortError') console.warn('[Video] Periodic remote play error:', e);
+                });
+
                 // Always ensure remoteHasVideo is true when we have tracks
                 if (!this.remoteHasVideo()) {
                     console.log('[Video] Forcing remoteHasVideo = true (stream has tracks)');
@@ -671,7 +673,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.peerConnection = new RTCPeerConnection({
             ...this.iceServers,
-            iceCandidatePoolSize: 0
+            iceCandidatePoolSize: 10
         });
 
         // Add local tracks FIRST — no addTransceiver() here, tracks create their own transceivers
@@ -701,9 +703,8 @@ export class InterviewComponent implements OnInit, OnDestroy {
             }
 
             if (event.track.kind === 'video') {
-                this.hasRemoteVideo = true;
                 this.remoteHasVideo.set(true);
-                this.isRemoteConnected = true;
+                this.isRemoteConnected.set(true);
                 console.log('[WebRTC] Remote VIDEO track ready — will bind stream...');
 
                 event.track.onunmute = () => {
@@ -769,7 +770,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         // Only the Host (impolite peer) auto-negotiates
         this.peerConnection.onnegotiationneeded = async () => {
             // FIX: Only initiate if we have someone to negotiate WITH
-            if (this.isInterviewer && this.isReadyToNegotiate && this.isRemoteConnected) {
+            if (this.isInterviewer && this.isReadyToNegotiate && this.isRemoteConnected()) {
                 console.log('[WebRTC] onnegotiationneeded fired (Host) — initiating offer...');
                 await this.initiateNegotiation();
             } else if (this.isInterviewer && this.isReadyToNegotiate) {
