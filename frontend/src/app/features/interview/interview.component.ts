@@ -631,7 +631,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
         try {
             console.log('[WebRTC] Requesting camera + microphone...');
             const constraints: MediaStreamConstraints = {
-                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+                audio: { 
+                    echoCancellation: true, 
+                    noiseSuppression: true, 
+                    autoGainControl: true,
+                    // More detailed hints for browser audio processing
+                    sampleRate: 48000,
+                    channelCount: 1
+                },
                 video: { width: { ideal: 1280 }, height: { ideal: 720 } }
             };
 
@@ -726,6 +733,22 @@ export class InterviewComponent implements OnInit, OnDestroy {
             if (event.track.kind === 'audio') {
                 this.isRemoteAudioActive.set(true);
                 console.log('[WebRTC] Remote AUDIO track ready');
+                
+                event.track.onunmute = () => {
+                    console.log('[WebRTC] Remote audio track unmuted');
+                    this.isRemoteAudioActive.set(true);
+                    this.bindRemoteStream(); // Re-bind to ensure audio starts
+                };
+                event.track.onmute = () => console.log('[WebRTC] Remote audio track muted');
+                event.track.onended = () => {
+                    console.log('[WebRTC] Remote audio track ended');
+                    this.isRemoteAudioActive.set(false);
+                };
+            }
+
+            // Bind stream even if it's just audio
+            if (this.peerConnection.iceConnectionState === 'connected' || this.peerConnection.iceConnectionState === 'completed') {
+                this.bindRemoteStream();
             }
 
             // FIX: Force change detection FIRST so *ngIf="isRemoteConnected" renders the
@@ -887,23 +910,41 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
     }
 
-    // Prioritize H.264 codec for better mobile/Safari compatibility
+    // Prioritize H.264 for video and Opus for high-quality audio
     private preferH264(sdp: string): string {
-        if (!sdp.includes('H264')) return sdp;
-        const lines = sdp.split('\r\n');
-        const videoIndex = lines.findIndex(l => l.startsWith('m=video'));
-        if (videoIndex === -1) return sdp;
+        let lines = sdp.split('\r\n');
+        
+        // 1. Prioritize Opus for audio
+        const audioIndex = lines.findIndex(l => l.startsWith('m=audio'));
+        if (audioIndex !== -1) {
+            const mLine = lines[audioIndex].split(' ');
+            const opusPayloads = lines
+                .filter(l => l.startsWith('a=rtpmap') && l.includes('opus/48000'))
+                .map(l => l.split(':')[1].split(' ')[0]);
+            
+            if (opusPayloads.length > 0) {
+                const newMLine = mLine.slice(0, 3);
+                const otherPayloads = mLine.slice(3).filter(p => !opusPayloads.includes(p));
+                lines[audioIndex] = [...newMLine, ...opusPayloads, ...otherPayloads].join(' ');
+            }
+        }
 
-        const mLine = lines[videoIndex].split(' ');
+        // 2. Prioritize H.264 for video
+        if (!sdp.includes('H264')) return lines.join('\r\n');
+        const videoIndex = lines.findIndex(l => l.startsWith('m=video'));
+        if (videoIndex === -1) return lines.join('\r\n');
+
+        const mLineVideo = lines[videoIndex].split(' ');
         const h264Payloads = lines
             .filter(l => l.startsWith('a=rtpmap') && l.includes('H264'))
             .map(l => l.split(':')[1].split(' ')[0]);
 
-        if (h264Payloads.length === 0) return sdp;
-
-        const newMLine = mLine.slice(0, 3);
-        const otherPayloads = mLine.slice(3).filter(p => !h264Payloads.includes(p));
-        lines[videoIndex] = [...newMLine, ...h264Payloads, ...otherPayloads].join(' ');
+        if (h264Payloads.length > 0) {
+            const newMLineVideo = mLineVideo.slice(0, 3);
+            const otherPayloadsVideo = mLineVideo.slice(3).filter(p => !h264Payloads.includes(p));
+            lines[videoIndex] = [...newMLineVideo, ...h264Payloads, ...otherPayloadsVideo].join(' ');
+        }
+        
         return lines.join('\r\n');
     }
 
