@@ -29,15 +29,23 @@
 
                     <!-- Invite Actions (Join/Reject) -->
                     <div class="invite-card" *ngIf="msg.isInvite">
-                        <p class="invite-hint">Please join the interview room.</p>
-                        <div class="invite-actions">
-                            <button class="btn-join" (click)="joinMeeting(msg.meetingLink!)">
-                                <i class="bi bi-camera-video"></i> Accept & Join
-                            </button>
-                            <button class="btn-reject" (click)="rejectInvite()">
-                                Reject
-                            </button>
-                        </div>
+                        <ng-container *ngIf="!msg.isExpired; else expiredTemplate">
+                            <p class="invite-hint">Please join the interview room.</p>
+                            <div class="invite-actions">
+                                <button class="btn-join" (click)="joinMeeting(msg.meetingLink!)">
+                                    <i class="bi bi-camera-video"></i> Accept & Join
+                                </button>
+                                <button class="btn-reject" (click)="rejectInvite()">
+                                    Reject
+                                </button>
+                            </div>
+                        </ng-container>
+                        <ng-template #expiredTemplate>
+                            <div class="expired-tag">
+                                <i class="bi bi-clock-history"></i> Invitation Expired
+                            </div>
+                            <p class="invite-hint muted">Participants left. This meeting link is no longer active.</p>
+                        </ng-template>
                     </div>
                 </div>
             </div>

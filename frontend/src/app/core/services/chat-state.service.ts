@@ -11,9 +11,11 @@ export interface GlobalMessage {
     text: string;
     timestamp: Date;
     isInvite?: boolean;
+    isExpired?: boolean;
     meetingLink?: string;
     seenByMe?: boolean;
 }
+
 
 @Injectable({
     providedIn: 'root'
@@ -114,6 +116,7 @@ export class ChatStateService {
                 text: msg.text,
                 timestamp: new Date(msg.timestamp),
                 isInvite: msg.isInvite,
+                isExpired: msg.isExpired || false,
                 meetingLink: msg.roomId ? `/interview/${msg.roomId}` : undefined,
                 seenByMe: isCurrentChat
             };
@@ -149,6 +152,17 @@ export class ChatStateService {
             }
         });
 
+        this.socketService.on('interview-expired').subscribe((data: any) => {
+            console.log('Room Expired:', data.roomId);
+            this.messages.update(msgs => msgs.map(m => {
+                if (m.isInvite && m.meetingLink?.includes(data.roomId)) {
+                    return { ...m, isExpired: true };
+                }
+                return m;
+            }));
+        });
+
+
         this.socketService.on('typing').subscribe((data: any) => {
             const currentTyping = new Map(this.typingUsers());
             currentTyping.set(data.userId, data.name);
@@ -178,10 +192,12 @@ export class ChatStateService {
                     text: m.text,
                     timestamp: new Date(m.timestamp),
                     isInvite: m.isInvite,
+                    isExpired: m.isExpired,
                     meetingLink: m.roomId ? `/interview/${m.roomId}` : undefined,
                     seenByMe: true // History is considered seen
                 };
             });
+
 
             this.messages.set(historyMessages);
         });

@@ -496,30 +496,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     leaveMeeting() {
         if (this.isInterviewer) {
-            Swal.fire({
-                title: 'End Interview?',
-                text: "Do you want to just Leave, or End and Expire the link permanently?",
-                icon: 'warning',
-                showCancelButton: true,
-                showDenyButton: true,
-                confirmButtonText: 'End & Expire',
-                denyButtonText: 'Just Leave',
-                cancelButtonText: 'Stay',
-                confirmButtonColor: '#f85149',
-                denyButtonColor: '#484f58',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Mark as completed in backend
-                    this.http.patch(`${environment.apiUrl}/interview/${this.roomId}/complete`, {}).subscribe({
-                        next: () => {
-                            this.finalizeLeave();
-                        },
-                        error: () => {
-                            this.finalizeLeave(); // Leave anyway even if API fails
-                        }
-                    });
-                } else if (result.isDenied) {
+            // Directly mark as completed and expire the link
+            this.http.patch(`${environment.apiUrl}/interview/${this.roomId}/complete`, {}).subscribe({
+                next: () => {
                     this.finalizeLeave();
+                },
+                error: () => {
+                    this.finalizeLeave(); // Leave anyway even if API fails
                 }
             });
         } else {

@@ -8,6 +8,8 @@ const Interview = require('./models/Interview');
 let io;
 const activeUsers = new Map(); // userId -> { sockets: Set<socketId>, role, name }
 const roomParticipants = new Map(); // roomId -> Set<userId>
+const activeExpirations = new Map(); // roomId -> Timeout object
+
 
 const initSocket = (server) => {
     io = new Server(server, {
@@ -55,6 +57,16 @@ const initSocket = (server) => {
                 try {
                     const interview = await Interview.findOne({ roomId });
                     const interviewerId = interview ? interview.interviewerId.toString() : null;
+
+                    if (interview) {
+                        // Cancel any pending expiry timer since someone joined
+                        cancelInterviewExpiry(roomId);
+                        if (interview.expiresAt) {
+                            interview.expiresAt = null;
+                            await interview.save();
+                        }
+                    }
+
 
                     // 1. Notify others that I joined
                     socket.to(roomId).emit('user-joined', { userId, role, interviewerId });
@@ -132,13 +144,16 @@ const initSocket = (server) => {
                 socket.to(roomId).emit('request-negotiation', { sender: userId });
             });
 
-            socket.on('leave-interview', ({ roomId }) => {
+            socket.on('leave-interview', async ({ roomId }) => {
                 socket.leave(roomId);
                 socket.to(roomId).emit('user-left', { userId });
                 if (roomParticipants.has(roomId)) {
                     roomParticipants.get(roomId).delete(userId);
+                    // If anyone leaves, start the 5-minute expiry timer
+                    scheduleInterviewExpiry(roomId);
                 }
             });
+
 
             // ======== CHAT MESSAGING (NON-BLOCKING) ========
             socket.on('chat-message', async ({ roomId, message }) => {
@@ -206,13 +221,22 @@ const initSocket = (server) => {
                     if (chat) {
                         socket.emit('chatHistory', {
                             userId: otherUserId,
-                            messages: chat.messages.map(m => ({
-                                senderId: m.senderId,
-                                text: m.text,
-                                isInvite: m.isInvite,
-                                roomId: m.roomId,
-                                timestamp: m.createdAt
+                            messages: await Promise.all(chat.messages.map(async (m) => {
+                                let isExpired = false;
+                                if (m.isInvite && m.roomId) {
+                                    const interview = await Interview.findOne({ roomId: m.roomId }).select('status');
+                                    isExpired = interview?.status === 'completed';
+                                }
+                                return {
+                                    senderId: m.senderId,
+                                    text: m.text,
+                                    isInvite: m.isInvite,
+                                    isExpired,
+                                    roomId: m.roomId,
+                                    timestamp: m.createdAt
+                                };
                             }))
+
                         });
                     } else {
                         socket.emit('chatHistory', {
@@ -239,7 +263,10 @@ const initSocket = (server) => {
                             if (participants.has(userId)) {
                                 io.to(rId).emit('user-left', { userId });
                                 participants.delete(userId);
+                                // Start expiry timer when user disconnects from a room
+                                scheduleInterviewExpiry(rId);
                             }
+
                         }
                     }
                 }
@@ -291,5 +318,44 @@ const emitToUser = (userId, event, payload) => {
     return false;
 };
 
+const scheduleInterviewExpiry = (roomId) => {
+    // Only one timer per room
+    if (activeExpirations.has(roomId)) return;
+
+    console.log(`Scheduling expiry for room ${roomId} in 5 minutes`);
+    const timeout = setTimeout(async () => {
+        try {
+            activeExpirations.delete(roomId);
+            const interview = await Interview.findOne({ roomId });
+            if (interview && interview.status !== 'completed') {
+                interview.status = 'completed';
+                interview.expiresAt = new Date();
+                await interview.save();
+
+                // Notify participants via global chat event
+                const participants = [interview.interviewerId.toString(), interview.candidateId.toString()];
+                participants.forEach(pId => {
+                    emitToUser(pId, 'interview-expired', { roomId });
+                });
+
+                console.log(`Interview ${roomId} expired after 5 minutes of inactivity.`);
+            }
+        } catch (e) {
+            console.error('Error during interview expiry:', e);
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    activeExpirations.set(roomId, timeout);
+};
+
+const cancelInterviewExpiry = (roomId) => {
+    if (activeExpirations.has(roomId)) {
+        console.log(`Cancelling expiry for room ${roomId}`);
+        clearTimeout(activeExpirations.get(roomId));
+        activeExpirations.delete(roomId);
+    }
+};
+
 module.exports = { initSocket, getIO, isUserOnline, getOnlineUserIds, emitToUser, getActiveUsersCount };
+
 
