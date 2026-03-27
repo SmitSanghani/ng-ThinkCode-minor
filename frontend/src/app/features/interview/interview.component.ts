@@ -103,10 +103,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
     replyingToMessage: ChatMessage | null = null;
     @ViewChild('chatContainer') chatContainer!: ElementRef;
 
-    private iceServers = {
+    private iceServers: RTCConfiguration = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            // Free TURN from open-relay (replace with Twilio/Xirsys in production):
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.services.mozilla.com' },
+            // Free TURN from open-relay (replace with Twilio/Xirsys in production if these fail):
             {
                 urls: 'turn:openrelay.metered.ca:80',
                 username: 'openrelayproject',
@@ -116,8 +119,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 urls: 'turn:openrelay.metered.ca:443',
                 username: 'openrelayproject',
                 credential: 'openrelayproject'
+            },
+            {
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
             }
-        ]
+        ],
+        iceCandidatePoolSize: 10
     };
 
     async ngOnInit() {
@@ -158,13 +167,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
             // Safety check for video binding every 2 seconds
             this.videoBindInterval = setInterval(() => this.ensureVideoBinding(), 2000);
 
-            // 5. JOIN LAST - only when ready to negotiate
+            // 5. JOIN & HANDLE RECONNECTS
             console.log('Interview: Joining room...');
-            this.socket.emit('join-interview', { roomId: this.roomId });
-            this.socket.emit('media-status', {
-                roomId: this.roomId,
-                isVideoActive: this.isVideoActive && this.localHasVideo(),
-                isAudioActive: this.isAudioActive
+            this.joinInterviewRoom();
+
+            // Re-join room if socket reconnects (CRITICAL for stability)
+            this.socket.on('connect', () => {
+                console.log('WebRTC: Socket reconnected, re-joining room...');
+                this.joinInterviewRoom();
             });
 
         } catch (err: any) {
@@ -437,6 +447,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.socket.off('chat-message');
             this.socket.off('code-change');
         }
+    }
+
+    private joinInterviewRoom() {
+        if (!this.socket?.connected) return;
+        
+        this.socket.emit('join-interview', { roomId: this.roomId });
+        this.socket.emit('media-status', {
+            roomId: this.roomId,
+            isVideoActive: this.isVideoActive && this.localHasVideo(),
+            isAudioActive: this.isAudioActive
+        });
     }
 
     private validateRoom(): Promise<void> {
