@@ -403,6 +403,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
             }
             this.cdr.detectChanges();
         });
+
+        this.socket.on('interview-ended', () => {
+            console.log('WebRTC: Interview has been ended by Host');
+            Swal.fire({
+                title: 'Meeting Ended',
+                text: 'This interview has been completed and the link has expired.',
+                icon: 'info',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                this.finalizeLeave();
+            });
+        });
     }
 
     private ensureVideoBinding() {
@@ -483,6 +495,39 @@ export class InterviewComponent implements OnInit, OnDestroy {
     }
 
     leaveMeeting() {
+        if (this.isInterviewer) {
+            Swal.fire({
+                title: 'End Interview?',
+                text: "Do you want to just Leave, or End and Expire the link permanently?",
+                icon: 'warning',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'End & Expire',
+                denyButtonText: 'Just Leave',
+                cancelButtonText: 'Stay',
+                confirmButtonColor: '#f85149',
+                denyButtonColor: '#484f58',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mark as completed in backend
+                    this.http.patch(`${environment.apiUrl}/interview/${this.roomId}/complete`, {}).subscribe({
+                        next: () => {
+                            this.finalizeLeave();
+                        },
+                        error: () => {
+                            this.finalizeLeave(); // Leave anyway even if API fails
+                        }
+                    });
+                } else if (result.isDenied) {
+                    this.finalizeLeave();
+                }
+            });
+        } else {
+            this.finalizeLeave();
+        }
+    }
+
+    private finalizeLeave() {
         this.socket?.emit('leave-interview', { roomId: this.roomId });
         this.router.navigate(['/']);
     }

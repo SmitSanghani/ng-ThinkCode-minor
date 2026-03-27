@@ -92,6 +92,11 @@ exports.getInterviewByRoomId = async (req, res, next) => {
             return res.status(404).json({ success: false, message: 'Interview room not found or invalid link' });
         }
 
+        // Check if interview is already completed (expired)
+        if (interview.status === 'completed') {
+            return res.status(410).json({ success: false, message: 'This interview link has expired' });
+        }
+
         // Validate that the requester is either the interviewer or the candidate
         const isInterviewer = interview.interviewerId._id.toString() === req.user.id;
         const isCandidate = interview.candidateId._id.toString() === req.user.id;
@@ -167,6 +172,43 @@ exports.runCode = async (req, res, next) => {
         }
     } catch (error) {
         console.error('Error running code:', error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Complete an interview (Expire link)
+// @route   PATCH /api/interview/:roomId/complete
+// @access  Private
+exports.completeInterview = async (req, res, next) => {
+    try {
+        const { roomId } = req.params;
+        const interview = await Interview.findOne({ roomId });
+
+        if (!interview) {
+            return res.status(404).json({ success: false, message: 'Interview not found' });
+        }
+
+        // Only interviewer can complete
+        if (interview.interviewerId.toString() !== req.user.id) {
+            return res.status(403).json({ success: false, message: 'Only the interviewer can end the meeting' });
+        }
+
+        interview.status = 'completed';
+        await interview.save();
+
+        // Notify the room via socket
+        const { getIO } = require('../socket');
+        const io = getIO();
+        if (io) {
+            io.in(roomId).emit('interview-ended');
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Interview completed and link expired'
+        });
+    } catch (error) {
+        console.error('Error completing interview:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };

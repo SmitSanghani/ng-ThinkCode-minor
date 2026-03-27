@@ -13,4 +13,7 @@ router.get('/:roomId', protect, getInterviewByRoomId);
 // Route to run code via Judge0 API
 router.post('/run', protect, require('../controllers/interview.controller').runCode);
 
+// Route to complete an interview (Expire link)
+router.patch('/:roomId/complete', protect, require('../controllers/interview.controller').completeInterview);
+
 module.exports = router;
