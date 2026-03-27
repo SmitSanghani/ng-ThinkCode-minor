@@ -85,6 +85,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private socket: any;
     private isNegotiating = false;
+    private ignoreOffer = false;
     private iceCandidatesBuffer: RTCIceCandidateInit[] = [];
     isInterviewer: boolean = false;
     private videoBindInterval: any;
@@ -280,45 +281,49 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('webrtc-offer', async (data: any) => {
             console.log('WebRTC: Received offer, state:', this.peerConnection?.signalingState);
             this.isRemoteConnected = true;
+
+            // Perfect Negotiation Pattern:
+            const offerCollision = (data.offer.type === "offer") && 
+                                   (this.isNegotiating || this.peerConnection?.signalingState !== "stable");
             
-            // CRITICAL: Wait for local media to be ready before answering
-            // If we answer before our camera starts, the other side will see black.
+            this.ignoreOffer = !this.isInterviewer && offerCollision; // Candidate is polite, ignores collision
+            if (this.ignoreOffer) {
+                console.warn('WebRTC: Offer collision detected, ignoring because I am polite (Candidate)');
+                return;
+            }
+
+            // CRITICAL: Wait for local media to be ready before answering (Max 2.5s)
             let attempts = 0;
-            while (!this.localStream && attempts < 20) { // wait up to 2 seconds
-                console.log('WebRTC: Waiting for local media before answering offer...');
+            while (!this.localStream && attempts < 25) {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 attempts++;
             }
 
             if (!this.peerConnection) this.setupWebRTC();
 
-            if (this.peerConnection.signalingState !== 'stable') {
-                console.warn('WebRTC: Received offer while not stable, state:', this.peerConnection.signalingState);
-                return;
-            }
-
-            if (data.offer) {
-                // Prefer H.264 for mobile compatibility (SDP Munging)
-                data.offer.sdp = this.preferH264(data.offer.sdp);
-            }
-            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-
-            // Flush buffered ICE candidates
-            while (this.iceCandidatesBuffer.length > 0) {
-                const candidate = this.iceCandidatesBuffer.shift();
-                if (candidate) {
-                    this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {
-                        console.warn('WebRTC: Error adding buffered candidate', e);
-                    });
+            try {
+                if (data.offer) {
+                    data.offer.sdp = this.preferH264(data.offer.sdp);
                 }
-            }
-            const answer = await this.peerConnection.createAnswer();
-            await this.peerConnection.setLocalDescription(answer);
-            this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
-            this.cdr.detectChanges();
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                
+                // Flush buffered candidates
+                while (this.iceCandidatesBuffer.length > 0) {
+                    const cand = this.iceCandidatesBuffer.shift();
+                    if (cand) this.peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+                }
 
+                if (data.offer.type === "offer") {
+                    const answer = await this.peerConnection.createAnswer();
+                    await this.peerConnection.setLocalDescription(answer);
+                    this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
+                }
+            } catch (err) {
+                console.error("WebRTC: Error handling offer/answer", err);
+            }
+            this.cdr.detectChanges();
         });
+
 
         this.socket.on('webrtc-answer', async (data: any) => {
             console.log('WebRTC: Received answer, state:', this.peerConnection?.signalingState);
@@ -753,122 +758,92 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private setupWebRTC() {
         if (this.peerConnection) return;
+        console.log('WebRTC: Creating RTCPeerConnection...');
 
-        console.log('WebRTC Debug: Initializing RTCPeerConnection with STUN/TURN');
         this.peerConnection = new RTCPeerConnection(this.iceServers);
 
-        // Track listener for remote media
-        this.peerConnection.ontrack = (event) => {
-            console.log('WebRTC Debug: Remote track received', event.track.kind, 'ReadyState:', event.track.readyState);
+        // Proactive Transceivers (Essential for mobile/safari)
+        this.peerConnection.addTransceiver('video', { direction: 'sendrecv' });
+        this.peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
 
-            // Use the stream provided by the browser directly
+        this.peerConnection.ontrack = (event) => {
+            console.log('WebRTC Debug: Received Remote Track', event.track.kind);
+            
             if (event.streams && event.streams[0]) {
-                console.log('WebRTC Debug: Using browser-provided stream');
                 this.remoteStream = event.streams[0];
             } else {
-                console.warn('WebRTC Debug: No stream in event, creating manual stream');
-                if (!this.remoteStream) {
-                    this.remoteStream = new MediaStream();
-                }
+                if (!this.remoteStream) this.remoteStream = new MediaStream();
                 this.remoteStream.addTrack(event.track);
             }
 
-            this.hasRemoteVideo = true;
-            this.isRemoteConnected = true;
-            
-            // Sync video presence based on tracks in the stream
-            const videoTracks = this.remoteStream.getVideoTracks();
-            console.log('WebRTC Debug: Remote video tracks count:', videoTracks.length);
-            
-            if (videoTracks.length > 0) {
+            if (event.track.kind === 'video') {
+                this.hasRemoteVideo = true;
                 this.remoteHasVideo.set(true);
-                videoTracks[0].onmute = () => {
-                    console.log('WebRTC Debug: Remote video track MUTED (Black Screen potentially)');
+                this.isRemoteConnected = true;
+                
+                event.track.onmute = () => {
+                    console.log('WebRTC Track: Muted');
                     this.remoteHasVideo.set(false);
                 };
-                videoTracks[0].onunmute = () => {
-                    console.log('WebRTC Debug: Remote video track UNMUTED');
+                event.track.onunmute = () => {
+                    console.log('WebRTC Track: Unmuted');
                     this.remoteHasVideo.set(true);
                 };
             }
 
-            this.cdr.detectChanges();
-
-            // Force binding to element
-            if (this._remoteVideo?.nativeElement) {
-                console.log('WebRTC Debug: Binding remoteStream to video element');
-                this._remoteVideo.nativeElement.srcObject = this.remoteStream;
-                this._remoteVideo.nativeElement.play().catch(e => {
-                    console.warn('WebRTC Debug: Remote video play auto-retry...', e);
-                });
+            if (event.track.kind === 'audio') {
+                this.isRemoteAudioActive.set(true);
             }
 
-            // Safety loop integration
-            setTimeout(() => this.ensureVideoBinding(), 1000);
+            // Forced re-bind to video element
+            this.ensureVideoBinding();
+            this.cdr.detectChanges();
         };
 
-        // ICE Candidate handling
+        this.peerConnection.oniceconnectionstatechange = () => {
+            console.log('WebRTC ICE State:', this.peerConnection.iceConnectionState);
+            if (this.peerConnection.iceConnectionState === 'failed') {
+                this.peerConnection.restartIce();
+            }
+        };
+
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log('WebRTC Debug: Local ICE Candidate generated');
                 this.socket?.emit('webrtc-candidate', { roomId: this.roomId, candidate: event.candidate });
             }
         };
 
-        // Connection state monitoring
-        this.peerConnection.onconnectionstatechange = () => {
-            const state = this.peerConnection.connectionState;
-            console.log("WebRTC Debug: PEER CONNECTION STATE:", state);
-
-            if (state === 'failed') {
-                console.warn('WebRTC Debug: Connection failed, attempting ICE restart...');
-                this.peerConnection.restartIce();
-            } else if (state === 'connected') {
-                console.log('WebRTC Debug: Connection fully established!');
-            }
-        };
-
-        this.peerConnection.oniceconnectionstatechange = () => {
-            console.log("WebRTC Debug: ICE CONNECTION STATE:", this.peerConnection.iceConnectionState);
-        };
-
-        this.peerConnection.onsignalingstatechange = () => {
-            console.log("WebRTC Debug: SIGNALING STATE:", this.peerConnection.signalingState);
-        };
-
-        // Pre-emptively add tracks if already available
+        // Always add local tracks if we have them
         this.addLocalTracksToPeer();
     }
 
     private initiateNegotiation() {
-        if (!this.peerConnection || this.isNegotiating || this.peerConnection.signalingState !== 'stable') return;
+        if (!this.peerConnection || this.isNegotiating) return;
 
         this.isNegotiating = true;
         setTimeout(async () => {
             try {
+                // Perfect Negotiation: If not stable, we wait
                 if (this.peerConnection.signalingState !== 'stable') {
                     this.isNegotiating = false;
                     return;
                 }
-                console.log('WebRTC: Creating proactive offer...');
-                let offer = await this.peerConnection.createOffer({
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: true
-                });
 
-                // Prefer H.264 for mobile compatibility (SDP Munging)
+                console.log('WebRTC: Creating proactive offer...');
+                const offer = await this.peerConnection.createOffer();
+                
+                // SDP Munging
                 offer.sdp = this.preferH264(offer.sdp!);
 
                 await this.peerConnection.setLocalDescription(offer);
-                this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
+                this.socket.emit('webrtc-offer', { roomId: this.roomId, offer: this.peerConnection.localDescription });
             } catch (err) {
                 console.error('WebRTC: Proactive offer error', err);
-                this.isNegotiating = false;
             } finally {
-                // Keep isNegotiating true until we get an answer or timeout
-                setTimeout(() => this.isNegotiating = false, 5000);
+                // Short wait to prevent spamming offers
+                setTimeout(() => this.isNegotiating = false, 1000);
             }
-        }, 800);
+        }, 1000);
     }
 
     // Helper to prioritize H.264 video codec in SDP
