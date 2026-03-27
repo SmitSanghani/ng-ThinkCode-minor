@@ -304,15 +304,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         this.socket.on('webrtc-candidate', async (data: any) => {
             if (this.peerConnection && data.candidate) {
+                console.log('WebRTC Debug: Received ICE Candidate from Peer');
                 this.isRemoteConnected = true;
                 try {
                     if (this.peerConnection.remoteDescription) {
                         await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        console.log('WebRTC Debug: ICE Candidate added successfully');
                     } else {
+                        console.warn('WebRTC Debug: Remote description not set, buffering candidate');
                         this.iceCandidatesBuffer.push(data.candidate);
                     }
                 } catch (e) {
-                    console.error('WebRTC: Error adding ICE candidate', e);
+                    console.error('WebRTC Debug: Error adding ICE candidate', e);
                 }
                 this.cdr.detectChanges();
             }
@@ -659,45 +662,63 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private setupWebRTC() {
         if (this.peerConnection) return;
 
-        console.log('WebRTC: Initializing RTCPeerConnection with STUN/TURN');
+        console.log('WebRTC Debug: Initializing RTCPeerConnection with STUN/TURN');
         this.peerConnection = new RTCPeerConnection(this.iceServers);
 
         // Track listener for remote media
         this.peerConnection.ontrack = (event) => {
-            console.log('WebRTC: Remote track received', event.track.kind);
+            console.log('WebRTC Debug: Remote track received', event.track.kind, 'ReadyState:', event.track.readyState);
 
-            // Re-initialize remote stream if not present
-            if (!this.remoteStream) {
-                this.remoteStream = new MediaStream();
-            }
-
-            // Robustly add the track to the stream
-            if (!this.remoteStream.getTracks().find(t => t.id === event.track.id)) {
+            // Use the stream provided by the browser directly
+            if (event.streams && event.streams[0]) {
+                console.log('WebRTC Debug: Using browser-provided stream');
+                this.remoteStream = event.streams[0];
+            } else {
+                console.warn('WebRTC Debug: No stream in event, creating manual stream');
+                if (!this.remoteStream) {
+                    this.remoteStream = new MediaStream();
+                }
                 this.remoteStream.addTrack(event.track);
             }
 
             this.hasRemoteVideo = true;
+            this.isRemoteConnected = true;
+            
+            // Sync video presence based on tracks in the stream
+            const videoTracks = this.remoteStream.getVideoTracks();
+            console.log('WebRTC Debug: Remote video tracks count:', videoTracks.length);
+            
+            if (videoTracks.length > 0) {
+                this.remoteHasVideo.set(true);
+                videoTracks[0].onmute = () => {
+                    console.log('WebRTC Debug: Remote video track MUTED (Black Screen potentially)');
+                    this.remoteHasVideo.set(false);
+                };
+                videoTracks[0].onunmute = () => {
+                    console.log('WebRTC Debug: Remote video track UNMUTED');
+                    this.remoteHasVideo.set(true);
+                };
+            }
+
             this.cdr.detectChanges();
 
-            // Direct binding to element if available
+            // Force binding to element
             if (this._remoteVideo?.nativeElement) {
+                console.log('WebRTC Debug: Binding remoteStream to video element');
                 this._remoteVideo.nativeElement.srcObject = this.remoteStream;
                 this._remoteVideo.nativeElement.play().catch(e => {
-                    console.warn('WebRTC: Remote video play auto-retry...', e);
+                    console.warn('WebRTC Debug: Remote video play auto-retry...', e);
                 });
             }
 
-            // Sync video presence
-            const hasVideo = this.remoteStream.getVideoTracks().length > 0;
-            this.remoteHasVideo.set(hasVideo);
-
-            // Extra safety to resolve black screens
+            // Safety loop integration
             setTimeout(() => this.ensureVideoBinding(), 1000);
         };
 
         // ICE Candidate handling
         this.peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log('WebRTC Debug: Local ICE Candidate generated');
                 this.socket?.emit('webrtc-candidate', { roomId: this.roomId, candidate: event.candidate });
             }
         };
@@ -705,18 +726,22 @@ export class InterviewComponent implements OnInit, OnDestroy {
         // Connection state monitoring
         this.peerConnection.onconnectionstatechange = () => {
             const state = this.peerConnection.connectionState;
-            console.log("WebRTC: Connection State Changed:", state);
+            console.log("WebRTC Debug: PEER CONNECTION STATE:", state);
 
             if (state === 'failed') {
-                console.warn('WebRTC: Connection failed, restarting ICE...');
+                console.warn('WebRTC Debug: Connection failed, attempting ICE restart...');
                 this.peerConnection.restartIce();
             } else if (state === 'connected') {
-                console.log('WebRTC: Peers are fully connected!');
+                console.log('WebRTC Debug: Connection fully established!');
             }
         };
 
         this.peerConnection.oniceconnectionstatechange = () => {
-            console.log("WebRTC: ICE Connection State:", this.peerConnection.iceConnectionState);
+            console.log("WebRTC Debug: ICE CONNECTION STATE:", this.peerConnection.iceConnectionState);
+        };
+
+        this.peerConnection.onsignalingstatechange = () => {
+            console.log("WebRTC Debug: SIGNALING STATE:", this.peerConnection.signalingState);
         };
 
         // Pre-emptively add tracks if already available
