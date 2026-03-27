@@ -341,20 +341,20 @@ export class InterviewComponent implements OnInit, OnDestroy {
             }
 
             try {
-                if (data.offer?.sdp) {
-                    data.offer.sdp = this.preferH264(data.offer.sdp);
-                }
                 console.log('[WebRTC] Setting remote description (offer)...');
+                // FIX: Never munge a remote description. Use it exactly as received.
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
                 console.log('[WebRTC] Remote description set (offer). Creating answer...');
 
-                // Flush buffered ICE candidates
                 await this.flushIceCandidateBuffer();
 
                 const answer = await this.peerConnection.createAnswer();
-                answer.sdp = this.preferH264(answer.sdp!);
-                await this.peerConnection.setLocalDescription(answer);
-                this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
+                // FIX: Only munge our OWN local description before setting
+                const mungedSdp = this.preferH264(answer.sdp!);
+                const localAnswer = new RTCSessionDescription({ type: 'answer', sdp: mungedSdp });
+                
+                await this.peerConnection.setLocalDescription(localAnswer);
+                this.socket.emit('webrtc-answer', { roomId: this.roomId, answer: localAnswer });
                 console.log('[WebRTC] Answer sent to peer');
             } catch (err) {
                 console.error('[WebRTC] Error handling offer:', err);
@@ -371,13 +371,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
             if (state === 'have-local-offer') {
                 try {
-                    if (data.answer?.sdp) {
-                        data.answer.sdp = this.preferH264(data.answer.sdp);
-                    }
+                    console.log('[WebRTC] Setting remote description (answer)...');
+                    // FIX: Never munge a remote description.
                     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
                     console.log('[WebRTC] Answer applied. Connection negotiated!');
 
-                    // Flush buffered ICE candidates
                     await this.flushIceCandidateBuffer();
                 } catch (err) {
                     console.error('[WebRTC] Error applying answer:', err);
@@ -671,7 +669,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
         if (this.peerConnection) return;
         console.log('[WebRTC] Creating RTCPeerConnection...');
 
-        this.peerConnection = new RTCPeerConnection(this.iceServers);
+        this.peerConnection = new RTCPeerConnection({
+            ...this.iceServers,
+            iceCandidatePoolSize: 0
+        });
 
         // Add local tracks FIRST — no addTransceiver() here, tracks create their own transceivers
         if (this.localStream) {
@@ -767,9 +768,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         // Only the Host (impolite peer) auto-negotiates
         this.peerConnection.onnegotiationneeded = async () => {
-            if (this.isInterviewer && this.isReadyToNegotiate) {
+            // FIX: Only initiate if we have someone to negotiate WITH
+            if (this.isInterviewer && this.isReadyToNegotiate && this.isRemoteConnected) {
                 console.log('[WebRTC] onnegotiationneeded fired (Host) — initiating offer...');
                 await this.initiateNegotiation();
+            } else if (this.isInterviewer && this.isReadyToNegotiate) {
+                console.log('[WebRTC] Delaying negotiation until peer connects...');
             }
         };
     }
@@ -807,25 +811,36 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private async initiateNegotiation() {
         if (!this.peerConnection || this.isNegotiating) {
-            console.log('[WebRTC] Skipping negotiation — already in progress or no peer connection');
+            console.log('[WebRTC] Skipping negotiation — already in progress');
             return;
         }
 
-        if (this.peerConnection.signalingState !== 'stable') {
-            console.warn(`[WebRTC] Cannot negotiate — state is ${this.peerConnection.signalingState}`);
+        const state = this.peerConnection.signalingState;
+        if (state !== 'stable') {
+            console.warn(`[WebRTC] Cannot initiate NEW offer — state is ${state}`);
+            // RECOVERY: If we already have a local offer, re-send it to the sync'd room
+            if (state === 'have-local-offer') {
+                console.log('[WebRTC] Re-sending pending local offer to room sync...');
+                this.socket.emit('webrtc-offer', { 
+                    roomId: this.roomId, 
+                    offer: this.peerConnection.localDescription 
+                });
+            }
             return;
         }
 
         this.isNegotiating = true;
-        console.log('[WebRTC] Creating offer...');
+        console.log('[WebRTC] Creating fresh offer...');
 
         try {
             const offer = await this.peerConnection.createOffer();
-            // NOTE: No SDP munging — let browser negotiate codec naturally
-            // preferH264 was removed because it can corrupt SDP on some browsers/networks
-            await this.peerConnection.setLocalDescription(offer);
-            this.socket.emit('webrtc-offer', { roomId: this.roomId, offer: this.peerConnection.localDescription });
-            console.log('[WebRTC] Offer sent to peer. SDP length:', offer.sdp?.length);
+            // FIX: Prioritize H.264 for offer too
+            const mungedSdp = this.preferH264(offer.sdp!);
+            const localOffer = new RTCSessionDescription({ type: 'offer', sdp: mungedSdp });
+            
+            await this.peerConnection.setLocalDescription(localOffer);
+            this.socket.emit('webrtc-offer', { roomId: this.roomId, offer: localOffer });
+            console.log('[WebRTC] Offer sent to peer. Host is now have-local-offer.');
         } catch (err) {
             console.error('[WebRTC] Offer creation failed:', err);
         } finally {
