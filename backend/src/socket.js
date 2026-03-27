@@ -54,16 +54,13 @@ const initSocket = (server) => {
                 if (!roomParticipants.has(roomId)) roomParticipants.set(roomId, new Set());
                 roomParticipants.get(roomId).add(userId);
 
-                // Log device info on server
-                console.log(`Server: User ${userId} (${name}) joined room ${roomId} using ${deviceInfo || 'Unknown Device'}`);
-
+                console.log(`[Socket] User ${userId} (${name}) joined room ${roomId} | Device: ${deviceInfo || 'Unknown'}`);
 
                 try {
                     const interview = await Interview.findOne({ roomId });
                     const interviewerId = interview ? interview.interviewerId.toString() : null;
 
                     if (interview) {
-                        // Cancel any pending expiry timer since someone joined
                         cancelInterviewExpiry(roomId);
                         if (interview.expiresAt) {
                             interview.expiresAt = null;
@@ -71,20 +68,25 @@ const initSocket = (server) => {
                         }
                     }
 
+                    // 1. Notify others immediately
+                    socket.to(roomId).emit('user-joined', { 
+                        userId, 
+                        role, 
+                        interviewerId, 
+                        deviceInfo,
+                        timestamp: new Date()
+                    });
 
-                    // 1. Notify others that I joined (including device info)
-                    socket.to(roomId).emit('user-joined', { userId, role, interviewerId, deviceInfo });
-                    console.log(`User ${userId} (${role}) joined room ${roomId}`);
+                    // 2. Send FULL ROOM STATUS to the joiner and anyone in the room
+                    const participants = Array.from(roomParticipants.get(roomId));
+                    io.to(roomId).emit('room-presence-update', { 
+                        roomId, 
+                        participants,
+                        activeUserId: userId 
+                    });
 
-
-                    // 2. Notify ME about who is already here
-                    if (roomParticipants.has(roomId)) {
-                        roomParticipants.get(roomId).forEach(pid => {
-                            if (pid !== userId) {
-                                socket.emit('user-joined', { userId: pid, role: 'existing', alreadyHere: true });
-                            }
-                        });
-                    }
+                    // 3. Invite peer to send their media status immediately
+                    socket.to(roomId).emit('request-media-status', { requesterId: userId });
 
                     // Load Chat History
                     if (interview) {
@@ -111,7 +113,7 @@ const initSocket = (server) => {
                         }
                     }
                 } catch (e) {
-                    socket.to(roomId).emit('user-joined', { userId, role, interviewerId: null });
+                    console.error('Join Interview Error:', e.message);
                 }
             });
 
@@ -154,8 +156,11 @@ const initSocket = (server) => {
                 socket.to(roomId).emit('user-left', { userId });
                 if (roomParticipants.has(roomId)) {
                     roomParticipants.get(roomId).delete(userId);
-                    // If anyone leaves, start the 5-minute expiry timer
                     scheduleInterviewExpiry(roomId);
+                    
+                    // Notify remaining about current presence
+                    const participants = Array.from(roomParticipants.get(roomId));
+                    io.to(roomId).emit('room-presence-update', { roomId, participants });
                 }
             });
 
@@ -266,12 +271,15 @@ const initSocket = (server) => {
                         // ROOM CLEANUP
                         for (const [rId, participants] of roomParticipants.entries()) {
                             if (participants.has(userId)) {
-                                io.to(rId).emit('user-left', { userId });
                                 participants.delete(userId);
-                                // Start expiry timer when user disconnects from a room
+                                io.to(rId).emit('user-left', { userId });
+                                
+                                // Update remaining people
+                                const updatedList = Array.from(participants);
+                                io.to(rId).emit('room-presence-update', { roomId: rId, participants: updatedList });
+                                
                                 scheduleInterviewExpiry(rId);
                             }
-
                         }
                     }
                 }

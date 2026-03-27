@@ -245,9 +245,9 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 if (this.socket?.connected) {
                     clearInterval(socketPoll);
                     resolve();
-                } else if (attempts > 50) {
+                } else if (attempts > 300) { // 30 seconds
                     clearInterval(socketPoll);
-                    reject(new Error('Real-time connection failed. Check your internet or login status.'));
+                    reject(new Error('Signaling server unreachable. Check your network.'));
                 }
             }, 100);
         });
@@ -271,48 +271,51 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.cdr.markForCheck();
         });
 
-        this.socket.on('user-joined', async (data: any) => {
-            console.log(`[WebRTC] User joined! UserID: ${data.userId}, Role: ${data.role}, AlreadyHere: ${data.alreadyHere}`);
+        this.socket.on('user-joined', (data: any) => {
+            console.log(`[Socket] User entered: ${data.userId} | Role: ${data.role}`);
             this.isRemoteConnected = true;
+            this.cdr.detectChanges();
+        });
 
-            // Broadcast my media status to the new joiner
+        // NEW: Handles full room state from server
+        this.socket.on('room-presence-update', (data: { roomId: string, participants: string[], activeUserId?: string }) => {
+            console.log('[Socket] Room Presence Sync:', data.participants);
+            
+            const currentUserId = this.authService.currentUser()?.id || this.authService.currentUser()?.['_id'];
+            const hasOther = data.participants.some(pid => pid.toString() !== currentUserId?.toString());
+
+            if (hasOther) {
+                console.log('[Socket] Internal: Peer detected in room sync');
+                this.isRemoteConnected = true;
+                
+                // If I am Host and Guest is here — check if I need to initiate
+                const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
+                if (this.isInterviewer && data.activeUserId && data.activeUserId.toString() !== currentUserId?.toString()) {
+                    console.log('[WebRTC] Guest recently joined. Negotiating...');
+                    setTimeout(() => this.initiateNegotiation(), 1000);
+                }
+            } else {
+                this.isRemoteConnected = false;
+                this.hasRemoteVideo = false;
+            }
+            this.cdr.detectChanges();
+        });
+
+        // NEW: Handle request for my media status
+        this.socket.on('request-media-status', () => {
+            console.log('[Socket] Remote peer requested my media status');
             this.socket.emit('media-status', {
                 roomId: this.roomId,
                 isVideoActive: this.isVideoActive && this.localHasVideo(),
                 isAudioActive: this.isAudioActive
             });
-
-            const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
-
-            // If I am the Guest and the Host joins → ask Host to send offer
-            if (!this.isInterviewer && data.userId === interviewerId?.toString()) {
-                console.log('[WebRTC] I am Guest, Host joined. Requesting offer from Host...');
-                this.socket.emit('request-negotiation', { roomId: this.roomId });
-                return;
-            }
-
-            // If I am the Host and a Guest joins → I create & send the offer
-            if (this.isInterviewer && !data.alreadyHere) {
-                console.log('[WebRTC] I am Host, Guest joined. Initiating negotiation...');
-                // Small delay to let the guest finish setup
-                setTimeout(() => this.initiateNegotiation(), 500);
-            }
-
-            // If the server tells me someone was already in the room when I joined
-            if (data.alreadyHere && this.isInterviewer) {
-                console.log('[WebRTC] Peer was already here. Sending offer as Host...');
-                setTimeout(() => this.initiateNegotiation(), 500);
-            }
-
-            this.cdr.detectChanges();
         });
 
         this.socket.on('request-negotiation', () => {
-            console.log('[WebRTC] Negotiation requested by remote peer');
+            console.log('[WebRTC] Negotiation requested by remote');
             this.isRemoteConnected = true;
             if (this.isInterviewer) {
-                console.log('[WebRTC] Responding to request — initiating offer...');
-                setTimeout(() => this.initiateNegotiation(), 300);
+                setTimeout(() => this.initiateNegotiation(), 500);
             }
         });
 
@@ -566,9 +569,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
         if (this.socket) {
             this.socket.emit('leave-interview', { roomId: this.roomId });
             ['webrtc-offer', 'webrtc-answer', 'webrtc-candidate', 'user-joined', 'user-left',
-             'chat-message', 'code-change', 'peer-media-status', 'peer-camera-toggled',
-             'peer-mic-toggled', 'peer-screen-share', 'interview-ended', 'roomChatHistory',
-             'chat-delete', 'chat-react', 'request-negotiation', 'connect'].forEach(ev => {
+             'room-presence-update', 'request-media-status', 'chat-message', 'code-change', 
+             'peer-media-status', 'peer-camera-toggled', 'peer-mic-toggled', 'peer-screen-share', 
+             'interview-ended', 'roomChatHistory', 'chat-delete', 'chat-react', 
+             'request-negotiation', 'connect'].forEach(ev => {
                 this.socket.off(ev);
             });
         }
