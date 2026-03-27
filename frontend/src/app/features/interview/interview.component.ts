@@ -108,8 +108,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
             { urls: 'stun:stun.services.mozilla.com' },
-            // Free TURN from open-relay (replace with Twilio/Xirsys in production if these fail):
+            // Public STUN from Metered
+            { urls: 'stun:stun.metered.ca:80' },
+            // Free TURN from open-relay
             {
                 urls: 'turn:openrelay.metered.ca:80',
                 username: 'openrelayproject',
@@ -126,8 +130,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 credential: 'openrelayproject'
             }
         ],
-        iceCandidatePoolSize: 10
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require'
     };
+
 
     async ngOnInit() {
         // RESET STATES
@@ -277,12 +284,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
             // Flush buffered ICE candidates
             while (this.iceCandidatesBuffer.length > 0) {
                 const candidate = this.iceCandidatesBuffer.shift();
-                if (candidate) await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                if (candidate) {
+                    this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {
+                        console.warn('WebRTC: Error adding buffered candidate', e);
+                    });
+                }
             }
             const answer = await this.peerConnection.createAnswer();
             await this.peerConnection.setLocalDescription(answer);
             this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
             this.cdr.detectChanges();
+
         });
 
         this.socket.on('webrtc-answer', async (data: any) => {
@@ -294,12 +306,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 // Flush buffered ICE candidates
                 while (this.iceCandidatesBuffer.length > 0) {
                     const candidate = this.iceCandidatesBuffer.shift();
-                    if (candidate) await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    if (candidate) {
+                        this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {
+                            console.warn('WebRTC: Error adding buffered candidate', e);
+                        });
+                    }
                 }
             } else {
                 console.warn('WebRTC: PeerConnection in wrong state for answer:', this.peerConnection?.signalingState);
             }
             this.cdr.detectChanges();
+
         });
 
         this.socket.on('webrtc-candidate', async (data: any) => {
@@ -777,16 +794,15 @@ export class InterviewComponent implements OnInit, OnDestroy {
     }
 
     private initiateNegotiation() {
-        if (!this.peerConnection) return;
+        if (!this.peerConnection || this.isNegotiating || this.peerConnection.signalingState !== 'stable') return;
 
+        this.isNegotiating = true;
         setTimeout(async () => {
             try {
-                if (this.isNegotiating || this.peerConnection.signalingState !== 'stable') {
-                    console.log('WebRTC: Signaling busy, skipping negotiation initiation');
+                if (this.peerConnection.signalingState !== 'stable') {
+                    this.isNegotiating = false;
                     return;
                 }
-
-                this.isNegotiating = true;
                 console.log('WebRTC: Creating proactive offer...');
                 const offer = await this.peerConnection.createOffer({
                     offerToReceiveAudio: true,
@@ -796,10 +812,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 this.socket.emit('webrtc-offer', { roomId: this.roomId, offer });
             } catch (err) {
                 console.error('WebRTC: Proactive offer error', err);
-            } finally {
                 this.isNegotiating = false;
+            } finally {
+                // Keep isNegotiating true until we get an answer or timeout
+                setTimeout(() => this.isNegotiating = false, 5000);
             }
-        }, 1000); // 1s buffer for socket stability
+        }, 800);
     }
 
     toggleAudio() {
