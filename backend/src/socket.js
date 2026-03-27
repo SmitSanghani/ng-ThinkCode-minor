@@ -48,11 +48,15 @@ const initSocket = (server) => {
             await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
 
             // ======== INTERVIEW SIGNALING ========
-            socket.on('join-interview', async ({ roomId }) => {
+            socket.on('join-interview', async ({ roomId, deviceInfo }) => {
                 socket.join(roomId);
                 
                 if (!roomParticipants.has(roomId)) roomParticipants.set(roomId, new Set());
                 roomParticipants.get(roomId).add(userId);
+
+                // Log device info on server
+                console.log(`Server: User ${userId} (${name}) joined room ${roomId} using ${deviceInfo || 'Unknown Device'}`);
+
 
                 try {
                     const interview = await Interview.findOne({ roomId });
@@ -68,9 +72,10 @@ const initSocket = (server) => {
                     }
 
 
-                    // 1. Notify others that I joined
-                    socket.to(roomId).emit('user-joined', { userId, role, interviewerId });
+                    // 1. Notify others that I joined (including device info)
+                    socket.to(roomId).emit('user-joined', { userId, role, interviewerId, deviceInfo });
                     console.log(`User ${userId} (${role}) joined room ${roomId}`);
+
 
                     // 2. Notify ME about who is already here
                     if (roomParticipants.has(roomId)) {

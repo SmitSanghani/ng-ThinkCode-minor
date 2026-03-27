@@ -243,8 +243,9 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('user-joined', async (data: any) => {
-            console.log('WebRTC: User joined, signaling starting...', data);
+            console.log(`WebRTC: User joined! UserID: ${data.userId}, Role: ${data.role}, Device: ${data.deviceInfo || 'Unknown'}`);
             this.isRemoteConnected = true;
+
 
             // Re-broadcast my status to the new joiner
             this.socket.emit('media-status', {
@@ -279,9 +280,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.socket.on('webrtc-offer', async (data: any) => {
             console.log('WebRTC: Received offer, state:', this.peerConnection?.signalingState);
             this.isRemoteConnected = true;
+            
+            // CRITICAL: Wait for local media to be ready before answering
+            // If we answer before our camera starts, the other side will see black.
+            let attempts = 0;
+            while (!this.localStream && attempts < 20) { // wait up to 2 seconds
+                console.log('WebRTC: Waiting for local media before answering offer...');
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
             if (!this.peerConnection) this.setupWebRTC();
 
-            // Only accept offer if we are stable
             if (this.peerConnection.signalingState !== 'stable') {
                 console.warn('WebRTC: Received offer while not stable, state:', this.peerConnection.signalingState);
                 return;
@@ -504,13 +514,30 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private joinInterviewRoom() {
         if (!this.socket?.connected) return;
         
-        this.socket.emit('join-interview', { roomId: this.roomId });
+        const deviceInfo = this.getDeviceInfo();
+        console.log('Interview: Self joining room with device info:', deviceInfo);
+
+        this.socket.emit('join-interview', { 
+            roomId: this.roomId,
+            deviceInfo: deviceInfo 
+        });
         this.socket.emit('media-status', {
             roomId: this.roomId,
             isVideoActive: this.isVideoActive && this.localHasVideo(),
             isAudioActive: this.isAudioActive
         });
     }
+
+    private getDeviceInfo(): string {
+        const ua = navigator.userAgent;
+        if (ua.indexOf("Win") != -1) return "Windows PC";
+        if (ua.indexOf("Mac") != -1) return "Macintosh";
+        if (ua.indexOf("Linux") != -1) return "Linux PC";
+        if (ua.indexOf("Android") != -1) return "Android Phone";
+        if (ua.indexOf("iPhone") != -1) return "iPhone";
+        return "Unknown Device";
+    }
+
 
     private validateRoom(): Promise<void> {
         return new Promise((resolve, reject) => {
