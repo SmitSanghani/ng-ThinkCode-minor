@@ -102,7 +102,17 @@ export class InterviewComponent implements OnInit, OnDestroy {
     chatMessages: ChatMessage[] = [];
     newMessage: string = '';
     replyingToMessage: ChatMessage | null = null;
+    isChatVisibleOnMobile = signal<boolean>(false);
+    hasNewMessage = signal<boolean>(false);
     @ViewChild('chatContainer') chatContainer!: ElementRef;
+
+    toggleMobileChat() {
+        this.isChatVisibleOnMobile.set(!this.isChatVisibleOnMobile());
+        if (this.isChatVisibleOnMobile()) {
+            this.hasNewMessage.set(false);
+            setTimeout(() => this.scrollToBottom(), 100);
+        }
+    }
 
     private iceServers: RTCConfiguration = {
         iceServers: [
@@ -382,11 +392,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
             console.log('Chat: Received message via Socket.io', msg);
             // Deduplicate local messages
             if (!this.chatMessages.some(m => m.id === msg.id)) {
-                // Ensure sender name is 'You' if it's from me (shouldn't happen via socket but for safety)
+                // Ensure sender name is 'You' if it's from me
                 if (this.isCurrentUser(msg.senderId)) {
                     msg.sender = 'You';
                 }
                 this.chatMessages = [...this.chatMessages, msg];
+                
+                // If on mobile and chat is closed, show notification badge
+                if (!this.isChatVisibleOnMobile() && !this.isCurrentUser(msg.senderId)) {
+                    this.hasNewMessage.set(true);
+                    console.log('Chat: New message badge active');
+                }
+
                 this.scrollToBottom();
                 this.cdr.detectChanges();
             }

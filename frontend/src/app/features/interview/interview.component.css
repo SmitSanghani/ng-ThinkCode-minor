@@ -882,36 +882,49 @@
     }
 
     .side-panel {
-        min-width: 100%;
-        height: 420px;
-        min-height: unset;
+        display: none !important; /* Hide by default on mobile */
     }
 
-    .panel-section.chat {
-        border-radius: 14px;
+    .mobile-chat-mode .video-workspace {
+        display: none !important;
     }
 
-    .chat-viewport {
-        padding: 14px;
-        gap: 12px;
+    .mobile-chat-mode .side-panel {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        background: #0b141a;
     }
 
-    .bubble {
-        max-width: 96%;
-        padding: 8px 12px;
+    .btn-mobile-chat {
+        display: flex !important;
+        background: rgba(88, 166, 255, 0.15) !important;
+        color: #58a6ff !important;
     }
 
-    .text {
-        font-size: 0.82rem;
+    .btn-mobile-chat .badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 12px;
+        height: 12px;
+        background: #f85149;
+        border-radius: 50%;
+        border: 2px solid #161b22;
+        animation: pulse-live 1.5s infinite;
     }
 
-    .chat-composer {
-        padding: 10px;
+    .back-btn-mobile {
+        display: flex !important;
+        color: #8696a0;
+        margin-right: 10px;
+        align-items: center;
     }
 
-    .input-wrap input {
-        font-size: 0.82rem;
-    }
 }
 
 @media (max-width: 480px) {
