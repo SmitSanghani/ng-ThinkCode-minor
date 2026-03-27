@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 export interface ChatMessage {
     id: string;
     sender: string;
-    senderId?: string; // Add this for robust comparison
+    senderId?: string;
     text: string;
     timestamp: Date;
     isDeleted?: boolean;
@@ -40,11 +40,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private _localVideo!: ElementRef<HTMLVideoElement>;
     @ViewChild('localVideo') set localVideoElem(el: ElementRef<HTMLVideoElement>) {
         if (el) {
-            console.log('Video: Local video element bound');
+            console.log('[Video] Local video element bound');
             this._localVideo = el;
             if (this.localStream) {
                 el.nativeElement.srcObject = this.localStream;
-                console.log('Video: Local stream assigned');
+                el.nativeElement.muted = true;
+                console.log('[Video] Local stream assigned to element');
             }
         }
     }
@@ -53,11 +54,12 @@ export class InterviewComponent implements OnInit, OnDestroy {
     private _remoteVideo!: ElementRef<HTMLVideoElement>;
     @ViewChild('remoteVideo') set remoteVideoElem(el: ElementRef<HTMLVideoElement>) {
         if (el) {
-            console.log('Video: Remote video element bound');
+            console.log('[Video] Remote video element bound');
             this._remoteVideo = el;
             if (this.remoteStream) {
                 el.nativeElement.srcObject = this.remoteStream;
-                console.log('Video: Remote stream assigned');
+                console.log('[Video] Remote stream assigned to element via setter');
+                el.nativeElement.play().catch(() => {});
             }
         }
     }
@@ -81,12 +83,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
     isVideoActive: boolean = true;
     isAudioActive: boolean = true;
     isSharingScreen: boolean = false;
-    isRemoteSharing: boolean = false; // Track if peer is sharing
+    isRemoteSharing: boolean = false;
 
     private socket: any;
     private isNegotiating = false;
     private isReadyToNegotiate = false;
-    private ignoreOffer = false;
     private iceCandidatesBuffer: RTCIceCandidateInit[] = [];
     isInterviewer: boolean = false;
     private videoBindInterval: any;
@@ -122,18 +123,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             { urls: 'stun:stun2.l.google.com:19302' },
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:stunserver.org' },
-            { urls: 'stun:stun.ekiga.net' },
-            { urls: 'stun:stun.ideasip.com' },
-            { urls: 'stun:stun.schlund.de' },
-            { urls: 'stun:stun.voiparound.com' },
-            { urls: 'stun:stun.voipbuster.com' },
-            { urls: 'stun:stun.voipstunt.com' },
-            { urls: 'stun:stun.voxgratia.org' },
-            { urls: 'stun:stun.services.mozilla.com' },
-            // Public STUN from Metered
             { urls: 'stun:stun.metered.ca:80' },
-            // Free TURN from open-relay
             {
                 urls: 'turn:openrelay.metered.ca:80',
                 username: 'openrelayproject',
@@ -157,7 +147,6 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
 
     async ngOnInit() {
-        // RESET STATES
         this.isAudioActive = true;
         this.isVideoActive = true;
 
@@ -169,44 +158,50 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
 
         try {
-            console.log('Interview: Validating room...', this.roomId);
+            console.log('[Interview] Validating room...', this.roomId);
             await this.validateRoom();
 
             this.isLoading.set(false);
             this.cdr.detectChanges();
 
-            console.log('Interview: Initializing socket...');
-            await this.initSocket();              // 1. connect socket
-            this.setupSocketListeners();          // 2. attach all listeners
-
-            // Get interview role
+            // Get interview role BEFORE setting up anything
             const currentUserId = this.authService.currentUser()?.id;
             const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
             this.isInterviewer = interviewerId?.toString() === currentUserId?.toString();
-            console.log('Interview: Is Interviewer?', this.isInterviewer);
+            console.log('[Interview] Is Interviewer?', this.isInterviewer);
 
-            console.log('WebRTC: Accessing media...');
-            await this.startLocalMedia();         // 3. get camera/mic
+            // STEP 1: Connect socket
+            console.log('[Interview] Initializing socket...');
+            await this.initSocket();
 
-            console.log('WebRTC: Setting up WebRTC...');
-            this.setupWebRTC();                   // 4. create RTCPeerConnection
+            // STEP 2: Get media (MUST happen before WebRTC setup)
+            console.log('[WebRTC] Accessing media devices...');
+            await this.startLocalMedia();
+
+            // STEP 3: Create RTCPeerConnection (AFTER media is ready, NO transceivers here)
+            console.log('[WebRTC] Setting up peer connection...');
+            this.setupWebRTC();
+
+            // STEP 4: Attach all socket listeners
+            this.setupSocketListeners();
+
+            // STEP 5: Mark ready and join room
+            this.isReadyToNegotiate = true;
 
             // Safety check for video binding every 2 seconds
             this.videoBindInterval = setInterval(() => this.ensureVideoBinding(), 2000);
 
-            // 5. JOIN & HANDLE RECONNECTS
-            console.log('Interview: Joining room...');
+            console.log('[Interview] Joining room...');
             this.joinInterviewRoom();
-            this.isReadyToNegotiate = true; // Safe to negotiate now
 
-            // Re-join room if socket reconnects (CRITICAL for stability)
+            // Re-join room if socket reconnects
             this.socket.on('connect', () => {
-                console.log('WebRTC: Socket reconnected, re-joining room...');
+                console.log('[WebRTC] Socket reconnected, re-joining room...');
                 this.joinInterviewRoom();
             });
 
         } catch (err: any) {
-            console.error('Interview: Failed to load:', err);
+            console.error('[Interview] Failed to load:', err);
             this.error.set(err.message || 'Access Denied');
             this.isLoading.set(false);
             this.cdr.detectChanges();
@@ -231,7 +226,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 if (this.socket?.connected) {
                     clearInterval(socketPoll);
                     resolve();
-                } else if (attempts > 50) { // 5 seconds
+                } else if (attempts > 50) {
                     clearInterval(socketPoll);
                     reject(new Error('Real-time connection failed. Check your internet or login status.'));
                 }
@@ -241,10 +236,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private setupSocketListeners() {
         if (!this.socket) return;
-        console.log('Interview: Setting up socket listeners');
+        console.log('[Interview] Setting up socket listeners');
 
         this.socket.on('user-left', () => {
-            console.log('WebRTC: Peer left');
+            console.log('[WebRTC] Peer left');
             this.isRemoteConnected = false;
             this.hasRemoteVideo = false;
             this.remoteHasVideo.set(false);
@@ -252,134 +247,141 @@ export class InterviewComponent implements OnInit, OnDestroy {
             if (this._remoteVideo?.nativeElement) {
                 this._remoteVideo.nativeElement.srcObject = null;
             }
+            // Reset and recreate peer connection so it's ready for a new caller
+            this.resetPeerConnection();
             this.cdr.markForCheck();
         });
 
         this.socket.on('user-joined', async (data: any) => {
-            console.log(`WebRTC: User joined! UserID: ${data.userId}, Role: ${data.role}, Device: ${data.deviceInfo || 'Unknown'}`);
+            console.log(`[WebRTC] User joined! UserID: ${data.userId}, Role: ${data.role}, AlreadyHere: ${data.alreadyHere}`);
             this.isRemoteConnected = true;
 
-
-            // Re-broadcast my status to the new joiner
+            // Broadcast my media status to the new joiner
             this.socket.emit('media-status', {
                 roomId: this.roomId,
                 isVideoActive: this.isVideoActive && this.localHasVideo(),
                 isAudioActive: this.isAudioActive
             });
 
-            // If I am Guest and Host (Interviewer) joins, I must request them to start negotiation
             const interviewerId = this.interviewDetails?.interviewerId?._id || this.interviewDetails?.interviewerId;
+
+            // If I am the Guest and the Host joins → ask Host to send offer
             if (!this.isInterviewer && data.userId === interviewerId?.toString()) {
-                console.log('WebRTC: Host joined! Requesting negotiation...');
+                console.log('[WebRTC] I am Guest, Host joined. Requesting offer from Host...');
                 this.socket.emit('request-negotiation', { roomId: this.roomId });
                 return;
             }
 
-            // If I am Host and someone (Guest) joins, I initiate negotiation
-            if (this.isInterviewer) {
-                this.initiateNegotiation();
+            // If I am the Host and a Guest joins → I create & send the offer
+            if (this.isInterviewer && !data.alreadyHere) {
+                console.log('[WebRTC] I am Host, Guest joined. Initiating negotiation...');
+                // Small delay to let the guest finish setup
+                setTimeout(() => this.initiateNegotiation(), 500);
             }
+
+            // If the server tells me someone was already in the room when I joined
+            if (data.alreadyHere && this.isInterviewer) {
+                console.log('[WebRTC] Peer was already here. Sending offer as Host...');
+                setTimeout(() => this.initiateNegotiation(), 500);
+            }
+
             this.cdr.detectChanges();
         });
 
         this.socket.on('request-negotiation', () => {
-            console.log('WebRTC: Negotiation requested by peer');
+            console.log('[WebRTC] Negotiation requested by remote peer');
             this.isRemoteConnected = true;
             if (this.isInterviewer) {
-                this.initiateNegotiation();
+                console.log('[WebRTC] Responding to request — initiating offer...');
+                setTimeout(() => this.initiateNegotiation(), 300);
             }
         });
 
         this.socket.on('webrtc-offer', async (data: any) => {
-            console.log('WebRTC: Received offer, state:', this.peerConnection?.signalingState);
+            const state = this.peerConnection?.signalingState;
+            console.log(`[WebRTC] Received offer | signalingState: ${state}`);
             this.isRemoteConnected = true;
 
-            // Perfect Negotiation Pattern:
-            const offerCollision = (data.offer.type === "offer") &&
-                (this.isNegotiating || this.peerConnection?.signalingState !== "stable");
+            if (!this.peerConnection) {
+                console.warn('[WebRTC] No peer connection! Setting up...');
+                this.setupWebRTC();
+            }
 
-            this.ignoreOffer = !this.isInterviewer && offerCollision; // Candidate is polite, ignores collision
-            if (this.ignoreOffer) {
-                console.warn('WebRTC: Offer collision detected, ignoring because I am polite (Candidate)');
+            // Polite peer (guest) backs off on offer collision
+            const offerCollision = data.offer?.type === 'offer' &&
+                (this.isNegotiating || state !== 'stable');
+            if (!this.isInterviewer && offerCollision) {
+                console.warn('[WebRTC] Offer collision — Guest rolling back local description');
+                await this.peerConnection.setLocalDescription({ type: 'rollback' }).catch(() => {});
+            } else if (this.isInterviewer && offerCollision) {
+                console.warn('[WebRTC] Offer collision ignored — Host is impolite peer');
                 return;
             }
 
-            // CRITICAL: Wait for local media to be ready before answering (Max 2.5s)
-            let attempts = 0;
-            while (!this.localStream && attempts < 25) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-
-            if (!this.peerConnection) this.setupWebRTC();
-
             try {
-                if (data.offer) {
+                if (data.offer?.sdp) {
                     data.offer.sdp = this.preferH264(data.offer.sdp);
                 }
+                console.log('[WebRTC] Setting remote description (offer)...');
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                console.log('[WebRTC] Remote description set (offer). Creating answer...');
 
-                // Flush buffered candidates
-                while (this.iceCandidatesBuffer.length > 0) {
-                    const cand = this.iceCandidatesBuffer.shift();
-                    if (cand) this.peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(() => { });
-                }
+                // Flush buffered ICE candidates
+                await this.flushIceCandidateBuffer();
 
-                if (data.offer.type === "offer") {
-                    const answer = await this.peerConnection.createAnswer();
-                    await this.peerConnection.setLocalDescription(answer);
-                    this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
-                }
+                const answer = await this.peerConnection.createAnswer();
+                answer.sdp = this.preferH264(answer.sdp!);
+                await this.peerConnection.setLocalDescription(answer);
+                this.socket.emit('webrtc-answer', { roomId: this.roomId, answer });
+                console.log('[WebRTC] Answer sent to peer');
             } catch (err) {
-                console.error("WebRTC: Error handling offer/answer", err);
+                console.error('[WebRTC] Error handling offer:', err);
             }
             this.cdr.detectChanges();
         });
 
-
         this.socket.on('webrtc-answer', async (data: any) => {
-            console.log('WebRTC: Received answer, state:', this.peerConnection?.signalingState);
+            const state = this.peerConnection?.signalingState;
+            console.log(`[WebRTC] Received answer | signalingState: ${state}`);
             this.isRemoteConnected = true;
-            if (this.peerConnection && this.peerConnection.signalingState === 'have-local-offer') {
-                if (data.answer) {
-                    // Prefer H.264 for mobile compatibility (SDP Munging)
-                    data.answer.sdp = this.preferH264(data.answer.sdp);
-                }
-                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
 
+            if (!this.peerConnection) return;
 
-                // Flush buffered ICE candidates
-                while (this.iceCandidatesBuffer.length > 0) {
-                    const candidate = this.iceCandidatesBuffer.shift();
-                    if (candidate) {
-                        this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => {
-                            console.warn('WebRTC: Error adding buffered candidate', e);
-                        });
+            if (state === 'have-local-offer') {
+                try {
+                    if (data.answer?.sdp) {
+                        data.answer.sdp = this.preferH264(data.answer.sdp);
                     }
+                    await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    console.log('[WebRTC] Answer applied. Connection negotiated!');
+
+                    // Flush buffered ICE candidates
+                    await this.flushIceCandidateBuffer();
+                } catch (err) {
+                    console.error('[WebRTC] Error applying answer:', err);
                 }
             } else {
-                console.warn('WebRTC: PeerConnection in wrong state for answer:', this.peerConnection?.signalingState);
+                console.warn(`[WebRTC] Ignoring answer — wrong state: ${state}`);
             }
             this.cdr.detectChanges();
-
         });
 
         this.socket.on('webrtc-candidate', async (data: any) => {
-            if (this.peerConnection && data.candidate) {
-                console.log('WebRTC Debug: Received ICE Candidate from Peer');
-                this.isRemoteConnected = true;
+            if (!data.candidate) return;
+            console.log('[WebRTC] ICE candidate received from peer');
+
+            if (!this.peerConnection) return;
+
+            if (this.peerConnection.remoteDescription) {
                 try {
-                    if (this.peerConnection.remoteDescription) {
-                        await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                        console.log('WebRTC Debug: ICE Candidate added successfully');
-                    } else {
-                        console.warn('WebRTC Debug: Remote description not set, buffering candidate');
-                        this.iceCandidatesBuffer.push(data.candidate);
-                    }
+                    await this.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    console.log('[WebRTC] ICE candidate added successfully');
                 } catch (e) {
-                    console.error('WebRTC Debug: Error adding ICE candidate', e);
+                    console.warn('[WebRTC] Failed to add ICE candidate:', e);
                 }
-                this.cdr.detectChanges();
+            } else {
+                console.warn('[WebRTC] Buffering ICE candidate (no remote desc yet)');
+                this.iceCandidatesBuffer.push(data.candidate);
             }
         });
 
@@ -391,28 +393,20 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('chat-message', (msg: ChatMessage) => {
-            console.log('Chat: Received message via Socket.io', msg);
-            // Deduplicate local messages
             if (!this.chatMessages.some(m => m.id === msg.id)) {
-                // Ensure sender name is 'You' if it's from me
                 if (this.isCurrentUser(msg.senderId)) {
                     msg.sender = 'You';
                 }
                 this.chatMessages = [...this.chatMessages, msg];
-
-                // If on mobile and chat is closed, show notification badge
                 if (!this.isChatVisibleOnMobile() && !this.isCurrentUser(msg.senderId)) {
                     this.hasNewMessage.set(true);
-                    console.log('Chat: New message badge active');
                 }
-
                 this.scrollToBottom();
                 this.cdr.detectChanges();
             }
         });
 
         this.socket.on('roomChatHistory', (data: { roomId: string, messages: any[] }) => {
-            console.log('Chat: Received room history', data);
             const history: ChatMessage[] = data.messages.map(m => {
                 const isFromMe = this.isCurrentUser(m.senderId);
                 return {
@@ -442,7 +436,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('peer-media-status', (data: any) => {
-            console.log('WebRTC: Peer media status update', data);
+            console.log('[WebRTC] Peer media status:', data);
             this.isRemoteConnected = true;
             this.remoteHasVideo.set(data.isVideoActive);
             this.isRemoteAudioActive.set(data.isAudioActive);
@@ -450,84 +444,100 @@ export class InterviewComponent implements OnInit, OnDestroy {
         });
 
         this.socket.on('peer-camera-toggled', ({ isVideoActive }: { isVideoActive: boolean }) => {
-            console.log('WebRTC: Peer camera toggled:', isVideoActive);
+            console.log('[WebRTC] Peer camera toggled:', isVideoActive);
             this.isRemoteConnected = true;
             this.remoteHasVideo.set(isVideoActive);
             this.cdr.detectChanges();
         });
 
         this.socket.on('peer-mic-toggled', ({ isAudioActive }: { isAudioActive: boolean }) => {
-            console.log('WebRTC: Peer mic toggled:', isAudioActive);
             this.isRemoteConnected = true;
             this.isRemoteAudioActive.set(isAudioActive);
             this.cdr.detectChanges();
         });
 
         this.socket.on('peer-screen-share', ({ isSharing }: { isSharing: boolean }) => {
-            console.log('WebRTC: Peer screen share toggled:', isSharing);
+            console.log('[WebRTC] Peer screen share:', isSharing);
             this.isRemoteSharing = isSharing;
             if (isSharing) {
                 this.isRemoteMaximized = true;
-                this.remoteHasVideo.set(true); // Ensure visibility when sharing starts
+                this.remoteHasVideo.set(true);
             }
             this.cdr.detectChanges();
         });
 
         this.socket.on('interview-ended', () => {
-            console.log('WebRTC: Interview has been ended by Host');
             Swal.fire({
                 title: 'Meeting Ended',
                 text: 'This interview has been completed and the link has expired.',
                 icon: 'info',
                 confirmButtonText: 'OK'
-            }).then(() => {
-                this.finalizeLeave();
-            });
+            }).then(() => this.finalizeLeave());
         });
     }
 
+    // ─── Core Video Binding ───────────────────────────────────────────────────
+
     private ensureVideoBinding() {
+        // Local video binding
         if (this._localVideo?.nativeElement) {
             const streamToBind = this.isSharingScreen ? this.screenStream : this.localStream;
             if (streamToBind && this._localVideo.nativeElement.srcObject !== streamToBind) {
-                console.log('WebRTC: Refreshing local video binding');
+                console.log('[Video] Refreshing local video binding');
                 this._localVideo.nativeElement.srcObject = streamToBind;
                 this._localVideo.nativeElement.muted = true;
             }
         }
 
+        // Remote video binding — bind whenever we have a stream, regardless of track state
         if (this._remoteVideo?.nativeElement && this.remoteStream) {
             const video = this._remoteVideo.nativeElement;
-
-            // Check if track is actually active
             const tracks = this.remoteStream.getVideoTracks();
-            const isTrackEnabled = tracks.length > 0 && tracks[0].enabled && tracks[0].readyState === 'live';
 
-            if (isTrackEnabled) {
-                // Force bind if srcObject is missing or mismatched
+            if (tracks.length > 0) {
                 if (video.srcObject !== this.remoteStream) {
-                    console.log('WebRTC: Force binding remote stream to video element');
+                    console.log('[Video] Force binding remote stream to video element');
                     video.srcObject = this.remoteStream;
                 }
-
-                // Force play if paused
-                if (video.paused && this.remoteHasVideo()) {
-                    console.log('WebRTC: Attempting to play remote video...');
-                    video.play().catch(e => {
-                        console.warn('WebRTC: Remote play failed (user gesture required?)', e);
-                    });
+                if (video.paused) {
+                    video.play().catch(e => console.warn('[Video] Remote play error:', e));
+                }
+                // Always ensure remoteHasVideo is true when we have tracks
+                if (!this.remoteHasVideo()) {
+                    console.log('[Video] Forcing remoteHasVideo = true (stream has tracks)');
+                    this.remoteHasVideo.set(true);
                 }
             }
         }
         this.cdr.detectChanges();
     }
 
+    // ─── Peer Connection Reset (when peer leaves) ─────────────────────────────
+
+    private resetPeerConnection() {
+        if (this.peerConnection) {
+            this.peerConnection.ontrack = null;
+            this.peerConnection.onicecandidate = null;
+            this.peerConnection.oniceconnectionstatechange = null;
+            this.peerConnection.onnegotiationneeded = null;
+            this.peerConnection.close();
+            this.peerConnection = null as any;
+        }
+        this.iceCandidatesBuffer = [];
+        this.isNegotiating = false;
+        this.setupWebRTC();
+    }
+
+    // ─── Lifecycle ────────────────────────────────────────────────────────────
 
     ngOnDestroy() {
         if (this.videoBindInterval) clearInterval(this.videoBindInterval);
 
         if (this.localStream) {
             this.localStream.getTracks().forEach(track => track.stop());
+        }
+        if (this.screenStream) {
+            this.screenStream.getTracks().forEach(track => track.stop());
         }
         if (this.peerConnection) {
             this.peerConnection.close();
@@ -536,36 +546,24 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         if (this.socket) {
             this.socket.emit('leave-interview', { roomId: this.roomId });
-            this.socket.off('webrtc-offer');
-            this.socket.off('webrtc-answer');
-            this.socket.off('webrtc-candidate');
-            this.socket.off('user-joined');
-            this.socket.off('user-left');
-            this.socket.off('chat-message');
-            this.socket.off('code-change');
-            this.socket.off('peer-media-status');
-            this.socket.off('peer-camera-toggled');
-            this.socket.off('peer-mic-toggled');
-            this.socket.off('peer-screen-share');
-            this.socket.off('interview-ended');
-            this.socket.off('roomChatHistory');
-            this.socket.off('chat-delete');
-            this.socket.off('chat-react');
-            this.socket.off('request-negotiation');
-            this.socket.off('connect');
+            ['webrtc-offer', 'webrtc-answer', 'webrtc-candidate', 'user-joined', 'user-left',
+             'chat-message', 'code-change', 'peer-media-status', 'peer-camera-toggled',
+             'peer-mic-toggled', 'peer-screen-share', 'interview-ended', 'roomChatHistory',
+             'chat-delete', 'chat-react', 'request-negotiation', 'connect'].forEach(ev => {
+                this.socket.off(ev);
+            });
         }
     }
+
+    // ─── Room Joining ─────────────────────────────────────────────────────────
 
     private joinInterviewRoom() {
         if (!this.socket?.connected) return;
 
         const deviceInfo = this.getDeviceInfo();
-        console.log('Interview: Self joining room with device info:', deviceInfo);
+        console.log('[Interview] Joining room:', this.roomId, 'Device:', deviceInfo);
 
-        this.socket.emit('join-interview', {
-            roomId: this.roomId,
-            deviceInfo: deviceInfo
-        });
+        this.socket.emit('join-interview', { roomId: this.roomId, deviceInfo });
         this.socket.emit('media-status', {
             roomId: this.roomId,
             isVideoActive: this.isVideoActive && this.localHasVideo(),
@@ -575,14 +573,13 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private getDeviceInfo(): string {
         const ua = navigator.userAgent;
-        if (ua.indexOf("Win") != -1) return "Windows PC";
-        if (ua.indexOf("Mac") != -1) return "Macintosh";
-        if (ua.indexOf("Linux") != -1) return "Linux PC";
-        if (ua.indexOf("Android") != -1) return "Android Phone";
-        if (ua.indexOf("iPhone") != -1) return "iPhone";
-        return "Unknown Device";
+        if (ua.indexOf('Win') !== -1) return 'Windows PC';
+        if (ua.indexOf('Mac') !== -1) return 'Macintosh';
+        if (ua.indexOf('Linux') !== -1) return 'Linux PC';
+        if (ua.indexOf('Android') !== -1) return 'Android Phone';
+        if (ua.indexOf('iPhone') !== -1) return 'iPhone';
+        return 'Unknown Device';
     }
-
 
     private validateRoom(): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -602,6 +599,233 @@ export class InterviewComponent implements OnInit, OnDestroy {
             });
         });
     }
+
+    // ─── Media ────────────────────────────────────────────────────────────────
+
+    private async startLocalMedia() {
+        try {
+            console.log('[WebRTC] Requesting camera + microphone...');
+            const constraints: MediaStreamConstraints = {
+                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+                video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+            };
+
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('[WebRTC] Video + Audio granted');
+            } catch (videoError: any) {
+                console.warn('[WebRTC] Full media failed, trying audio-only...', videoError.name);
+                if (['NotFoundError', 'DevicesNotFoundError', 'NotAllowedError'].includes(videoError.name)) {
+                    this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.isVideoActive = false;
+                    console.log('[WebRTC] Audio-only stream granted');
+                } else {
+                    throw videoError;
+                }
+            }
+
+            // Bind to local video element
+            if (this._localVideo?.nativeElement) {
+                this._localVideo.nativeElement.srcObject = this.localStream;
+                this._localVideo.nativeElement.muted = true;
+                this._localVideo.nativeElement.play().catch(() => {});
+            }
+
+            this.localHasVideo.set(this.localStream.getVideoTracks().length > 0);
+            console.log('[WebRTC] Local tracks:', this.localStream.getTracks().map(t => `${t.kind}(${t.readyState})`));
+
+        } catch (err: any) {
+            console.error('[WebRTC] Media error:', err);
+            if (err.message?.includes('microphone')) {
+                Swal.fire('Hardware Error', err.message, 'error');
+            }
+        }
+    }
+
+    // ─── WebRTC Core ──────────────────────────────────────────────────────────
+
+    private setupWebRTC() {
+        if (this.peerConnection) return;
+        console.log('[WebRTC] Creating RTCPeerConnection...');
+
+        this.peerConnection = new RTCPeerConnection(this.iceServers);
+
+        // Add local tracks FIRST — no addTransceiver() here, tracks create their own transceivers
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => {
+                this.peerConnection.addTrack(track, this.localStream);
+                console.log(`[WebRTC] Added local ${track.kind} track`);
+            });
+        }
+
+        // Handle incoming remote tracks
+        this.peerConnection.ontrack = (event: RTCTrackEvent) => {
+            console.log(`[WebRTC] *** REMOTE TRACK RECEIVED *** kind=${event.track.kind} state=${event.track.readyState}`);
+            console.log('[WebRTC] Streams in event:', event.streams.length);
+
+            if (!this.remoteStream) {
+                this.remoteStream = new MediaStream();
+                console.log('[WebRTC] Created new MediaStream for remote');
+            }
+
+            // Add track if not already in the stream
+            const exists = this.remoteStream.getTracks().find(t => t.id === event.track.id);
+            if (!exists) {
+                this.remoteStream.addTrack(event.track);
+                console.log(`[WebRTC] Added remote ${event.track.kind} track to MediaStream`);
+            }
+
+            if (event.track.kind === 'video') {
+                this.hasRemoteVideo = true;
+                this.remoteHasVideo.set(true);
+                this.isRemoteConnected = true;
+                console.log('[WebRTC] Remote video track added — binding to element...');
+
+                event.track.onunmute = () => {
+                    console.log('[WebRTC] Remote video track unmuted');
+                    this.remoteHasVideo.set(true);
+                    this.bindRemoteStream();
+                    this.cdr.detectChanges();
+                };
+                event.track.onmute = () => {
+                    console.log('[WebRTC] Remote video track muted');
+                };
+                event.track.onended = () => {
+                    console.log('[WebRTC] Remote video track ended');
+                    this.remoteHasVideo.set(false);
+                    this.cdr.detectChanges();
+                };
+            }
+
+            if (event.track.kind === 'audio') {
+                this.isRemoteAudioActive.set(true);
+            }
+
+            // Bind remote stream immediately
+            this.bindRemoteStream();
+            this.cdr.detectChanges();
+        };
+
+        // ICE candidate exchange
+        this.peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+            if (event.candidate) {
+                console.log('[WebRTC] Sending ICE candidate to peer');
+                this.socket?.emit('webrtc-candidate', { roomId: this.roomId, candidate: event.candidate });
+            } else {
+                console.log('[WebRTC] ICE gathering complete');
+            }
+        };
+
+        // ICE connection state monitoring
+        this.peerConnection.oniceconnectionstatechange = () => {
+            const state = this.peerConnection?.iceConnectionState;
+            console.log(`[WebRTC] ICE connection state: ${state}`);
+            if (state === 'failed') {
+                console.warn('[WebRTC] ICE failed — attempting restart...');
+                this.peerConnection.restartIce();
+            }
+            if (state === 'connected' || state === 'completed') {
+                console.log('[WebRTC] ✅ Peers are CONNECTED via ICE');
+                this.ensureVideoBinding();
+            }
+        };
+
+        this.peerConnection.onconnectionstatechange = () => {
+            console.log(`[WebRTC] Peer connection state: ${this.peerConnection?.connectionState}`);
+        };
+
+        this.peerConnection.onsignalingstatechange = () => {
+            console.log(`[WebRTC] Signaling state: ${this.peerConnection?.signalingState}`);
+        };
+
+        // Only the Host (impolite peer) auto-negotiates
+        this.peerConnection.onnegotiationneeded = async () => {
+            if (this.isInterviewer && this.isReadyToNegotiate) {
+                console.log('[WebRTC] onnegotiationneeded fired (Host) — initiating offer...');
+                await this.initiateNegotiation();
+            }
+        };
+    }
+
+    private bindRemoteStream() {
+        if (!this.remoteStream) return;
+
+        if (this._remoteVideo?.nativeElement) {
+            const video = this._remoteVideo.nativeElement;
+            if (video.srcObject !== this.remoteStream) {
+                console.log('[Video] Binding remote stream to <video> element');
+                video.srcObject = this.remoteStream;
+            }
+            video.play().catch(e => console.warn('[Video] Remote video play() failed:', e));
+        } else {
+            console.warn('[Video] Remote video element not in DOM yet — interval will retry');
+        }
+        this.cdr.detectChanges();
+    }
+
+    private async flushIceCandidateBuffer() {
+        console.log(`[WebRTC] Flushing ${this.iceCandidatesBuffer.length} buffered ICE candidates`);
+        while (this.iceCandidatesBuffer.length > 0) {
+            const cand = this.iceCandidatesBuffer.shift();
+            if (cand) {
+                try {
+                    await this.peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+                    console.log('[WebRTC] Flushed buffered candidate');
+                } catch (e) {
+                    console.warn('[WebRTC] Failed to add buffered candidate:', e);
+                }
+            }
+        }
+    }
+
+    private async initiateNegotiation() {
+        if (!this.peerConnection || this.isNegotiating) {
+            console.log('[WebRTC] Skipping negotiation — already in progress or no peer connection');
+            return;
+        }
+
+        if (this.peerConnection.signalingState !== 'stable') {
+            console.warn(`[WebRTC] Cannot negotiate — state is ${this.peerConnection.signalingState}`);
+            return;
+        }
+
+        this.isNegotiating = true;
+        console.log('[WebRTC] Creating offer...');
+
+        try {
+            const offer = await this.peerConnection.createOffer();
+            offer.sdp = this.preferH264(offer.sdp!);
+            await this.peerConnection.setLocalDescription(offer);
+            this.socket.emit('webrtc-offer', { roomId: this.roomId, offer: this.peerConnection.localDescription });
+            console.log('[WebRTC] Offer sent to peer');
+        } catch (err) {
+            console.error('[WebRTC] Offer creation failed:', err);
+        } finally {
+            setTimeout(() => { this.isNegotiating = false; }, 500);
+        }
+    }
+
+    // Prioritize H.264 codec for better mobile/Safari compatibility
+    private preferH264(sdp: string): string {
+        if (!sdp.includes('H264')) return sdp;
+        const lines = sdp.split('\r\n');
+        const videoIndex = lines.findIndex(l => l.startsWith('m=video'));
+        if (videoIndex === -1) return sdp;
+
+        const mLine = lines[videoIndex].split(' ');
+        const h264Payloads = lines
+            .filter(l => l.startsWith('a=rtpmap') && l.includes('H264'))
+            .map(l => l.split(':')[1].split(' ')[0]);
+
+        if (h264Payloads.length === 0) return sdp;
+
+        const newMLine = mLine.slice(0, 3);
+        const otherPayloads = mLine.slice(3).filter(p => !h264Payloads.includes(p));
+        lines[videoIndex] = [...newMLine, ...h264Payloads, ...otherPayloads].join(' ');
+        return lines.join('\r\n');
+    }
+
+    // ─── Controls ─────────────────────────────────────────────────────────────
 
     leaveMeeting() {
         if (this.isInterviewer) {
@@ -624,6 +848,81 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.router.navigate(['/']);
     }
 
+    toggleAudio() {
+        this.isAudioActive = !this.isAudioActive;
+        this.localStream?.getAudioTracks().forEach(track => { track.enabled = this.isAudioActive; });
+        this.socket?.emit('mic-toggle', { roomId: this.roomId, isAudioActive: this.isAudioActive });
+    }
+
+    toggleVideo() {
+        this.isVideoActive = !this.isVideoActive;
+        this.localStream?.getVideoTracks().forEach(t => t.enabled = this.isVideoActive);
+        this.socket?.emit('camera-toggle', { roomId: this.roomId, isVideoActive: this.isVideoActive });
+    }
+
+    async toggleScreenShare() {
+        if (!navigator.mediaDevices || !('getDisplayMedia' in navigator.mediaDevices)) {
+            Swal.fire({
+                title: 'Not Supported',
+                text: 'Screen sharing is only supported on Desktop browsers.',
+                icon: 'warning',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000
+            });
+            return;
+        }
+
+        if (this.isSharingScreen) {
+            this.isSharingScreen = false;
+            if (this.screenStream) {
+                this.screenStream.getTracks().forEach(t => t.stop());
+                const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                const videoTrack = this.localStream?.getVideoTracks()[0];
+                if (sender && videoTrack) {
+                    await sender.replaceTrack(videoTrack);
+                }
+                this.screenStream = null;
+            }
+            if (this._localVideo?.nativeElement) this._localVideo.nativeElement.srcObject = this.localStream;
+            this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: false });
+        } else {
+            try {
+                this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { cursor: 'always' } as any,
+                    audio: false
+                });
+                this.isSharingScreen = true;
+                const screenTrack = this.screenStream.getVideoTracks()[0];
+                const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+                if (sender) {
+                    await sender.replaceTrack(screenTrack);
+                } else {
+                    this.peerConnection.addTrack(screenTrack, this.screenStream);
+                    this.socket?.emit('request-negotiation', { roomId: this.roomId });
+                }
+                if (this._localVideo?.nativeElement) {
+                    this._localVideo.nativeElement.srcObject = this.screenStream;
+                    this._localVideo.nativeElement.play().catch(() => {});
+                }
+                this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: true });
+                screenTrack.onended = () => { if (this.isSharingScreen) this.toggleScreenShare(); };
+            } catch (err) {
+                console.error('[WebRTC] Screen share failed:', err);
+                this.isSharingScreen = false;
+            }
+        }
+        this.cdr.detectChanges();
+    }
+
+    toggleMaximize() {
+        this.isRemoteMaximized = !this.isRemoteMaximized;
+        this.cdr.detectChanges();
+    }
+
+    // ─── Editor & Chat ────────────────────────────────────────────────────────
+
     onCodeChanged(newCode: string) {
         this.code = newCode;
         this.socket?.emit('code-change', { roomId: this.roomId, code: newCode });
@@ -645,16 +944,10 @@ export class InterviewComponent implements OnInit, OnDestroy {
             timestamp: new Date(),
             replyTo: this.replyingToMessage
         };
-
-        console.log('Chat: Sending message', msg);
         this.chatMessages = [...this.chatMessages, msg];
-
         if (this.socket) {
             this.socket.emit('chat-message', { roomId: this.roomId, message: msg });
-        } else {
-            console.error('Chat: Socket not ready to send');
         }
-
         this.newMessage = '';
         this.replyingToMessage = null;
         this.scrollToBottom();
@@ -685,34 +978,18 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
     }
 
-    private scrollToBottom() {
-        setTimeout(() => {
-            if (this.chatContainer) {
-                this.chatContainer.nativeElement.scrollTop = this.chatContainer.nativeElement.scrollHeight;
-            }
-        }, 100);
-    }
-
     runCode() {
         if (!this.code) return;
         this.isExecuting = true;
         this.executionResult = null;
-
         this.http.post<any>(`${environment.apiUrl}/interview/run`, {
             code: this.code,
             language: this.selectedLanguage
         }).subscribe({
-            next: (res) => {
+            next: (res) => { this.isExecuting = false; this.executionResult = res; },
+            error: () => {
                 this.isExecuting = false;
-                this.executionResult = res;
-            },
-            error: (err) => {
-                this.isExecuting = false;
-                this.executionResult = {
-                    success: false,
-                    compile_error: 'Failed to run code.',
-                    output: ''
-                };
+                this.executionResult = { success: false, compile_error: 'Failed to run code.', output: '' };
             }
         });
     }
@@ -724,304 +1001,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
         return senderId.toString() === currentUserId.toString();
     }
 
-    private async startLocalMedia() {
-        try {
-            console.log('WebRTC: Attempting to access media devices...');
-
-            const constraints: any = {
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                },
-                video: { width: { ideal: 1280 }, height: { ideal: 720 } }
-            };
-
-            try {
-                // 1. Try Video + Audio
-                this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log('WebRTC: Video + Audio access granted');
-            } catch (videoError: any) {
-                console.warn('WebRTC: Full media access failed, trying audio-only...', videoError.name);
-
-                // 2. If video failed (missing hardware/denied), try Audio Only
-                if (videoError.name === 'NotFoundError' || videoError.name === 'DevicesNotFoundError' || videoError.name === 'NotAllowedError') {
-                    try {
-                        this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        this.isVideoActive = false; // Disable video state
-                        console.log('WebRTC: Audio-only access granted (No Camera)');
-                    } catch (audioError) {
-                        throw new Error('Could not access microphone. Please check your hardware and permissions.');
-                    }
-                } else {
-                    throw videoError;
-                }
+    private scrollToBottom() {
+        setTimeout(() => {
+            if (this.chatContainer) {
+                this.chatContainer.nativeElement.scrollTop = this.chatContainer.nativeElement.scrollHeight;
             }
-
-            if (this._localVideo?.nativeElement) {
-                this._localVideo.nativeElement.srcObject = this.localStream;
-                this._localVideo.nativeElement.muted = true;
-                if (this.isVideoActive) {
-                    this._localVideo.nativeElement.play().catch(e => console.warn('Local video play failed:', e));
-                }
-            }
-
-            this.addLocalTracksToPeer();
-            this.localHasVideo.set(this.localStream.getVideoTracks().length > 0);
-            console.log('WebRTC: Local media stream initialized');
-
-        } catch (err: any) {
-            console.error('WebRTC: Media error.', err);
-
-            // Only show blocking error if even Audio fails
-            if (err.message.includes('microphone')) {
-                Swal.fire('Hardware Error', err.message, 'error');
-            }
-        }
-    }
-
-    private addLocalTracksToPeer() {
-        if (!this.peerConnection || !this.localStream) return;
-        const senders = this.peerConnection.getSenders();
-        this.localStream.getTracks().forEach((track) => {
-            const alreadyAdded = senders.some(s => s.track?.id === track.id);
-            if (!alreadyAdded) {
-                this.peerConnection.addTrack(track, this.localStream);
-                console.log(`WebRTC: Added ${track.kind} track — enabled: ${track.enabled}`);
-            }
-        });
-
-        // Verify active tracks
-        const kinds = this.peerConnection.getSenders().map(s => s.track?.kind);
-        console.log('WebRTC: Active sender tracks:', kinds);
-    }
-
-    private setupWebRTC() {
-        if (this.peerConnection) return;
-        console.log('WebRTC: Creating RTCPeerConnection...');
-
-        this.peerConnection = new RTCPeerConnection(this.iceServers);
-
-        // Proactive Transceivers (Essential for mobile/safari)
-        this.peerConnection.addTransceiver('video', { direction: 'sendrecv' });
-        this.peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
-
-        this.peerConnection.onnegotiationneeded = () => {
-            if (this.isInterviewer && this.isReadyToNegotiate) {
-                this.initiateNegotiation();
-            }
-        };
-
-        this.peerConnection.ontrack = (event) => {
-            console.log('WebRTC: Received Remote Track:', event.track.kind, 'ReadyState:', event.track.readyState);
-
-            if (!this.remoteStream) {
-                this.remoteStream = new MediaStream();
-            }
-
-            // Always add the track to our existing stream object instead of replacing the entire stream
-            // This prevents broken references in the video element
-            const existingTracks = this.remoteStream.getTracks();
-            if (!existingTracks.find(t => t.id === event.track.id)) {
-                this.remoteStream.addTrack(event.track);
-            }
-
-            if (event.track.kind === 'video') {
-                this.hasRemoteVideo = true;
-                this.remoteHasVideo.set(true);
-                this.isRemoteConnected = true;
-
-                event.track.onmute = () => {
-                    console.log('WebRTC Track: Track Muted (Network issue or Peer closed camera)');
-                    this.remoteHasVideo.set(false);
-                };
-                event.track.onunmute = () => {
-                    console.log('WebRTC Track: Track Unmuted');
-                    this.remoteHasVideo.set(true);
-                };
-
-                // Immediate binding attempt
-                setTimeout(() => this.ensureVideoBinding(), 100);
-            }
-
-
-            if (event.track.kind === 'audio') {
-                this.isRemoteAudioActive.set(true);
-            }
-
-            // Forced re-bind to video element
-            this.ensureVideoBinding();
-            this.cdr.detectChanges();
-        };
-
-        this.peerConnection.oniceconnectionstatechange = () => {
-            console.log('WebRTC ICE State:', this.peerConnection.iceConnectionState);
-            if (this.peerConnection.iceConnectionState === 'failed') {
-                this.peerConnection.restartIce();
-            }
-        };
-
-        this.peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                this.socket?.emit('webrtc-candidate', { roomId: this.roomId, candidate: event.candidate });
-            }
-        };
-
-        // Always add local tracks if we have them
-        this.addLocalTracksToPeer();
-    }
-
-    private async initiateNegotiation() {
-        if (!this.peerConnection || this.isNegotiating) return;
-
-        try {
-            this.isNegotiating = true;
-            
-            // Perfect Negotiation Pattern: If signaling state is not stable, we wait
-            if (this.peerConnection.signalingState !== 'stable') {
-                return;
-            }
-
-            console.log('WebRTC: Creating proactive offer...');
-            const offer = await this.peerConnection.createOffer();
-
-            // SDP Munging (Prefer H.264)
-            offer.sdp = this.preferH264(offer.sdp!);
-
-            await this.peerConnection.setLocalDescription(offer);
-            this.socket.emit('webrtc-offer', { 
-                roomId: this.roomId, 
-                offer: this.peerConnection.localDescription 
-            });
-        } catch (err) {
-            console.error('WebRTC: Negotiation error:', err);
-        } finally {
-            // Safety: brief delay to allow signaling to propagate
-            setTimeout(() => this.isNegotiating = false, 500);
-        }
-    }
-
-    // Helper to prioritize H.264 video codec in SDP
-    private preferH264(sdp: string): string {
-        if (!sdp.includes('H264')) return sdp;
-        const lines = sdp.split('\r\n');
-        const videoIndex = lines.findIndex(l => l.startsWith('m=video'));
-        if (videoIndex === -1) return sdp;
-
-        const mLine = lines[videoIndex].split(' ');
-        const h264Payloads = lines
-            .filter(l => l.startsWith('a=rtpmap') && l.includes('H264'))
-            .map(l => l.split(':')[1].split(' ')[0]);
-
-        if (h264Payloads.length === 0) return sdp;
-
-        // Move H264 payloads to the front of the m=video line
-        const newMLine = mLine.slice(0, 3);
-        const otherPayloads = mLine.slice(3).filter(p => !h264Payloads.includes(p));
-
-        // Final line construction
-        lines[videoIndex] = [...newMLine, ...h264Payloads, ...otherPayloads].join(' ');
-        return lines.join('\r\n');
-    }
-
-
-    toggleAudio() {
-        this.isAudioActive = !this.isAudioActive;
-        this.localStream?.getAudioTracks().forEach(track => {
-            track.enabled = this.isAudioActive;
-            console.log(`Audio track enabled: ${track.enabled}`);
-        });
-        this.socket?.emit('mic-toggle', { roomId: this.roomId, isAudioActive: this.isAudioActive });
-    }
-
-    toggleVideo() {
-        this.isVideoActive = !this.isVideoActive;
-        this.localStream?.getVideoTracks().forEach(t => t.enabled = this.isVideoActive);
-        this.socket?.emit('camera-toggle', { roomId: this.roomId, isVideoActive: this.isVideoActive });
-    }
-
-    async toggleScreenShare() {
-        if (!navigator.mediaDevices || !('getDisplayMedia' in navigator.mediaDevices)) {
-            Swal.fire({
-                title: 'Not Supported',
-                text: 'Screen sharing is typically only supported on Desktop browsers (Chrome/Edge/Safari/Firefox).',
-                icon: 'warning',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 4000
-            });
-            return;
-        }
-
-        if (this.isSharingScreen) {
-            // Stop sharing
-            this.isSharingScreen = false;
-            if (this.screenStream) {
-                this.screenStream.getTracks().forEach(t => t.stop());
-
-                const sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-                const videoTrack = this.localStream?.getVideoTracks()[0];
-
-                if (sender) {
-                    if (videoTrack) {
-                        await sender.replaceTrack(videoTrack);
-                    } else {
-                        // If we didn't have a camera originally, we added this track just for sharing
-                        try {
-                            this.peerConnection.removeTrack(sender);
-                            this.socket?.emit('request-negotiation', { roomId: this.roomId });
-                        } catch (e) {
-                            console.warn('WebRTC: Error removing screen track', e);
-                        }
-                    }
-                }
-                this.screenStream = null;
-            }
-
-            if (this._localVideo?.nativeElement) this._localVideo.nativeElement.srcObject = this.localStream;
-            this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: false });
-        } else {
-            try {
-                this.screenStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { cursor: "always" } as any,
-                    audio: false
-                });
-                this.isSharingScreen = true;
-                const screenTrack = this.screenStream.getVideoTracks()[0];
-
-                // Try to find existing video sender
-                let sender = this.peerConnection.getSenders().find(s => s.track?.kind === 'video');
-
-                if (sender) {
-                    await sender.replaceTrack(screenTrack);
-                    console.log('WebRTC: Replaced existing track with screen share');
-                } else {
-                    console.log('WebRTC: No existing video sender, adding screen track');
-                    this.peerConnection.addTrack(screenTrack, this.screenStream);
-                    // MUST renegotiate because we added a new track kind
-                    this.socket?.emit('request-negotiation', { roomId: this.roomId });
-                }
-
-                if (this._localVideo?.nativeElement) {
-                    this._localVideo.nativeElement.srcObject = this.screenStream;
-                    this._localVideo.nativeElement.play().catch(() => { });
-                }
-                this.socket?.emit('screen-share-status', { roomId: this.roomId, isSharing: true });
-
-                screenTrack.onended = () => {
-                    if (this.isSharingScreen) this.toggleScreenShare();
-                };
-            } catch (err) {
-                console.error('WebRTC: Screen share failed', err);
-                this.isSharingScreen = false;
-            }
-        }
-        this.cdr.detectChanges();
-    }
-
-    toggleMaximize() {
-        this.isRemoteMaximized = !this.isRemoteMaximized;
-        this.cdr.detectChanges();
+        }, 100);
     }
 }
