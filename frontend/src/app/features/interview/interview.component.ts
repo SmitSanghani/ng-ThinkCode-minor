@@ -749,18 +749,34 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.peerConnection.oniceconnectionstatechange = () => {
             const state = this.peerConnection?.iceConnectionState;
             console.log(`[WebRTC] ICE connection state: ${state}`);
-            if (state === 'failed') {
-                console.warn('[WebRTC] ICE failed — attempting restart...');
-                this.peerConnection.restartIce();
+            
+            if (state === 'failed' || state === 'disconnected') {
+                console.warn(`[WebRTC] ICE ${state} — attempting restart sync...`);
+                if (this.isInterviewer) {
+                    // Host initiates restart
+                    setTimeout(() => {
+                        if (this.peerConnection?.iceConnectionState === 'failed' || this.peerConnection?.iceConnectionState === 'disconnected') {
+                            this.initiateNegotiation(true); // pass true for ice restart
+                        }
+                    }, 3000);
+                }
             }
+
             if (state === 'connected' || state === 'completed') {
                 console.log('[WebRTC] ✅ Peers are CONNECTED via ICE');
-                this.ensureVideoBinding();
+                this.isRemoteConnected.set(true);
+                // Force a bind refresh
+                setTimeout(() => this.ensureVideoBinding(), 500);
             }
         };
 
         this.peerConnection.onconnectionstatechange = () => {
-            console.log(`[WebRTC] Peer connection state: ${this.peerConnection?.connectionState}`);
+            const state = this.peerConnection?.connectionState;
+            console.log(`[WebRTC] Peer connection state: ${state}`);
+            if (state === 'failed') {
+                console.warn('[WebRTC] Connection failed — forcing re-setup...');
+                // If it truly failed, we might need a full reset but let's try ice restart first
+            }
         };
 
         this.peerConnection.onsignalingstatechange = () => {
@@ -823,14 +839,14 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
     }
 
-    private async initiateNegotiation() {
+    private async initiateNegotiation(restartIce: boolean = false) {
         if (!this.peerConnection || this.isNegotiating) {
             console.log('[WebRTC] Skipping negotiation — already in progress');
             return;
         }
 
         const state = this.peerConnection.signalingState;
-        if (state !== 'stable') {
+        if (state !== 'stable' && !restartIce) {
             console.warn(`[WebRTC] Cannot initiate NEW offer — state is ${state}`);
             // RECOVERY: If we already have a local offer, re-send it to the sync'd room
             if (state === 'have-local-offer') {
@@ -844,10 +860,16 @@ export class InterviewComponent implements OnInit, OnDestroy {
         }
 
         this.isNegotiating = true;
-        console.log('[WebRTC] Creating fresh offer...');
+        console.log(`[WebRTC] Creating ${restartIce ? 'ICE RESTART' : 'fresh'} offer...`);
 
         try {
-            const offer = await this.peerConnection.createOffer();
+            const offerOptions: RTCOfferOptions = {
+                iceRestart: restartIce,
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            };
+            
+            const offer = await this.peerConnection.createOffer(offerOptions);
             // FIX: Prioritize H.264 for offer too
             const mungedSdp = this.preferH264(offer.sdp!);
             const localOffer = new RTCSessionDescription({ type: 'offer', sdp: mungedSdp });
