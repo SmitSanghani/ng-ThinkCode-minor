@@ -85,6 +85,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
     private socket: any;
     private isNegotiating = false;
+    private isReadyToNegotiate = false;
     private ignoreOffer = false;
     private iceCandidatesBuffer: RTCIceCandidateInit[] = [];
     isInterviewer: boolean = false;
@@ -196,6 +197,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
             // 5. JOIN & HANDLE RECONNECTS
             console.log('Interview: Joining room...');
             this.joinInterviewRoom();
+            this.isReadyToNegotiate = true; // Safe to negotiate now
 
             // Re-join room if socket reconnects (CRITICAL for stability)
             this.socket.on('connect', () => {
@@ -293,9 +295,9 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.isRemoteConnected = true;
 
             // Perfect Negotiation Pattern:
-            const offerCollision = (data.offer.type === "offer") && 
-                                   (this.isNegotiating || this.peerConnection?.signalingState !== "stable");
-            
+            const offerCollision = (data.offer.type === "offer") &&
+                (this.isNegotiating || this.peerConnection?.signalingState !== "stable");
+
             this.ignoreOffer = !this.isInterviewer && offerCollision; // Candidate is polite, ignores collision
             if (this.ignoreOffer) {
                 console.warn('WebRTC: Offer collision detected, ignoring because I am polite (Candidate)');
@@ -316,11 +318,11 @@ export class InterviewComponent implements OnInit, OnDestroy {
                     data.offer.sdp = this.preferH264(data.offer.sdp);
                 }
                 await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                
+
                 // Flush buffered candidates
                 while (this.iceCandidatesBuffer.length > 0) {
                     const cand = this.iceCandidatesBuffer.shift();
-                    if (cand) this.peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+                    if (cand) this.peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(() => { });
                 }
 
                 if (data.offer.type === "offer") {
@@ -397,7 +399,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                     msg.sender = 'You';
                 }
                 this.chatMessages = [...this.chatMessages, msg];
-                
+
                 // If on mobile and chat is closed, show notification badge
                 if (!this.isChatVisibleOnMobile() && !this.isCurrentUser(msg.senderId)) {
                     this.hasNewMessage.set(true);
@@ -496,7 +498,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
 
         if (this._remoteVideo?.nativeElement && this.remoteStream) {
             const video = this._remoteVideo.nativeElement;
-            
+
             // Check if track is actually active
             const tracks = this.remoteStream.getVideoTracks();
             const isTrackEnabled = tracks.length > 0 && tracks[0].enabled && tracks[0].readyState === 'live';
@@ -541,18 +543,28 @@ export class InterviewComponent implements OnInit, OnDestroy {
             this.socket.off('user-left');
             this.socket.off('chat-message');
             this.socket.off('code-change');
+            this.socket.off('peer-media-status');
+            this.socket.off('peer-camera-toggled');
+            this.socket.off('peer-mic-toggled');
+            this.socket.off('peer-screen-share');
+            this.socket.off('interview-ended');
+            this.socket.off('roomChatHistory');
+            this.socket.off('chat-delete');
+            this.socket.off('chat-react');
+            this.socket.off('request-negotiation');
+            this.socket.off('connect');
         }
     }
 
     private joinInterviewRoom() {
         if (!this.socket?.connected) return;
-        
+
         const deviceInfo = this.getDeviceInfo();
         console.log('Interview: Self joining room with device info:', deviceInfo);
 
-        this.socket.emit('join-interview', { 
+        this.socket.emit('join-interview', {
             roomId: this.roomId,
-            deviceInfo: deviceInfo 
+            deviceInfo: deviceInfo
         });
         this.socket.emit('media-status', {
             roomId: this.roomId,
@@ -794,9 +806,15 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.peerConnection.addTransceiver('video', { direction: 'sendrecv' });
         this.peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
 
+        this.peerConnection.onnegotiationneeded = () => {
+            if (this.isInterviewer && this.isReadyToNegotiate) {
+                this.initiateNegotiation();
+            }
+        };
+
         this.peerConnection.ontrack = (event) => {
             console.log('WebRTC: Received Remote Track:', event.track.kind, 'ReadyState:', event.track.readyState);
-            
+
             if (!this.remoteStream) {
                 this.remoteStream = new MediaStream();
             }
@@ -812,7 +830,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
                 this.hasRemoteVideo = true;
                 this.remoteHasVideo.set(true);
                 this.isRemoteConnected = true;
-                
+
                 event.track.onmute = () => {
                     console.log('WebRTC Track: Track Muted (Network issue or Peer closed camera)');
                     this.remoteHasVideo.set(false);
@@ -853,33 +871,34 @@ export class InterviewComponent implements OnInit, OnDestroy {
         this.addLocalTracksToPeer();
     }
 
-    private initiateNegotiation() {
+    private async initiateNegotiation() {
         if (!this.peerConnection || this.isNegotiating) return;
 
-        this.isNegotiating = true;
-        setTimeout(async () => {
-            try {
-                // Perfect Negotiation: If not stable, we wait
-                if (this.peerConnection.signalingState !== 'stable') {
-                    this.isNegotiating = false;
-                    return;
-                }
-
-                console.log('WebRTC: Creating proactive offer...');
-                const offer = await this.peerConnection.createOffer();
-                
-                // SDP Munging
-                offer.sdp = this.preferH264(offer.sdp!);
-
-                await this.peerConnection.setLocalDescription(offer);
-                this.socket.emit('webrtc-offer', { roomId: this.roomId, offer: this.peerConnection.localDescription });
-            } catch (err) {
-                console.error('WebRTC: Proactive offer error', err);
-            } finally {
-                // Short wait to prevent spamming offers
-                setTimeout(() => this.isNegotiating = false, 1000);
+        try {
+            this.isNegotiating = true;
+            
+            // Perfect Negotiation Pattern: If signaling state is not stable, we wait
+            if (this.peerConnection.signalingState !== 'stable') {
+                return;
             }
-        }, 1000);
+
+            console.log('WebRTC: Creating proactive offer...');
+            const offer = await this.peerConnection.createOffer();
+
+            // SDP Munging (Prefer H.264)
+            offer.sdp = this.preferH264(offer.sdp!);
+
+            await this.peerConnection.setLocalDescription(offer);
+            this.socket.emit('webrtc-offer', { 
+                roomId: this.roomId, 
+                offer: this.peerConnection.localDescription 
+            });
+        } catch (err) {
+            console.error('WebRTC: Negotiation error:', err);
+        } finally {
+            // Safety: brief delay to allow signaling to propagate
+            setTimeout(() => this.isNegotiating = false, 500);
+        }
     }
 
     // Helper to prioritize H.264 video codec in SDP
@@ -899,7 +918,7 @@ export class InterviewComponent implements OnInit, OnDestroy {
         // Move H264 payloads to the front of the m=video line
         const newMLine = mLine.slice(0, 3);
         const otherPayloads = mLine.slice(3).filter(p => !h264Payloads.includes(p));
-        
+
         // Final line construction
         lines[videoIndex] = [...newMLine, ...h264Payloads, ...otherPayloads].join(' ');
         return lines.join('\r\n');
